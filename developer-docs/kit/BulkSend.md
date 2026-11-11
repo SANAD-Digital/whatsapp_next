@@ -12,7 +12,7 @@ rate, timing), the first recipient as the preview identity, the message bubble, 
 of its own; but the shapes it expects (`load`, `estimate`, `send` payload/result) mirror this app's
 `bulk_send.*` API, and the stylesheet uses the app's `--whatsapp-*` palette tokens from
 `public/scss/_tokens.scss`, which live outside the kit. It reuses `CommandEditor`'s layer/modal
-classes (`whatsapp-kit-ce-*`), so that stylesheet must load too (the kit's `style.scss` imports both).
+classes (`whatsapp-kit-command-editor-*`), so that stylesheet must load too (the kit's `style.scss` imports both).
 
 ## Options
 
@@ -76,9 +76,9 @@ new whatsapp.ui.BulkSend({
 
 ## CSS hooks
 
-- Layer/modal: `.whatsapp-kit.whatsapp-kit-ce-layer.whatsapp-kit-bs-layer` > `.whatsapp-kit-ce-backdrop` +
-  `.whatsapp-kit-ce.whatsapp-kit-bs[role=dialog]`; `body.whatsapp-kit-ce-open` while any layer is open.
-- Header: `.whatsapp-kit-bs__top`, `__title`, `__subtitle`; body `__body`, `__grid`.
+- Layer/modal: `.whatsapp-kit.whatsapp-kit-command-editor-layer.whatsapp-kit-bulk-send-layer` > `.whatsapp-kit-command-editor-backdrop` +
+  `.whatsapp-kit-command-editor.whatsapp-kit-bulk-send[role=dialog]`; `body.whatsapp-kit-command-editor-open` while any layer is open.
+- Header: `.whatsapp-kit-bulk-send__top`, `__title`, `__subtitle`; body `__body`, `__grid`.
 - Recipients: `__list-pane`, `__list-head`, `__segs` (`--sm`), `__seg` (`.is-sel`), `__seg-n`,
   `__search`, `__list`, `__row` (`.is-on`), `__avatar` (`--nf`, `--q`, `.is-on`), `__row-name`,
   `__row-sub`, `__badge--{wn|muted|pri|nf}`, `__mark` (`.is-on`, `.is-rm`), `__none`, `__manual`,

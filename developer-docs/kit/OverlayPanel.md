@@ -58,7 +58,7 @@ Tones everywhere: `ok`, `warn`, `danger`, `info`, `muted`, `pri` (anything else 
 
 **Action** — `{key, label, icon?, variant = "secondary", align ("start"|end), close (default true),
 requires_dirty?, validate (default true), handler?(values, panel)}`. With a handler the form is
-validated first (unless `validate: false`). A promise disables the button (`whatsapp-btn--busy`);
+validated first (unless `validate: false`). A promise disables the button (`whatsapp-button--busy`);
 resolving `false` (or returning `false`) keeps the panel open; a rejection shows inline
 (ignored if `message === "cancelled"`). No handler → just closes.
 
@@ -78,7 +78,7 @@ resolving `false` (or returning `false`) keeps the panel open; a rejection shows
 ## Events and callbacks
 
 `on_change`, `on_close`, per-field `on_change`, list `on_rows`, action handlers. Registers with
-`ui.overlay.open/close` (one overlay at a time) and adds `whatsapp-kit-op-open` to `<body>` while open.
+`ui.overlay.open/close` (one overlay at a time) and adds `whatsapp-kit-overlay-panel-open` to `<body>` while open.
 No realtime events.
 
 ## Server calls
@@ -109,9 +109,9 @@ whatsapp.ui.OverlayPanel.open({
 
 ## CSS hooks
 
-- `<section class="whatsapp-kit whatsapp-kit-op wa">` with `--modal` / `--drawer`, `--start` / `--end`,
-  `--in` (visible), `whatsapp--compact`; `role="dialog"`, `aria-modal`. Backdrop `.whatsapp-kit-op-backdrop`;
-  body class `whatsapp-kit-op-open`. Custom properties `--whatsapp-kit-op-width`, `--whatsapp-kit-op-cols`,
+- `<section class="whatsapp-kit whatsapp-kit-overlay-panel wa">` with `--modal` / `--drawer`, `--start` / `--end`,
+  `--in` (visible), `whatsapp--compact`; `role="dialog"`, `aria-modal`. Backdrop `.whatsapp-kit-overlay-panel-backdrop`;
+  body class `whatsapp-kit-overlay-panel-open`. Custom properties `--whatsapp-kit-op-width`, `--whatsapp-kit-op-cols`,
   `--whatsapp-kit-op-rowcols`.
 - Shell: `__head`, `__heading`, `__title`, `__meta`, `__subtitle(--mono)`, `__badge`, `__dirty`,
   `__close`, `__body`, `__summary`, `__foot`, `__foot-start`, `__foot-end`.
@@ -138,8 +138,8 @@ whatsapp.ui.OverlayPanel.open({
 - A closed panel is detached from the document (re-attached by `show()`); `destroy()` removes it.
 - Under 767 px both types become a full-height sheet; grids collapse to one column;
   `prefers-reduced-motion` drops the transition.
-- Class reuse: `whatsapp-kit-op__rows` is used both for a `layout: "rows"` section container and for
-  the `rows` field wrapper; target `.whatsapp-kit-op__field--rows .whatsapp-kit-op__rows` to distinguish.
+- Class reuse: `whatsapp-kit-overlay-panel__rows` is used both for a `layout: "rows"` section container and for
+  the `rows` field wrapper; target `.whatsapp-kit-overlay-panel__field--rows .whatsapp-kit-overlay-panel__rows` to distinguish.
 - Live use: `whatsapp_next/page/wa_contacts/wa_contacts.js` (detail drawer, create/edit modal,
   link chooser), `whatsapp_next/page/wa_functions_center/wa_functions_center.js` (dry-run,
   install/update diff, settings editor), `whatsapp_next/page/wa_simulator/wa_simulator.js`.

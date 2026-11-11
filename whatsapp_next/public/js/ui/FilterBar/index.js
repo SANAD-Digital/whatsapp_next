@@ -777,37 +777,37 @@ whatsapp.ui.FilterBar = class FilterBar {
 	open_option_sheet(preset, after) {
 		const label = this.label_of(preset);
 		const searchable = this.searchable(preset);
-		const $sheet = $(`<div class="whatsapp-kit whatsapp-kit-optsheet" role="dialog" aria-modal="true" aria-label="${ui.escape(label)}">
-				<div class="whatsapp-kit-optsheet__scrim"></div>
-				<div class="whatsapp-kit-optsheet__panel">
-					<div class="whatsapp-kit-optsheet__grip" aria-hidden="true"></div>
-					<div class="whatsapp-kit-optsheet__head">
-						<span class="whatsapp-kit-optsheet__title">${ui.escape(label)}</span>
-						<button type="button" class="whatsapp-kit-optsheet__clear">${ui.escape(__("Clear"))}</button>
+		const $sheet = $(`<div class="whatsapp-kit whatsapp-kit-options-sheet" role="dialog" aria-modal="true" aria-label="${ui.escape(label)}">
+				<div class="whatsapp-kit-options-sheet__scrim"></div>
+				<div class="whatsapp-kit-options-sheet__panel">
+					<div class="whatsapp-kit-options-sheet__grip" aria-hidden="true"></div>
+					<div class="whatsapp-kit-options-sheet__head">
+						<span class="whatsapp-kit-options-sheet__title">${ui.escape(label)}</span>
+						<button type="button" class="whatsapp-kit-options-sheet__clear">${ui.escape(__("Clear"))}</button>
 					</div>
-					${searchable ? `<div class="whatsapp-kit-optsheet__search"><input type="search" class="form-control" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}"></div>` : ""}
-					<div class="whatsapp-kit-optsheet__list" role="group" aria-label="${ui.escape(label)}"></div>
-					<div class="whatsapp-kit-optsheet__foot"><button type="button" class="btn btn-primary btn-sm whatsapp-kit-optsheet__done">${ui.escape(__("Done"))}</button></div>
+					${searchable ? `<div class="whatsapp-kit-options-sheet__search"><input type="search" class="form-control" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}"></div>` : ""}
+					<div class="whatsapp-kit-options-sheet__list" role="group" aria-label="${ui.escape(label)}"></div>
+					<div class="whatsapp-kit-options-sheet__foot"><button type="button" class="btn btn-primary btn-sm whatsapp-kit-options-sheet__done">${ui.escape(__("Done"))}</button></div>
 				</div>
 			</div>`).appendTo(document.body);
-		const $list = $sheet.find(".whatsapp-kit-optsheet__list");
+		const $list = $sheet.find(".whatsapp-kit-options-sheet__list");
 		const changed = () => {
 			if (typeof after === "function") after();
 		};
 		const fill = (txt) => this.fill_options($list, preset, txt, changed);
 		const close = () => {
-			$sheet.removeClass("whatsapp-kit-optsheet--in");
+			$sheet.removeClass("whatsapp-kit-options-sheet--in");
 			$(document).off(`keydown.${this.id}-opt`);
 			window.setTimeout(() => $sheet.remove(), 180);
 			if (this.$optsheet === $sheet) this.$optsheet = null;
 		};
-		$sheet.find(".whatsapp-kit-optsheet__scrim, .whatsapp-kit-optsheet__done").on("click", close);
-		$sheet.find(".whatsapp-kit-optsheet__clear").on("click", () => {
+		$sheet.find(".whatsapp-kit-options-sheet__scrim, .whatsapp-kit-options-sheet__done").on("click", close);
+		$sheet.find(".whatsapp-kit-options-sheet__clear").on("click", () => {
 			this.set(preset.fieldname, null);
 			changed();
-			fill($sheet.find(".whatsapp-kit-optsheet__search input").val() || "");
+			fill($sheet.find(".whatsapp-kit-options-sheet__search input").val() || "");
 		});
-		const $search = $sheet.find(".whatsapp-kit-optsheet__search input");
+		const $search = $sheet.find(".whatsapp-kit-options-sheet__search input");
 		$search.on("input", ui.debounce(() => fill($search.val()), 250));
 		$(document).on(`keydown.${this.id}-opt`, (e) => {
 			if (e.key !== "Escape") return;
@@ -817,7 +817,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.$optsheet = $sheet;
 		fill("");
 		// one frame before the transition, so it slides in rather than appearing
-		window.requestAnimationFrame(() => $sheet.addClass("whatsapp-kit-optsheet--in"));
+		window.requestAnimationFrame(() => $sheet.addClass("whatsapp-kit-options-sheet--in"));
 		return $sheet;
 	}
 

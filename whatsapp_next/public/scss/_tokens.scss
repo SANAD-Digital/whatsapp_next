@@ -164,11 +164,11 @@ $wa-surfaces:
 	'body[data-route="Workspaces/WhatsApp"] #page-Workspaces',
 	".modal.whatsapp-kit-sheet",
 	// the settings window (D-138) mounts on <body> too
-	".whatsapp-kit-sw.whatsapp-settings-window",
+	".whatsapp-kit-settings-window.whatsapp-settings-window",
 	// the alert editor (D-139) mounts on <body>
-	".whatsapp-kit-ae-layer",
+	".whatsapp-kit-alert-editor-layer",
 	// the prototype's overlay panel mounts on <body>, outside every page, and is always ours
-	".whatsapp-kit-op";
+	".whatsapp-kit-overlay-panel";
 
 $wa-bridge: ();
 @each $sel in $wa-surfaces {

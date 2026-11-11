@@ -73,7 +73,7 @@ frappe.listview_settings["Sales Order"] = {
 
 ## CSS hooks
 
-- Root `<header class="whatsapp-kit whatsapp-kit-pagehead">`.
+- Root `<header class="whatsapp-kit whatsapp-kit-page-header">`.
 - `__row`, `__text`, `__title`, `__desc`, `__actions`, `__primary`, `__count`, `__stats`,
   `__banner` (+ `whatsapp-kit-tone--<tone>`), `__banner-icon`, `__banner-text`, `__banner-action`,
   `__blocks`, `__block[data-key]`.

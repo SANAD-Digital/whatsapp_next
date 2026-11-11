@@ -79,16 +79,16 @@ frappe.provide("whatsapp.ui");
 			if (!v) return "";
 			const detail = v.file_name || v.contact_label || v.summary || (v.location ? v.location.name || `${v.location.latitude}, ${v.location.longitude}` : "");
 			const tone = (KINDS.find((k) => k.key === v.kind) || {}).tone || "muted";
-			return `<span class="whatsapp-kit-am__chip whatsapp-kit-am__chip--${tone}">
-				<span class="whatsapp-kit-am__chip-icon">${ICONS[v.kind] || ""}</span>
-				<span class="whatsapp-kit-am__chip-text">${esc(label_of(v.kind))}${detail ? ` · <bdi>${esc(detail)}</bdi>` : ""}</span>
-				<button type="button" class="whatsapp-kit-am__chip-x" data-attach-clear aria-label="${esc(__("Remove the attachment"))}" title="${esc(__("Remove the attachment"))}">×</button>
+			return `<span class="whatsapp-kit-attach-menu__chip whatsapp-kit-attach-menu__chip--${tone}">
+				<span class="whatsapp-kit-attach-menu__chip-icon">${ICONS[v.kind] || ""}</span>
+				<span class="whatsapp-kit-attach-menu__chip-text">${esc(label_of(v.kind))}${detail ? ` · <bdi>${esc(detail)}</bdi>` : ""}</span>
+				<button type="button" class="whatsapp-kit-attach-menu__chip-x" data-attach-clear aria-label="${esc(__("Remove the attachment"))}" title="${esc(__("Remove the attachment"))}">×</button>
 			</span>`;
 		}
 
 		open() {
 			const $anchor = $(this.opts.anchor);
-			this.$pop = $(`<div class="whatsapp-kit whatsapp-kit-am" role="dialog" aria-label="${esc(__("Message type"))}"></div>`).appendTo(document.body);
+			this.$pop = $(`<div class="whatsapp-kit whatsapp-kit-attach-menu" role="dialog" aria-label="${esc(__("Message type"))}"></div>`).appendTo(document.body);
 			this.render();
 			this.place($anchor);
 			this._outside = (e) => {
@@ -104,7 +104,7 @@ frappe.provide("whatsapp.ui");
 			setTimeout(() => document.addEventListener("mousedown", this._outside, true), 0);
 			this.$pop.on("keydown", this._key);
 			this._resize = () => this.place($anchor);
-			$(window).on("resize.whatsapp-kit-am", this._resize);
+			$(window).on("resize.whatsapp-kit-attach-menu", this._resize);
 			const first = this.$pop.find("button:not([disabled]), input").get(0);
 			first && first.focus();
 		}
@@ -123,7 +123,7 @@ frappe.provide("whatsapp.ui");
 
 		close(refocus = false) {
 			document.removeEventListener("mousedown", this._outside, true);
-			$(window).off("resize.whatsapp-kit-am", this._resize);
+			$(window).off("resize.whatsapp-kit-attach-menu", this._resize);
 			if (this.$pop) this.$pop.remove();
 			this.$pop = null;
 			if (refocus) $(this.opts.anchor).trigger("focus");
@@ -137,30 +137,30 @@ frappe.provide("whatsapp.ui");
 		render() {
 			const $p = this.$pop;
 			if (this.step === "menu") {
-				$p.html(`<div class="whatsapp-kit-am__grid">${KINDS.filter((k) => !k.opt_in || (this.opts.kinds || []).includes(k.key)).map((k) => {
+				$p.html(`<div class="whatsapp-kit-attach-menu__grid">${KINDS.filter((k) => !k.opt_in || (this.opts.kinds || []).includes(k.key)).map((k) => {
 					const ok = this.allowed(k.key);
 					const reason = !ok && this.opts.reasons ? this.opts.reasons[k.key] : "";
-					return `<button type="button" class="whatsapp-kit-am__item" data-kind="${k.key}"${ok ? "" : ` disabled title="${esc(reason || __("Not available here"))}"`}>
-						<span class="whatsapp-kit-am__icon whatsapp-kit-am__icon--${k.tone}">${ICONS[k.key]}</span>
-						<span class="whatsapp-kit-am__label">${esc(label_of(k.key))}</span>
+					return `<button type="button" class="whatsapp-kit-attach-menu__item" data-kind="${k.key}"${ok ? "" : ` disabled title="${esc(reason || __("Not available here"))}"`}>
+						<span class="whatsapp-kit-attach-menu__icon whatsapp-kit-attach-menu__icon--${k.tone}">${ICONS[k.key]}</span>
+						<span class="whatsapp-kit-attach-menu__label">${esc(label_of(k.key))}</span>
 					</button>`;
 				}).join("")}</div>`);
 				$p.find("[data-kind]").on("click", (e) => this.pick($(e.currentTarget).data("kind")));
 				return;
 			}
 			if (this.step === "location") {
-				$p.html(`<form class="whatsapp-kit-am__form" novalidate>
-					<span class="whatsapp-kit-am__title">${ICONS.location}${esc(__("Location"))}</span>
-					<span class="whatsapp-kit-am__row">
-						<label class="whatsapp-kit-am__fld"><span>${esc(__("Latitude"))}</span><input type="number" step="any" name="latitude" dir="ltr" required /></label>
-						<label class="whatsapp-kit-am__fld"><span>${esc(__("Longitude"))}</span><input type="number" step="any" name="longitude" dir="ltr" required /></label>
+				$p.html(`<form class="whatsapp-kit-attach-menu__form" novalidate>
+					<span class="whatsapp-kit-attach-menu__title">${ICONS.location}${esc(__("Location"))}</span>
+					<span class="whatsapp-kit-attach-menu__row">
+						<label class="whatsapp-kit-attach-menu__fld"><span>${esc(__("Latitude"))}</span><input type="number" step="any" name="latitude" dir="ltr" required /></label>
+						<label class="whatsapp-kit-attach-menu__fld"><span>${esc(__("Longitude"))}</span><input type="number" step="any" name="longitude" dir="ltr" required /></label>
 					</span>
-					<label class="whatsapp-kit-am__fld"><span>${esc(__("Place name"))}</span><input type="text" name="name" /></label>
-					${navigator.geolocation ? `<button type="button" class="whatsapp-kit-am__link" data-here>${esc(__("Use my current location"))}</button>` : ""}
-					<span class="whatsapp-kit-am__error" role="alert"></span>
-					<span class="whatsapp-kit-am__actions">
-						<button type="button" class="whatsapp-kit-am__btn" data-back>${esc(__("Back"))}</button>
-						<button type="submit" class="whatsapp-kit-am__btn whatsapp-kit-am__btn--pri">${esc(__("Add the location"))}</button>
+					<label class="whatsapp-kit-attach-menu__fld"><span>${esc(__("Place name"))}</span><input type="text" name="name" /></label>
+					${navigator.geolocation ? `<button type="button" class="whatsapp-kit-attach-menu__link" data-here>${esc(__("Use my current location"))}</button>` : ""}
+					<span class="whatsapp-kit-attach-menu__error" role="alert"></span>
+					<span class="whatsapp-kit-attach-menu__actions">
+						<button type="button" class="whatsapp-kit-attach-menu__btn" data-back>${esc(__("Back"))}</button>
+						<button type="submit" class="whatsapp-kit-attach-menu__btn whatsapp-kit-attach-menu__btn--pri">${esc(__("Add the location"))}</button>
 					</span>
 				</form>`);
 				const $f = $p.find("form");
@@ -171,7 +171,7 @@ frappe.provide("whatsapp.ui");
 							$f.find("[name=latitude]").val(pos.coords.latitude.toFixed(6));
 							$f.find("[name=longitude]").val(pos.coords.longitude.toFixed(6));
 						},
-						() => $f.find(".whatsapp-kit-am__error").text(__("The browser did not share the location."))
+						() => $f.find(".whatsapp-kit-attach-menu__error").text(__("The browser did not share the location."))
 					)
 				);
 				$f.on("submit", (e) => {
@@ -179,7 +179,7 @@ frappe.provide("whatsapp.ui");
 					const lat = parseFloat($f.find("[name=latitude]").val());
 					const lng = parseFloat($f.find("[name=longitude]").val());
 					if (!(lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)) {
-						$f.find(".whatsapp-kit-am__error").text(__("Enter a latitude between -90 and 90 and a longitude between -180 and 180."));
+						$f.find(".whatsapp-kit-attach-menu__error").text(__("Enter a latitude between -90 and 90 and a longitude between -180 and 180."));
 						return;
 					}
 					const name = cstr($f.find("[name=name]").val()).trim();
@@ -188,22 +188,22 @@ frappe.provide("whatsapp.ui");
 				return;
 			}
 			if (this.step === "contact") {
-				$p.html(`<div class="whatsapp-kit-am__form">
-					<span class="whatsapp-kit-am__title">${ICONS.contact}${esc(__("Contact card"))}</span>
-					<input type="text" class="whatsapp-kit-am__search" data-whatsapp-bare placeholder="${esc(__("Search by name or number…"))}" aria-label="${esc(__("Search by name or number"))}" autocomplete="off" />
-					<span class="whatsapp-kit-am__results" role="listbox"><span class="whatsapp-kit-am__none">${esc(__("Loading…"))}</span></span>
-					<span class="whatsapp-kit-am__actions"><button type="button" class="whatsapp-kit-am__btn" data-back>${esc(__("Back"))}</button></span>
+				$p.html(`<div class="whatsapp-kit-attach-menu__form">
+					<span class="whatsapp-kit-attach-menu__title">${ICONS.contact}${esc(__("Contact card"))}</span>
+					<input type="text" class="whatsapp-kit-attach-menu__search" data-whatsapp-bare placeholder="${esc(__("Search by name or number…"))}" aria-label="${esc(__("Search by name or number"))}" autocomplete="off" />
+					<span class="whatsapp-kit-attach-menu__results" role="listbox"><span class="whatsapp-kit-attach-menu__none">${esc(__("Loading…"))}</span></span>
+					<span class="whatsapp-kit-attach-menu__actions"><button type="button" class="whatsapp-kit-attach-menu__btn" data-back>${esc(__("Back"))}</button></span>
 				</div>`);
 				$p.find("[data-back]").on("click", () => this.go("menu"));
-				const $q = $p.find(".whatsapp-kit-am__search");
-				const $r = $p.find(".whatsapp-kit-am__results");
+				const $q = $p.find(".whatsapp-kit-attach-menu__search");
+				const $r = $p.find(".whatsapp-kit-attach-menu__results");
 				const load = whatsapp.ui.debounce(async () => {
 					const q = cstr($q.val());
 					let rows = [];
 					try {
 						rows = (await this.opts.search_contacts(q)) || [];
 					} catch (err) {
-						$r.html(`<span class="whatsapp-kit-am__none">${esc(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span>`);
+						$r.html(`<span class="whatsapp-kit-attach-menu__none">${esc(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span>`);
 						return;
 					}
 					if (cstr($q.val()) !== q) return;
@@ -211,9 +211,9 @@ frappe.provide("whatsapp.ui");
 						rows.length
 							? rows
 									.slice(0, 20)
-									.map((c) => `<button type="button" role="option" class="whatsapp-kit-am__opt" data-name="${esc(c.name)}">${esc(c.label || c.name)}<span dir="ltr">${esc(whatsapp.ui.phone(c.phone || ""))}</span></button>`)
+									.map((c) => `<button type="button" role="option" class="whatsapp-kit-attach-menu__opt" data-name="${esc(c.name)}">${esc(c.label || c.name)}<span dir="ltr">${esc(whatsapp.ui.phone(c.phone || ""))}</span></button>`)
 									.join("")
-							: `<span class="whatsapp-kit-am__none">${esc(__("No matching contacts."))}</span>`
+							: `<span class="whatsapp-kit-attach-menu__none">${esc(__("No matching contacts."))}</span>`
 					);
 					$r.find("[data-name]").on("click", (e) => {
 						const c = rows.find((x) => x.name === $(e.currentTarget).data("name"));

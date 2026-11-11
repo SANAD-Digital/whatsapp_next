@@ -25,10 +25,10 @@
 	// the weight of one: the mark, the name, the line that says what the screen is for, and the
 	// verbs at the far end — closed by a hairline that separates it from the work below.
 
-	.whatsapp-kit-pagehead {
+	.whatsapp-kit-page-header {
 		gap: var(--whatsapp-kit-gap-lg);
 	}
-	.whatsapp-kit-pagehead__row {
+	.whatsapp-kit-page-header__row {
 		align-items: center;
 		gap: var(--whatsapp-kit-gap-md);
 		padding-block-end: var(--whatsapp-kit-gap-lg);
@@ -41,7 +41,7 @@
 	}
 	// the kit's header row is `space-between`, which leaves a title with no `flex` floating in the
 	// middle of the row; with a mark beside it the title has to hug that mark, not the centre
-	.whatsapp-kit-pagehead__text {
+	.whatsapp-kit-page-header__text {
 		flex: 1 1 auto;
 
 		@media (max-width: 767px) {
@@ -49,7 +49,7 @@
 		}
 	}
 	// the title and the verbs at the product's one size (PageHeader's own)
-	.whatsapp-kit-pagehead__actions .btn {
+	.whatsapp-kit-page-header__actions .btn {
 		font-weight: 600;
 	}
 

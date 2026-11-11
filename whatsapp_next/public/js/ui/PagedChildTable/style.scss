@@ -1,7 +1,7 @@
 // Host = the Table field's `.grid-field`: the panel's own head carries the name and the count, so
 // the field's label steps aside rather than printing the same word twice; the native grid parts
 // stay hidden.
-.whatsapp-kit-pct-host {
+.whatsapp-kit-paged-child-table-host {
 	> .grid-custom-buttons,
 	> .form-grid-container,
 	> .grid-footer { display: none; }
@@ -9,7 +9,7 @@
 	> .grid-label { display: none; }
 }
 
-.whatsapp-kit-pct {
+.whatsapp-kit-paged-child-table {
 	display: flex;
 	flex-direction: column;
 	gap: var(--whatsapp-kit-gap-md);
@@ -97,29 +97,29 @@
 }
 
 @media (max-width: 767px) {
-	.whatsapp-kit-pct__search, .whatsapp-kit-pct__select { max-width: 100%; width: 100%; }
-	.whatsapp-kit-pct__pager-btns .btn span { display: none; }
+	.whatsapp-kit-paged-child-table__search, .whatsapp-kit-paged-child-table__select { max-width: 100%; width: 100%; }
+	.whatsapp-kit-paged-child-table__pager-btns .btn span { display: none; }
 }
 
 // A chip carries the number behind it, so the reader chooses knowing how many rows are there.
-.whatsapp-kit-pct__chip {
+.whatsapp-kit-paged-child-table__chip {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--whatsapp-kit-gap-xs);
 
 	&[hidden] { display: none; }
 }
-.whatsapp-kit-pct__chip-count {
+.whatsapp-kit-paged-child-table__chip-count {
 	font-size: var(--text-xs, 11px);
 	color: var(--ink-gray-6);
 }
-.whatsapp-kit-pct__chip[aria-pressed="true"] .whatsapp-kit-pct__chip-count {
+.whatsapp-kit-paged-child-table__chip[aria-pressed="true"] .whatsapp-kit-paged-child-table__chip-count {
 	color: inherit;
 }
 
 // two chip groups on one line are two questions: they need air between them, and a group that
 // offers nothing to choose is hidden by the component
-.whatsapp-kit-pct__chips {
+.whatsapp-kit-paged-child-table__chips {
 	&[hidden] { display: none; }
-	& + .whatsapp-kit-pct__chips { margin-inline-start: var(--whatsapp-kit-gap-md); }
+	& + .whatsapp-kit-paged-child-table__chips { margin-inline-start: var(--whatsapp-kit-gap-md); }
 }

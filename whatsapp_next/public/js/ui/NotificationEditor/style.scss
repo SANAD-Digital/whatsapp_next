@@ -1,8 +1,8 @@
-// NotificationEditor — the AlertEditor's shell and cards (`.whatsapp-kit-ae*`); only what a notification
+// NotificationEditor — the AlertEditor's shell and cards (`.whatsapp-kit-alert-editor*`); only what a notification
 // adds is here: the template cards, the inline "N days before [field]" lines, the record the
 // preview is tried on and the optional "afterwards" card. Product tokens, logical properties.
 
-.whatsapp-kit-ne {
+.whatsapp-kit-notification-editor {
 	// the template cards: the document type's templates first, "New template" as the first card
 	&__tpls {
 		display: grid;
@@ -89,7 +89,7 @@
 		justify-content: space-between;
 		gap: 8px;
 		flex-wrap: wrap;
-		.whatsapp-kit-ne__filter { margin: 0; }
+		.whatsapp-kit-notification-editor__filter { margin: 0; }
 	}
 
 	// "3 days before [Due date]": numbers, words and selects on one line

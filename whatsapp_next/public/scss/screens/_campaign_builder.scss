@@ -18,9 +18,9 @@
 // ---- the shell ----------------------------------------------------------------------------------
 
 // Desk's own form layout: kept in the DOM because it validates and saves, never shown.
-.whatsapp-cb-native { display: none !important; }
+.whatsapp-campaign-builder-native { display: none !important; }
 
-.whatsapp-cb {
+.whatsapp-campaign-builder {
 	--cb-radius: 10px;
 	--cb-gap: 10px;
 	--cb-pad: 12px;
@@ -95,7 +95,7 @@
 // border, same height, same icon at the start, one focus halo. The native picker indicator is
 // stretched over the whole field, invisible, so the field itself opens the picker.
 
-.whatsapp-cb {
+.whatsapp-campaign-builder {
 	.whatsapp-affix--has-start .whatsapp-select { padding-inline-start: 34px; }
 
 	// Frappe's date and time pickers: their calendar and clock are theirs, their field is the kit's
@@ -125,18 +125,18 @@
 	// the composer's menus (message type, variables) drop below their button and must be able
 	// to leave the composer's frame — its own `overflow: hidden` clipped them at the frame's edge
 	// — and to paint over the pinned band and tabs, which sit at 5 and 6
-	.whatsapp-kit-mc__split { overflow: visible; }
-	.whatsapp-kit-mc__typemenu,
-	.whatsapp-kit-mc__varmenu { z-index: 8; }
+	.whatsapp-kit-message-composer__split { overflow: visible; }
+	.whatsapp-kit-message-composer__typemenu,
+	.whatsapp-kit-message-composer__varmenu { z-index: 8; }
 
 	// the product's toolbar inside the audience step: no reserved band, it is one row of the bar
-	.whatsapp-cb__aud-filters {
+	.whatsapp-campaign-builder__aud-filters {
 		flex: 1 1 auto;
 		min-inline-size: 0;
 		.whatsapp-kit-filterbar { min-height: 0; margin: 0; padding-block: 0; }
 	}
 	// the verbs beside the bar are the bar's own kind of button: the same height, the same border
-	.whatsapp-cb__aud-verbs .whatsapp-btn { min-block-size: var(--whatsapp-kit-ctl-h, 28px); }
+	.whatsapp-campaign-builder__aud-verbs .whatsapp-button { min-block-size: var(--whatsapp-kit-ctl-h, 28px); }
 }
 
 // ---- menus that open inside the step ------------------------------------------------------------
@@ -144,22 +144,22 @@
 // the composer's frame or under the pinned bars. Inside this screen nothing clips them, and they
 // paint above the band and the tabs.
 
-.whatsapp-cb {
-	.whatsapp-kit-mc__split { overflow: visible; }
-	.whatsapp-cb__pane .whatsapp-cb__card { overflow: visible; }
-	.whatsapp-kit-mc__typemenu,
-	.whatsapp-kit-mc__varmenu { z-index: 5; }
+.whatsapp-campaign-builder {
+	.whatsapp-kit-message-composer__split { overflow: visible; }
+	.whatsapp-campaign-builder__pane .whatsapp-campaign-builder__card { overflow: visible; }
+	.whatsapp-kit-message-composer__typemenu,
+	.whatsapp-kit-message-composer__varmenu { z-index: 5; }
 	// a menu that would run off the screen's end is hung from its button's other side instead
-	.whatsapp-kit-mc__typemenu--flip,
-	.whatsapp-kit-mc__varmenu--flip { inset-inline-start: auto; inset-inline-end: 0; }
-	.whatsapp-kit-mc__typemenu--unflip,
-	.whatsapp-kit-mc__varmenu--unflip { inset-inline-start: 0; inset-inline-end: auto; }
+	.whatsapp-kit-message-composer__typemenu--flip,
+	.whatsapp-kit-message-composer__varmenu--flip { inset-inline-start: auto; inset-inline-end: 0; }
+	.whatsapp-kit-message-composer__typemenu--unflip,
+	.whatsapp-kit-message-composer__varmenu--unflip { inset-inline-start: 0; inset-inline-end: auto; }
 }
 
 // ---- the header ---------------------------------------------------------------------------------
 // What this record is, what state it is in, and the four numbers that decide everything else.
 
-.whatsapp-cb__header {
+.whatsapp-campaign-builder__header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -172,7 +172,7 @@
 	box-shadow: var(--whatsapp-shadow-sm);
 }
 
-.whatsapp-cb__identity {
+.whatsapp-campaign-builder__identity {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
@@ -186,7 +186,7 @@
 	}
 }
 
-.whatsapp-cb__kicker {
+.whatsapp-campaign-builder__kicker {
 	margin: 0;
 	font-size: 16px;
 	font-weight: 700;
@@ -194,7 +194,7 @@
 	color: var(--whatsapp-ink);
 }
 
-.whatsapp-cb__name {
+.whatsapp-campaign-builder__name {
 	margin: 0;
 	font-size: 12px;
 	color: var(--whatsapp-ink-3);
@@ -202,14 +202,14 @@
 	unicode-bidi: plaintext;
 }
 
-.whatsapp-cb__metrics {
+.whatsapp-campaign-builder__metrics {
 	display: flex;
 	align-items: stretch;
 	flex-wrap: wrap;
 	gap: 0;
 }
 
-.whatsapp-cb__metric {
+.whatsapp-campaign-builder__metric {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -217,7 +217,7 @@
 	border-inline-start: 1px solid var(--whatsapp-border);
 
 	&:first-child { border-inline-start: 0; }
-	&--muted .whatsapp-cb__metric-value { color: var(--whatsapp-ink-4); }
+	&--muted .whatsapp-campaign-builder__metric-value { color: var(--whatsapp-ink-4); }
 
 	&-text {
 		display: flex;
@@ -261,18 +261,18 @@
 
 // ---- a phone: the same screen, one column, nothing cut and nothing scrolling sideways --------------
 @media (max-width: 640px) {
-	.whatsapp-cb__header {
+	.whatsapp-campaign-builder__header {
 		padding: 10px 12px;
 		gap: 10px;
 	}
-	.whatsapp-cb__kicker { font-size: 14px; }
-	.whatsapp-cb__metrics {
+	.whatsapp-campaign-builder__kicker { font-size: 14px; }
+	.whatsapp-campaign-builder__metrics {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 8px 12px;
 		inline-size: 100%;
 	}
-	.whatsapp-cb__metric {
+	.whatsapp-campaign-builder__metric {
 		flex: none;
 		flex-direction: row-reverse; // the icon leads, the words follow it
 		justify-content: flex-end;
@@ -282,45 +282,45 @@
 		&-value { overflow: hidden; text-overflow: ellipsis; max-inline-size: 100%; }
 		&-icon { inline-size: 26px; block-size: 26px; }
 	}
-	.whatsapp-cb__pane { padding: 10px; }
+	.whatsapp-campaign-builder__pane { padding: 10px; }
 	// the audience: sources two to a row, the bar's own phone layout below them
-	.whatsapp-cb__aud-add {
+	.whatsapp-campaign-builder__aud-add {
 		inline-size: 100%;
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 6px;
-		.whatsapp-cb__aud-source { justify-content: flex-start; inline-size: 100%; min-inline-size: 0; > span { overflow: hidden; text-overflow: ellipsis; } }
+		.whatsapp-campaign-builder__aud-source { justify-content: flex-start; inline-size: 100%; min-inline-size: 0; > span { overflow: hidden; text-overflow: ellipsis; } }
 	}
-	.whatsapp-cb__aud-tags { margin-inline-start: 0; }
-	.whatsapp-cb__aud-verbs { margin-inline-start: 0; inline-size: 100%; justify-content: flex-end; }
+	.whatsapp-campaign-builder__aud-tags { margin-inline-start: 0; }
+	.whatsapp-campaign-builder__aud-verbs { margin-inline-start: 0; inline-size: 100%; justify-content: flex-end; }
 	// the monitor
-	.whatsapp-cb__stages {
+	.whatsapp-campaign-builder__stages {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		.whatsapp-cb__stage:last-child:nth-child(odd) { grid-column: 1 / -1; }
+		.whatsapp-campaign-builder__stage:last-child:nth-child(odd) { grid-column: 1 / -1; }
 	}
-	.whatsapp-cb__tab { padding-inline: 10px; min-block-size: 28px; }
-	.whatsapp-cb__band-state { flex-wrap: wrap; }
-	.whatsapp-cb__band-verbs { inline-size: 100%; justify-content: flex-end; }
+	.whatsapp-campaign-builder__tab { padding-inline: 10px; min-block-size: 28px; }
+	.whatsapp-campaign-builder__band-state { flex-wrap: wrap; }
+	.whatsapp-campaign-builder__band-verbs { inline-size: 100%; justify-content: flex-end; }
 }
 
 // ---- the wizard's tabs ----------------------------------------------------------------------------
-// The kit's segmented control (`.whatsapp-seg`) as a tab list: the four parts of a campaign are places
+// The kit's segmented control (`.whatsapp-segmented`) as a tab list: the four parts of a campaign are places
 // to go, so each is a tab — a mark (its number, or a tick once it is behind the reader), its name,
 // and a red count when something in it needs fixing.
 
-.whatsapp-cb__wtabs {
+.whatsapp-campaign-builder__wtabs {
 	padding: 8px 12px;
 	border-block-end: 1px solid var(--whatsapp-border);
 	background: var(--whatsapp-bg);
 }
 
-.whatsapp-cb__wseg {
+.whatsapp-campaign-builder__wseg {
 	display: flex;
 	inline-size: 100%;
 	flex-wrap: nowrap;
 }
 
-.whatsapp-cb__wtab {
+.whatsapp-campaign-builder__wtab {
 	flex: 1 1 0;
 	min-inline-size: 0;
 	gap: 8px;
@@ -347,19 +347,19 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	&--done .whatsapp-cb__wtab-mark { border-color: var(--whatsapp-pri); background: var(--whatsapp-pri); color: var(--whatsapp-on-pri); }
-	&[aria-selected="true"] .whatsapp-cb__wtab-mark { border-color: var(--whatsapp-pri); color: var(--whatsapp-pri-d); background: var(--whatsapp-pri-s); }
-	&--done[aria-selected="true"] .whatsapp-cb__wtab-mark { background: var(--whatsapp-pri); color: var(--whatsapp-on-pri); }
+	&--done .whatsapp-campaign-builder__wtab-mark { border-color: var(--whatsapp-pri); background: var(--whatsapp-pri); color: var(--whatsapp-on-pri); }
+	&[aria-selected="true"] .whatsapp-campaign-builder__wtab-mark { border-color: var(--whatsapp-pri); color: var(--whatsapp-pri-d); background: var(--whatsapp-pri-s); }
+	&--done[aria-selected="true"] .whatsapp-campaign-builder__wtab-mark { background: var(--whatsapp-pri); color: var(--whatsapp-on-pri); }
 
 	@media (max-width: 640px) {
 		gap: 6px;
 		padding-inline: 8px;
 		&:not([aria-selected="true"]) { flex: 0 0 auto; }
-		&:not([aria-selected="true"]) .whatsapp-cb__wtab-label { display: none; }
+		&:not([aria-selected="true"]) .whatsapp-campaign-builder__wtab-label { display: none; }
 	}
 }
 
-.whatsapp-cb__step-flag {
+.whatsapp-campaign-builder__step-flag {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -376,7 +376,7 @@
 
 // ---- the card every group is drawn in ----------------------------------------------------------
 
-.whatsapp-cb__card {
+.whatsapp-campaign-builder__card {
 	display: flex;
 	flex-direction: column;
 	border: 1px solid var(--whatsapp-border);
@@ -444,7 +444,7 @@
 
 // the columns are stated: `auto-fit` invents empty ones on a wide screen and squeezes two fields
 // into a fifth of the row
-.whatsapp-cb__grid {
+.whatsapp-campaign-builder__grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 10px 14px;
@@ -459,13 +459,13 @@
 	@media (max-width: 600px) { grid-template-columns: minmax(0, 1fr); }
 }
 
-.whatsapp-cb__counter {
+.whatsapp-campaign-builder__counter {
 	align-self: flex-start;
 	color: var(--whatsapp-ink-4);
 }
 
 // the rate: the value, what it costs, and the rule under both
-.whatsapp-cb__rate {
+.whatsapp-campaign-builder__rate {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr) auto;
 	align-items: center;
@@ -493,18 +493,18 @@
 
 	@media (max-width: 700px) {
 		grid-template-columns: minmax(0, 1fr);
-		.whatsapp-cb__estimate { justify-self: stretch; }
+		.whatsapp-campaign-builder__estimate { justify-self: stretch; }
 	}
 }
 
-.whatsapp-cb__slider {
+.whatsapp-campaign-builder__slider {
 	inline-size: 100%;
 	accent-color: var(--whatsapp-pri);
 	block-size: 20px;
 	cursor: pointer;
 }
 
-.whatsapp-cb__estimate {
+.whatsapp-campaign-builder__estimate {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
@@ -521,7 +521,7 @@
 }
 
 // the send time: the two answers on one side, the date and time on the other
-.whatsapp-cb__when {
+.whatsapp-campaign-builder__when {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
 	gap: 10px 12px;
@@ -548,7 +548,7 @@
 }
 
 // An answer, not a card: a radio, the answer, and the line that says what it means.
-.whatsapp-cb__choice {
+.whatsapp-campaign-builder__choice {
 	display: flex;
 	align-items: flex-start;
 	gap: 9px;
@@ -568,7 +568,7 @@
 }
 
 // advanced options: three switches in one row, each one its text and its switch
-.whatsapp-cb__options {
+.whatsapp-campaign-builder__options {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 6px 12px;
@@ -578,7 +578,7 @@
 	@media (max-width: 640px) { grid-template-columns: minmax(0, 1fr); }
 }
 
-.whatsapp-cb__option {
+.whatsapp-campaign-builder__option {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -592,7 +592,7 @@
 
 // ---- the aside -------------------------------------------------------------------------------------
 
-.whatsapp-cb__readings {
+.whatsapp-campaign-builder__readings {
 	display: flex;
 	flex-direction: column;
 	gap: 0;
@@ -605,7 +605,7 @@
 	}
 }
 
-.whatsapp-cb__reading {
+.whatsapp-campaign-builder__reading {
 	display: flex;
 	align-items: center;
 	gap: 9px;
@@ -637,7 +637,7 @@
 	&-sub { font-size: 11px; color: var(--whatsapp-ink-4); }
 }
 
-.whatsapp-cb__checks {
+.whatsapp-campaign-builder__checks {
 	display: flex;
 	flex-direction: column;
 	gap: 0;
@@ -648,17 +648,17 @@
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: 0 16px;
 
-		> .whatsapp-cb__check { padding-block: 4px; border-block-start: 0; }
-		> .whatsapp-cb__check + .whatsapp-cb__check { border-inline-start: 1px solid var(--whatsapp-border); padding-inline-start: 14px; }
+		> .whatsapp-campaign-builder__check { padding-block: 4px; border-block-start: 0; }
+		> .whatsapp-campaign-builder__check + .whatsapp-campaign-builder__check { border-inline-start: 1px solid var(--whatsapp-border); padding-inline-start: 14px; }
 
 		@media (max-width: 1000px) {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			> .whatsapp-cb__check:nth-child(3) { border-inline-start: 0; padding-inline-start: 0; }
+			> .whatsapp-campaign-builder__check:nth-child(3) { border-inline-start: 0; padding-inline-start: 0; }
 		}
 	}
 }
 
-.whatsapp-cb__check {
+.whatsapp-campaign-builder__check {
 	display: flex;
 	align-items: flex-start;
 	gap: 9px;
@@ -702,7 +702,7 @@
 
 // ---- a tinted note --------------------------------------------------------------------------------
 
-.whatsapp-cb__note {
+.whatsapp-campaign-builder__note {
 	display: flex;
 	align-items: flex-start;
 	gap: 9px;
@@ -741,7 +741,7 @@
 // The step's one line of explanation, above the composer's own head. It is a block in a column,
 // so it takes no `flex-basis` — one on a column axis is a height, which is what left a 320 px
 // hole between this line and the component under it.
-.whatsapp-cb__mstep-note {
+.whatsapp-campaign-builder__mstep-note {
 	margin: 0;
 	font-size: 12px;
 	color: var(--whatsapp-ink-3);
@@ -749,21 +749,21 @@
 }
 
 // the composer draws its own card; inside the pane it needs no second frame
-.whatsapp-cb__mstep-host .whatsapp-kit-mc { margin: 0; }
+.whatsapp-campaign-builder__mstep-host .whatsapp-kit-message-composer { margin: 0; }
 
-.whatsapp-cb__test-preview {
+.whatsapp-campaign-builder__test-preview {
 	display: flex;
 	flex-direction: column;
 	gap: 5px;
 	margin-block-start: 10px;
 }
 
-.whatsapp-cb__test-label {
+.whatsapp-campaign-builder__test-label {
 	font-size: 11px;
 	color: var(--whatsapp-ink-4);
 }
 
-.whatsapp-cb__bubble {
+.whatsapp-campaign-builder__bubble {
 	padding: 9px 11px;
 	border: 1px solid var(--whatsapp-ok-sb);
 	border-radius: 9px 9px 9px 2px;
@@ -776,7 +776,7 @@
 	[dir="rtl"] & { border-radius: 9px 9px 2px 9px; }
 }
 
-.whatsapp-cb__test-errors {
+.whatsapp-campaign-builder__test-errors {
 	margin: 0;
 	padding-inline-start: 16px;
 	font-size: 12px;
@@ -787,20 +787,20 @@
 // One working surface: the head says how many and from where and carries the sources as verbs; the
 // bar filters; the table is the kit's own list.
 
-.whatsapp-cb__aud {
+.whatsapp-campaign-builder__aud {
 	display: flex;
 	flex-direction: column;
 	gap: var(--cb-gap);
 }
 
-.whatsapp-cb__aud-head {
+.whatsapp-campaign-builder__aud-head {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 8px 12px;
 }
 
-.whatsapp-cb__aud-tags {
+.whatsapp-campaign-builder__aud-tags {
 	margin-inline-start: auto;
 	display: inline-flex;
 	flex-wrap: wrap;
@@ -808,19 +808,19 @@
 	gap: 6px;
 }
 
-.whatsapp-cb__aud-total {
+.whatsapp-campaign-builder__aud-total {
 	gap: 4px;
 	b { font-weight: 700; }
 }
 
-.whatsapp-cb__aud-parts {
+.whatsapp-campaign-builder__aud-parts {
 	display: inline-flex;
 	flex-wrap: wrap;
 	gap: 6px;
 	&:empty { display: none; }
 }
 
-.whatsapp-cb__aud-add {
+.whatsapp-campaign-builder__aud-add {
 	display: inline-flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -828,9 +828,9 @@
 	&:empty { display: none; }
 }
 
-.whatsapp-cb__aud-source { gap: 6px; }
+.whatsapp-campaign-builder__aud-source { gap: 6px; }
 
-.whatsapp-cb__aud-bar {
+.whatsapp-campaign-builder__aud-bar {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: flex-start;
@@ -839,7 +839,7 @@
 	border-block-start: 1px solid var(--whatsapp-border);
 }
 
-.whatsapp-cb__aud-verbs {
+.whatsapp-campaign-builder__aud-verbs {
 	margin-inline-start: auto;
 	display: inline-flex;
 	align-items: center;
@@ -847,14 +847,14 @@
 	min-block-size: 28px;
 }
 
-.whatsapp-cb__aud-table {
+.whatsapp-campaign-builder__aud-table {
 	border: 1px solid var(--whatsapp-border);
 	border-radius: var(--cb-radius);
 	background: var(--whatsapp-surface);
 	overflow: hidden;
 }
 
-.whatsapp-cb__chip {
+.whatsapp-campaign-builder__chip {
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
@@ -879,7 +879,7 @@
 // The results dashboard's language, before anything is sent: a status band, four tinted tiles,
 // then a grid of cards — the checks with the verb under them, the thread, the details and when.
 
-.whatsapp-cb__verdict {
+.whatsapp-campaign-builder__verdict {
 	--verdict: var(--whatsapp-ink-4);
 	display: flex;
 	align-items: center;
@@ -926,13 +926,13 @@
 	}
 }
 
-.whatsapp-cb__tiles {
+.whatsapp-campaign-builder__tiles {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 10px;
 	@media (max-width: 1000px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-.whatsapp-cb__tile {
+.whatsapp-campaign-builder__tile {
 	--tile: var(--whatsapp-ink-3);
 	--tile-s: var(--whatsapp-sunken);
 	--tile-sb: var(--whatsapp-border);
@@ -980,7 +980,7 @@
 	}
 }
 
-.whatsapp-cb__review-grid {
+.whatsapp-campaign-builder__review-grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 10px;
@@ -988,7 +988,7 @@
 	@media (max-width: 1100px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	@media (max-width: 700px) { grid-template-columns: minmax(0, 1fr); }
 }
-.whatsapp-cb__rcard {
+.whatsapp-campaign-builder__rcard {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -997,7 +997,7 @@
 	border: 1px solid var(--whatsapp-border);
 	border-radius: var(--cb-radius);
 	background: var(--whatsapp-surface);
-	.whatsapp-cb__card { padding: 0; }
+	.whatsapp-campaign-builder__card { padding: 0; }
 	&-foot {
 		display: flex;
 		justify-content: flex-end;
@@ -1009,12 +1009,12 @@
 	}
 }
 // a card drawn straight into the grid keeps the grid's frame, not the pane's flat section look
-.whatsapp-cb__pane .whatsapp-cb__rcard.whatsapp-cb__card { border: 1px solid var(--whatsapp-border); }
-.whatsapp-cb__pairs--one { grid-template-columns: minmax(0, 1fr); }
-.whatsapp-cb__timeline--plan .whatsapp-cb__event--todo .whatsapp-cb__event-dot { background: var(--whatsapp-surface); border: 2px solid var(--whatsapp-border-2); }
+.whatsapp-campaign-builder__pane .whatsapp-campaign-builder__rcard.whatsapp-campaign-builder__card { border: 1px solid var(--whatsapp-border); }
+.whatsapp-campaign-builder__pairs--one { grid-template-columns: minmax(0, 1fr); }
+.whatsapp-campaign-builder__timeline--plan .whatsapp-campaign-builder__event--todo .whatsapp-campaign-builder__event-dot { background: var(--whatsapp-surface); border: 2px solid var(--whatsapp-border-2); }
 
 // the thread: what the recipient's screen will show, bubble by bubble
-.whatsapp-cb__thread {
+.whatsapp-campaign-builder__thread {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -1023,7 +1023,7 @@
 	border-radius: 12px;
 	background: var(--whatsapp-sunken);
 }
-.whatsapp-cb__thread-wait {
+.whatsapp-campaign-builder__thread-wait {
 	display: flex;
 	justify-content: center;
 	span {
@@ -1035,7 +1035,7 @@
 		color: var(--whatsapp-ink-4);
 	}
 }
-.whatsapp-cb__bubble {
+.whatsapp-campaign-builder__bubble {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -1078,7 +1078,7 @@
 }
 
 
-.whatsapp-cb__pairs {
+.whatsapp-campaign-builder__pairs {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 0 12px;
@@ -1088,7 +1088,7 @@
 	}
 }
 
-.whatsapp-cb__pair {
+.whatsapp-campaign-builder__pair {
 	display: flex;
 	align-items: baseline;
 	justify-content: space-between;
@@ -1108,13 +1108,13 @@
 
 // ---- the monitor ------------------------------------------------------------------------------------
 
-.whatsapp-cb__monitor {
+.whatsapp-campaign-builder__monitor {
 	display: flex;
 	flex-direction: column;
 	gap: var(--cb-gap);
 }
 
-.whatsapp-cb__band {
+.whatsapp-campaign-builder__band {
 	--band: var(--whatsapp-ink-4);
 
 	display: flex;
@@ -1144,7 +1144,7 @@
 		border-radius: 50%;
 		background: var(--band);
 
-		&--live { animation: whatsapp-cb-pulse 1.8s ease-in-out infinite; }
+		&--live { animation: whatsapp-campaign-builder-pulse 1.8s ease-in-out infinite; }
 	}
 	&-text {
 		display: flex;
@@ -1172,24 +1172,24 @@
 	}
 }
 
-@keyframes whatsapp-cb-pulse {
+@keyframes whatsapp-campaign-builder-pulse {
 	0%, 100% { opacity: 1; transform: scale(1); }
 	50% { opacity: 0.4; transform: scale(0.8); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.whatsapp-cb__band-dot--live { animation: none; }
+	.whatsapp-campaign-builder__band-dot--live { animation: none; }
 }
 
 // the tabs are the head of the panel they open — one border around both, and nothing between them
-.whatsapp-cb__monitor .whatsapp-cb__panel {
+.whatsapp-campaign-builder__monitor .whatsapp-campaign-builder__panel {
 	border: 1px solid var(--whatsapp-border);
 	border-radius: var(--cb-radius);
 	background: var(--whatsapp-surface);
 	box-shadow: var(--whatsapp-shadow-sm);
 }
 
-.whatsapp-cb__tabs {
+.whatsapp-campaign-builder__tabs {
 	display: flex;
 	align-items: stretch;
 	gap: 2px;
@@ -1204,18 +1204,18 @@
 	z-index: 3;
 }
 
-.whatsapp-cb__monitor .whatsapp-cb__pane {
+.whatsapp-campaign-builder__monitor .whatsapp-campaign-builder__pane {
 	padding: var(--cb-pad);
 }
 
 // inside a tab the parts are sections of one panel, not cards stacked on a page
-.whatsapp-cb__pane > .whatsapp-cb__stack { gap: 0; }
-.whatsapp-cb__pane > .whatsapp-cb__stack > :not([hidden]) + * {
+.whatsapp-campaign-builder__pane > .whatsapp-campaign-builder__stack { gap: 0; }
+.whatsapp-campaign-builder__pane > .whatsapp-campaign-builder__stack > :not([hidden]) + * {
 	margin-block-start: var(--cb-gap);
 	padding-block-start: var(--cb-gap);
 	border-block-start: 1px solid var(--whatsapp-border);
 }
-.whatsapp-cb__pane .whatsapp-cb__card {
+.whatsapp-campaign-builder__pane .whatsapp-campaign-builder__card {
 	border: 0;
 	border-radius: 0;
 	background: none;
@@ -1224,7 +1224,7 @@
 	&-head { padding-inline: 0; padding-block-start: 0; }
 	&-body { padding-inline: 0; padding-block-end: 0; }
 }
-.whatsapp-cb__pane .whatsapp-cb__two {
+.whatsapp-campaign-builder__pane .whatsapp-campaign-builder__two {
 	gap: 0;
 
 	> * + * {
@@ -1235,7 +1235,7 @@
 	> :last-child { padding-inline-end: 0; }
 }
 
-.whatsapp-cb__tab {
+.whatsapp-campaign-builder__tab {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -1274,13 +1274,13 @@
 }
 
 // the five stages, each with its own denominator — never one bare percentage
-.whatsapp-cb__stages {
+.whatsapp-campaign-builder__stages {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
 	gap: 2px;
 }
 
-.whatsapp-cb__stage {
+.whatsapp-campaign-builder__stage {
 	--stage: var(--whatsapp-ink-3);
 
 	display: flex;
@@ -1319,7 +1319,7 @@
 	}
 }
 
-.whatsapp-cb__funnel {
+.whatsapp-campaign-builder__funnel {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -1348,7 +1348,7 @@
 	&-share { font-size: 11px; color: var(--whatsapp-ink-4); min-inline-size: 28px; text-align: end; }
 }
 
-.whatsapp-cb__dist {
+.whatsapp-campaign-builder__dist {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
@@ -1394,7 +1394,7 @@
 }
 
 // one row per message of the campaign
-.whatsapp-cb__mrow {
+.whatsapp-campaign-builder__mrow {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -1438,7 +1438,7 @@
 }
 
 // one row per reason a message failed
-.whatsapp-cb__frow {
+.whatsapp-campaign-builder__frow {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -1479,14 +1479,14 @@
 	}
 }
 
-.whatsapp-cb__row-actions {
+.whatsapp-campaign-builder__row-actions {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
 }
 
 // what happened, and when
-.whatsapp-cb__timeline {
+.whatsapp-campaign-builder__timeline {
 	display: flex;
 	flex-direction: column;
 	margin: 0;
@@ -1494,7 +1494,7 @@
 	list-style: none;
 }
 
-.whatsapp-cb__event {
+.whatsapp-campaign-builder__event {
 	display: flex;
 	align-items: flex-start;
 	gap: 10px;

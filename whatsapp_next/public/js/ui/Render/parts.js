@@ -85,11 +85,11 @@ export function dl(rows = [], { columns = 2 } = {}) {
 		.map((r) => {
 			if (!r || r.value == null || r.value === "") return "";
 			const is_html = !r.text && typeof r.value === "string" && /^\s*</.test(r.value);
-			return `<div class="whatsapp-kit-dl__row${r.wide ? " whatsapp-kit-dl__row--wide" : ""}"><dt>${ui.escape(r.label || "")}</dt><dd>${is_html ? r.value : `<span dir="${r.ltr ? "ltr" : "auto"}">${ui.escape(r.value)}</span>`}</dd></div>`;
+			return `<div class="whatsapp-kit-definition-list__row${r.wide ? " whatsapp-kit-definition-list__row--wide" : ""}"><dt>${ui.escape(r.label || "")}</dt><dd>${is_html ? r.value : `<span dir="${r.ltr ? "ltr" : "auto"}">${ui.escape(r.value)}</span>`}</dd></div>`;
 		})
 		.filter(Boolean)
 		.join("");
-	return body ? `<dl class="whatsapp-kit-dl whatsapp-kit-dl--cols-${columns}">${body}</dl>` : "";
+	return body ? `<dl class="whatsapp-kit-definition-list whatsapp-kit-definition-list--cols-${columns}">${body}</dl>` : "";
 }
 
 /**
@@ -102,13 +102,13 @@ export function kv(rows = []) {
 		.map((r) => {
 			if (!r || r.value == null || r.value === "") return "";
 			const is_html = !r.text && typeof r.value === "string" && /^\s*</.test(r.value);
-			const icon = r.icon ? `<span class="whatsapp-kit-kv__icon" aria-hidden="true">${ui.icon(r.icon, "sm")}</span>` : "";
+			const icon = r.icon ? `<span class="whatsapp-kit-key-value__icon" aria-hidden="true">${ui.icon(r.icon, "sm")}</span>` : "";
 			const value = is_html ? r.value : `<span dir="${r.ltr ? "ltr" : "auto"}">${ui.escape(r.value)}</span>`;
-			return `<div class="whatsapp-kit-kv__row${r.wide ? " whatsapp-kit-kv__row--wide" : ""}"><dt>${icon}<span>${ui.escape(r.label || "")}</span></dt><dd>${value}</dd></div>`;
+			return `<div class="whatsapp-kit-key-value__row${r.wide ? " whatsapp-kit-key-value__row--wide" : ""}"><dt>${icon}<span>${ui.escape(r.label || "")}</span></dt><dd>${value}</dd></div>`;
 		})
 		.filter(Boolean)
 		.join("");
-	return body ? `<dl class="whatsapp-kit-kv">${body}</dl>` : "";
+	return body ? `<dl class="whatsapp-kit-key-value">${body}</dl>` : "";
 }
 
 /** Code / JSON preview with a copy button (`inline` truncates to one line). */
@@ -149,14 +149,14 @@ export function actions(list = [], { size = "sm" } = {}) {
 		.map((a, i) => {
 			if (!a) return "";
 			const label = a.label || a.title || "";
-			const body = `${a.icon ? ui.icon(a.icon, size === "sm" ? "xs" : "sm") : ""}${a.show_label && label ? `<span class="whatsapp-kit-iconbtn__label">${ui.escape(label)}</span>` : ""}`;
-			const attrs = `class="whatsapp-kit-iconbtn whatsapp-kit-iconbtn--${size}${a.tone ? ` whatsapp-kit-tone--${ui.tone(a.tone)}` : ""}" title="${ui.escape(label)}" aria-label="${ui.escape(label)}" data-action-index="${i}"`;
+			const body = `${a.icon ? ui.icon(a.icon, size === "sm" ? "xs" : "sm") : ""}${a.show_label && label ? `<span class="whatsapp-kit-icon-button__label">${ui.escape(label)}</span>` : ""}`;
+			const attrs = `class="whatsapp-kit-icon-button whatsapp-kit-icon-button--${size}${a.tone ? ` whatsapp-kit-tone--${ui.tone(a.tone)}` : ""}" title="${ui.escape(label)}" aria-label="${ui.escape(label)}" data-action-index="${i}"`;
 			if (a.href) return `<a ${attrs} href="${ui.escape(ui.safe_url(a.href))}"${a.target ? ` target="${ui.escape(a.target)}" rel="noopener"` : ""}>${body}</a>`;
 			return `<button type="button" ${attrs}>${body}</button>`;
 		})
 		.filter(Boolean)
 		.join("");
-	return buttons ? `<span class="whatsapp-kit-iconbtn-row">${buttons}</span>` : "";
+	return buttons ? `<span class="whatsapp-kit-icon-button-row">${buttons}</span>` : "";
 }
 
 /** Bind the handlers of `actions()` inside `$root` against the same spec list. */

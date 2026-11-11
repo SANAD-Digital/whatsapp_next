@@ -75,9 +75,9 @@ win.show_window("usage");
 
 ## CSS hooks
 
-- `.whatsapp-kit-sw-backdrop` and root `.whatsapp-kit.whatsapp-kit-sw[role=dialog]` (plus `cls`), both appended to
-  `body`; `body.whatsapp-kit-sw-open` while open.
-- State modifiers: `.whatsapp-kit-sw--in` (entered, for the transition), `.whatsapp-kit-sw--pane` (a section is
+- `.whatsapp-kit-settings-window-backdrop` and root `.whatsapp-kit.whatsapp-kit-settings-window[role=dialog]` (plus `cls`), both appended to
+  `body`; `body.whatsapp-kit-settings-window-open` while open.
+- State modifiers: `.whatsapp-kit-settings-window--in` (entered, for the transition), `.whatsapp-kit-settings-window--pane` (a section is
   shown — on phones this switches from list to pane).
 - Rail: `__rail`, `__search`, `__search-icon`, `__nav`, `__group`, `__group-label`,
   `__item[data-key]` (`.is-on`, `aria-current="page"`), `__item-icon`, `__item-label`, `__none`.

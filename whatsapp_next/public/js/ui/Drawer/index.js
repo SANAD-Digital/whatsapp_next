@@ -76,8 +76,8 @@ whatsapp.ui.Drawer = class Drawer {
 						<div class="whatsapp-kit-drawer__meta"></div>
 					</div>
 					<div class="whatsapp-kit-drawer__tools">
-						<a class="whatsapp-btn whatsapp-btn--ghost whatsapp-btn--sm whatsapp-kit-drawer__open" hidden>${ui.icon(ui.icons.open, "xs")}<span>${ui.escape(__("Open", null, "Open the record in its form"))}</span></a>
-						<button type="button" class="whatsapp-btn whatsapp-btn--secondary whatsapp-btn--sm whatsapp-btn--icon whatsapp-kit-drawer__close" aria-label="${ui.escape(__("Close"))}" title="${ui.escape(__("Close (Esc)"))}">${ui.icon("es-line-close", "sm")}</button>
+						<a class="whatsapp-button whatsapp-button--ghost whatsapp-button--sm whatsapp-kit-drawer__open" hidden>${ui.icon(ui.icons.open, "xs")}<span>${ui.escape(__("Open", null, "Open the record in its form"))}</span></a>
+						<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-button--icon whatsapp-kit-drawer__close" aria-label="${ui.escape(__("Close"))}" title="${ui.escape(__("Close (Esc)"))}">${ui.icon("es-line-close", "sm")}</button>
 					</div>
 				</header>
 				<div class="whatsapp-kit-panel__body whatsapp-kit-drawer__body"></div>
@@ -589,15 +589,15 @@ whatsapp.ui.Drawer = class Drawer {
 		const inline = actions.filter((a) => !a.menu);
 		const more = actions.filter((a) => a.menu);
 		if (more.length) {
-			const $more = $(`<button type="button" class="whatsapp-btn whatsapp-btn--secondary whatsapp-btn--icon whatsapp-kit-drawer__action whatsapp-kit-drawer__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("More actions"))}" title="${ui.escape(__("More actions"))}">${ui.icon(ui.icons.more, "sm")}</button>`);
+			const $more = $(`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--icon whatsapp-kit-drawer__action whatsapp-kit-drawer__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("More actions"))}" title="${ui.escape(__("More actions"))}">${ui.icon(ui.icons.more, "sm")}</button>`);
 			$more.on("click", () => (this.$menu ? this.close_menu(true) : this.open_menu($more, more, run)));
 			this.$footer.append($more);
 		}
 		inline.forEach((a) => {
 			// the kit's own variants (`_kit/style.scss`): primary for the one main verb, danger for what
 			// cannot be undone, secondary for the rest
-			const cls = a.primary ? "whatsapp-btn--primary" : a.danger ? "whatsapp-btn--danger" : "whatsapp-btn--secondary";
-			const $btn = $(`<button type="button" class="whatsapp-btn ${cls} whatsapp-kit-drawer__action" title="${ui.escape(a.label)}">${a.icon ? ui.icon(a.icon, "xs") : ""}<span class="whatsapp-kit-drawer__action-label">${ui.escape(a.label)}</span></button>`);
+			const cls = a.primary ? "whatsapp-button--primary" : a.danger ? "whatsapp-button--danger" : "whatsapp-button--secondary";
+			const $btn = $(`<button type="button" class="whatsapp-button ${cls} whatsapp-kit-drawer__action" title="${ui.escape(a.label)}">${a.icon ? ui.icon(a.icon, "xs") : ""}<span class="whatsapp-kit-drawer__action-label">${ui.escape(a.label)}</span></button>`);
 			$btn.on("click", () => run(a, $btn));
 			this.$footer.append($btn);
 		});

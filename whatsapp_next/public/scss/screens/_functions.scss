@@ -30,7 +30,7 @@
 			grid-template-columns: 1fr 1fr;
 		}
 		// the header's one secondary button stays a button, not a full-width bar
-		.whatsapp-kit-pagehead__actions {
+		.whatsapp-kit-page-header__actions {
 			inline-size: auto;
 			.btn {
 				flex: 0 0 auto;
@@ -117,7 +117,7 @@
 
 // ---- the diff before install / update (inside the OverlayPanel) -------------------------------------
 
-.whatsapp-fn-diff {
+.whatsapp-function-diff {
 	&__line {
 		display: flex;
 		align-items: flex-start;
@@ -145,7 +145,7 @@
 }
 
 // "Try": each message the function would send, under the @reply key it answers with
-.whatsapp-fn-try {
+.whatsapp-function-try {
 	&__msg {
 		display: flex;
 		flex-direction: column;

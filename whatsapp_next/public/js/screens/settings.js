@@ -189,7 +189,7 @@ class SettingsView {
 		);
 		const controls = {};
 		// one list of rows, read-only and editable alike: the app's own rows and controls
-		// (`whatsapp-kit-sw__row`, `whatsapp-input` / `whatsapp-select` / `whatsapp-toggle`), not Desk's form groups
+		// (`whatsapp-kit-settings-window__row`, `whatsapp-input` / `whatsapp-select` / `whatsapp-toggle`), not Desk's form groups
 		const $read = $('<div class="whatsapp-settings__facts"></div>');
 		const $form = $('<div class="whatsapp-settings__form"></div>');
 		fieldnames.forEach((fieldname) => {
@@ -210,14 +210,14 @@ class SettingsView {
 			const control = this.setting_control(df, values[fieldname]);
 			const required = df.reqd ? ' <span class="whatsapp-settings__req" aria-hidden="true">*</span>' : "";
 			const $row = $(`
-				<div class="whatsapp-kit-sw__row whatsapp-settings__field${control.stacked ? " whatsapp-settings__field--stacked" : ""}" data-fieldname="${esc(fieldname)}">
-					<div class="whatsapp-kit-sw__row-text">
-						<label class="whatsapp-kit-sw__row-title" for="${esc(control.id)}">${esc(__(df.label || fieldname))}${required}</label>
-						${df.description ? `<span class="whatsapp-kit-sw__row-desc">${esc(__(df.description))}</span>` : ""}
+				<div class="whatsapp-kit-settings-window__row whatsapp-settings__field${control.stacked ? " whatsapp-settings__field--stacked" : ""}" data-fieldname="${esc(fieldname)}">
+					<div class="whatsapp-kit-settings-window__row-text">
+						<label class="whatsapp-kit-settings-window__row-title" for="${esc(control.id)}">${esc(__(df.label || fieldname))}${required}</label>
+						${df.description ? `<span class="whatsapp-kit-settings-window__row-desc">${esc(__(df.description))}</span>` : ""}
 					</div>
-					<div class="whatsapp-kit-sw__row-control"></div>
+					<div class="whatsapp-kit-settings-window__row-control"></div>
 				</div>`).appendTo($form);
-			$row.find(".whatsapp-kit-sw__row-control").append(control.$el);
+			$row.find(".whatsapp-kit-settings-window__row-control").append(control.$el);
 			controls[fieldname] = control;
 		});
 		const has_controls = Object.keys(controls).length > 0;
@@ -1478,21 +1478,21 @@ class SettingsView {
 			const esc = frappe.utils.escape_html;
 			const wallet = data.wallet || {};
 			const plans = (data.plans || []).filter((p) => !p.is_trial && flt(p.monthly_price) > 0);
-			$el.append(`<p class="whatsapp-settings__note whatsapp-bill__lead">${esc(__("Wallet balance"))}: <strong class="whatsapp-kit-tabular">${this.money(wallet.balance, wallet.currency)}</strong></p>`);
+			$el.append(`<p class="whatsapp-settings__note whatsapp-billing__lead">${esc(__("Wallet balance"))}: <strong class="whatsapp-kit-tabular">${this.money(wallet.balance, wallet.currency)}</strong></p>`);
 			if (!plans.length) {
 				new whatsapp.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title: __("No plans to choose from right now") });
 				return;
 			}
-			const $grid = $('<div class="whatsapp-bill__plans"></div>').appendTo($el);
+			const $grid = $('<div class="whatsapp-billing__plans"></div>').appendTo($el);
 			plans.forEach((p) => {
 				const features = Object.entries(p.features || {}).filter(([, on]) => on).length;
 				const $card = $(`
-					<article class="whatsapp-bill__plan${p.is_current ? " is-current" : ""}">
+					<article class="whatsapp-billing__plan${p.is_current ? " is-current" : ""}">
 						<header>
 							<h4>${esc(__(p.plan_name || p.plan_code))}</h4>
 							${p.is_current ? whatsapp.ui.StatusBadge.html({ label: __("Your plan"), colour: "green" }) : p.is_featured ? whatsapp.ui.StatusBadge.html({ label: __("Most popular"), colour: "blue" }) : ""}
 						</header>
-						<p class="whatsapp-bill__price"><strong class="whatsapp-kit-tabular">${this.money(p.monthly_price, p.currency)}</strong><span>${esc(__("per month"))}</span></p>
+						<p class="whatsapp-billing__price"><strong class="whatsapp-kit-tabular">${this.money(p.monthly_price, p.currency)}</strong><span>${esc(__("per month"))}</span></p>
 						<ul>
 							<li><span>${esc(__("Messages a month"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_int(p.message_limit)}</b></li>
 							<li><span>${esc(__("WhatsApp numbers"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_int(p.device_limit)}</b></li>
@@ -1501,7 +1501,7 @@ class SettingsView {
 						</ul>
 						<footer>${
 							p.is_current
-								? `<span class="whatsapp-bill__muted">${esc(__("You are on this plan"))}</span>`
+								? `<span class="whatsapp-billing__muted">${esc(__("You are on this plan"))}</span>`
 								: `<button type="button" class="btn btn-sm btn-primary" data-plan="${esc(p.plan_code)}">${esc(__("Move to this plan"))}</button>`
 						}</footer>
 					</article>`).appendTo($grid);
@@ -1571,8 +1571,8 @@ class SettingsView {
 	}
 
 	banner(tone, text) {
-		const cls = { ok: "whatsapp-bill__banner--ok", warn: "whatsapp-bill__banner--warn", bad: "whatsapp-bill__banner--bad" }[tone];
-		return `<div class="whatsapp-bill__banner ${cls}" role="status">${frappe.utils.escape_html(text)}</div>`;
+		const cls = { ok: "whatsapp-billing__banner--ok", warn: "whatsapp-billing__banner--warn", bad: "whatsapp-billing__banner--bad" }[tone];
+		return `<div class="whatsapp-billing__banner ${cls}" role="status">${frappe.utils.escape_html(text)}</div>`;
 	}
 
 	topup_form($el, wallet, payment) {
@@ -1593,29 +1593,29 @@ class SettingsView {
 		this.topup_plan = null;
 		const id = whatsapp.ui.uid("whatsapp-topup");
 		const $form = $(`
-			<form class="whatsapp-bill__topup" novalidate>
-				<label class="whatsapp-bill__label" for="${id}-amount">${esc(__("Amount"))} <span class="whatsapp-bill__muted">(${esc(wallet.currency || "")})</span></label>
-				<input class="whatsapp-input whatsapp-bill__amount" id="${id}-amount" type="number" inputmode="decimal" min="0.01" step="0.01" dir="ltr" required value="${esc(amount)}">
-				<fieldset class="whatsapp-bill__methods"><legend class="whatsapp-bill__label">${esc(__("How you pay"))}</legend>${choices
+			<form class="whatsapp-billing__topup" novalidate>
+				<label class="whatsapp-billing__label" for="${id}-amount">${esc(__("Amount"))} <span class="whatsapp-billing__muted">(${esc(wallet.currency || "")})</span></label>
+				<input class="whatsapp-input whatsapp-billing__amount" id="${id}-amount" type="number" inputmode="decimal" min="0.01" step="0.01" dir="ltr" required value="${esc(amount)}">
+				<fieldset class="whatsapp-billing__methods"><legend class="whatsapp-billing__label">${esc(__("How you pay"))}</legend>${choices
 					.map(
-						(c, i) => `<label class="whatsapp-bill__method"><input type="radio" name="${id}-method" value="${esc(c.key)}"${i === 0 ? " checked" : ""}><span><b>${esc(c.title)}</b><em>${esc(c.note)}</em></span></label>`
+						(c, i) => `<label class="whatsapp-billing__method"><input type="radio" name="${id}-method" value="${esc(c.key)}"${i === 0 ? " checked" : ""}><span><b>${esc(c.title)}</b><em>${esc(c.note)}</em></span></label>`
 					)
 					.join("")}</fieldset>
-				<div class="whatsapp-bill__details"></div>
-				<div class="whatsapp-bill__actions"><button type="submit" class="btn btn-primary whatsapp-bill__submit"></button></div>
+				<div class="whatsapp-billing__details"></div>
+				<div class="whatsapp-billing__actions"><button type="submit" class="btn btn-primary whatsapp-billing__submit"></button></div>
 			</form>`).appendTo($el);
 		let receipt = "";
 		const pick = () => {
 			const key = $form.find(`input[name="${id}-method"]:checked`).val();
 			const choice = choices.find((c) => c.key === key);
-			const $details = $form.find(".whatsapp-bill__details").empty();
+			const $details = $form.find(".whatsapp-billing__details").empty();
 			receipt = "";
 			if (key === "paypal") {
-				$form.find(".whatsapp-bill__submit").text(__("Pay with PayPal"));
-				$details.append(`<p class="whatsapp-bill__muted">${esc(__("You go to PayPal to pay and come back here; the amount is added to your wallet straight away."))}</p>`);
+				$form.find(".whatsapp-billing__submit").text(__("Pay with PayPal"));
+				$details.append(`<p class="whatsapp-billing__muted">${esc(__("You go to PayPal to pay and come back here; the amount is added to your wallet straight away."))}</p>`);
 				return;
 			}
-			$form.find(".whatsapp-bill__submit").text(__("Send for review"));
+			$form.find(".whatsapp-billing__submit").text(__("Send for review"));
 			const m = choice.method;
 			const facts = [
 				[__("Bank"), m.bank_name],
@@ -1629,15 +1629,15 @@ class SettingsView {
 				[__("PayPal account"), m.paypal_account],
 			].filter(([, v]) => v);
 			$details.append(`
-				${facts.length ? `<dl class="whatsapp-bill__payto">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd dir="auto" class="whatsapp-kit-tabular">${esc(v)}</dd></div>`).join("")}</dl>` : ""}
-				${m.instructions ? `<p class="whatsapp-bill__muted">${esc(m.instructions)}</p>` : ""}
-				<label class="whatsapp-bill__label" for="${id}-ref">${esc(__("Transfer number"))}</label>
+				${facts.length ? `<dl class="whatsapp-billing__payto">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd dir="auto" class="whatsapp-kit-tabular">${esc(v)}</dd></div>`).join("")}</dl>` : ""}
+				${m.instructions ? `<p class="whatsapp-billing__muted">${esc(m.instructions)}</p>` : ""}
+				<label class="whatsapp-billing__label" for="${id}-ref">${esc(__("Transfer number"))}</label>
 				<input class="whatsapp-input" id="${id}-ref" maxlength="140" dir="auto">
-				<span class="whatsapp-bill__label">${esc(__("Receipt"))} <span class="whatsapp-bill__muted">${esc(__("PDF or image, up to 5 MB"))}</span></span>
-				<div class="whatsapp-bill__receipt"><button type="button" class="btn btn-sm btn-default" data-act="receipt">${esc(__("Attach the receipt"))}</button><span class="whatsapp-bill__muted" data-receipt></span></div>
-				<label class="whatsapp-bill__label" for="${id}-note">${esc(__("Note"))} <span class="whatsapp-bill__muted">${esc(__("Optional"))}</span></label>
+				<span class="whatsapp-billing__label">${esc(__("Receipt"))} <span class="whatsapp-billing__muted">${esc(__("PDF or image, up to 5 MB"))}</span></span>
+				<div class="whatsapp-billing__receipt"><button type="button" class="btn btn-sm btn-default" data-act="receipt">${esc(__("Attach the receipt"))}</button><span class="whatsapp-billing__muted" data-receipt></span></div>
+				<label class="whatsapp-billing__label" for="${id}-note">${esc(__("Note"))} <span class="whatsapp-billing__muted">${esc(__("Optional"))}</span></label>
 				<textarea class="whatsapp-input" id="${id}-note" rows="2" maxlength="500"></textarea>
-				<p class="whatsapp-bill__muted">${esc(__("The platform checks the transfer, then adds the amount to your wallet."))}</p>`);
+				<p class="whatsapp-billing__muted">${esc(__("The platform checks the transfer, then adds the amount to your wallet."))}</p>`);
 			$details.find("[data-act=receipt]").on("click", () => {
 				new frappe.ui.FileUploader({
 					allow_multiple: false,
@@ -1661,7 +1661,7 @@ class SettingsView {
 				return $form.find(`#${id}-amount`).trigger("focus");
 			}
 			const key = $form.find(`input[name="${id}-method"]:checked`).val();
-			const $btn = $form.find(".whatsapp-bill__submit").prop("disabled", true);
+			const $btn = $form.find(".whatsapp-billing__submit").prop("disabled", true);
 			const done = () => $btn.prop("disabled", false);
 			if (key === "paypal") {
 				return whatsapp.ui
@@ -1708,7 +1708,7 @@ class SettingsView {
 		}
 		const kind = { Credit: __("Wallet top-up"), Refund: __("Refund to your wallet"), Debit: __("Paid from your wallet"), Adjustment: __("Balance correction") };
 		const status = { Approved: ["Done", "green"], Draft: ["Under review", "orange"], Cancelled: ["Not accepted", "red"] };
-		$el.append(`<ul class="whatsapp-bill__activity">${rows
+		$el.append(`<ul class="whatsapp-billing__activity">${rows
 			.map((t) => {
 				const out = t.transaction_type === "Debit";
 				const [label, colour] = status[t.status] || [t.status, "gray"];
@@ -1732,7 +1732,7 @@ class SettingsView {
 		$el.empty();
 		const esc = frappe.utils.escape_html;
 		this.statement_period = this.statement_period || "month";
-		const $bar = $('<div class="whatsapp-bill__bar"></div>').appendTo($el);
+		const $bar = $('<div class="whatsapp-billing__bar"></div>').appendTo($el);
 		const $seg = $('<div class="whatsapp-settings__period" role="radiogroup"></div>').attr("aria-label", __("Period")).appendTo($bar);
 		[
 			["month", __("This month")],
@@ -1747,7 +1747,7 @@ class SettingsView {
 				.appendTo($seg);
 		});
 		const $tools = $(`<span class="whatsapp-settings__btns"><button type="button" class="btn btn-sm btn-default" data-act="csv" disabled>${esc(__("Download"))}</button><button type="button" class="btn btn-sm btn-default" data-act="print" disabled>${esc(__("Print"))}</button></span>`).appendTo($bar);
-		const $body = $('<div class="whatsapp-bill__statement"></div>').appendTo($el);
+		const $body = $('<div class="whatsapp-billing__statement"></div>').appendTo($el);
 		const state = new whatsapp.ui.EmptyState({ wrapper: $body, state: "loading", rows: 5, size: "sm" });
 		const today = SITE_TODAY();
 		const from_date = this.statement_period === "year" ? `${today.slice(0, 4)}-01-01` : this.statement_period === "quarter" ? `${frappe.datetime.add_months(today, -2).slice(0, 7)}-01` : `${today.slice(0, 7)}-01`;
@@ -1788,7 +1788,7 @@ class SettingsView {
 			</div>`);
 		if (!(v.rows || []).length) {
 			new whatsapp.ui.EmptyState({
-				wrapper: $('<div class="whatsapp-bill__empty"></div>').appendTo($body),
+				wrapper: $('<div class="whatsapp-billing__empty"></div>').appendTo($body),
 				state: "empty",
 				size: "sm",
 				title: __("Nothing in this period"),
@@ -1797,8 +1797,8 @@ class SettingsView {
 			return;
 		}
 		$body.append(`
-			<div class="whatsapp-bill__table-wrap" tabindex="0" role="region" aria-label="${esc(__("Account statement"))}">
-				<table class="whatsapp-bill__table">
+			<div class="whatsapp-billing__table-wrap" tabindex="0" role="region" aria-label="${esc(__("Account statement"))}">
+				<table class="whatsapp-billing__table">
 					<thead><tr><th scope="col">${esc(__("Date"))}</th><th scope="col">${esc(__("Details", null, "Statement"))}</th><th scope="col" class="is-num">${esc(__("Money in"))}</th><th scope="col" class="is-num">${esc(__("Money out"))}</th><th scope="col" class="is-num">${esc(__("Balance"))}</th></tr></thead>
 					<tbody>
 						<tr class="is-opening"><td>${day(v.from_date)}</td><td colspan="3">${esc(__("Opening balance"))}</td><td class="is-num">${this.money(v.opening, v.currency)}</td></tr>

@@ -48,7 +48,7 @@
 // `margin: 0 auto`, which centres an icon inside any flex row it lands in, so the size and the
 // margin are both stated here rather than left to whatever Frappe last declared.
 
-.whatsapp-ico {
+.whatsapp-icon {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -77,7 +77,7 @@
 // (filter on, column pinned) — which is the one Frappe has no idea about and the product uses
 // everywhere.
 
-.whatsapp-btn {
+.whatsapp-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -115,8 +115,8 @@
 	&--icon {
 		padding-inline: 0;
 		inline-size: var(--whatsapp-btn-h, 28px);
-		&.whatsapp-btn--sm { inline-size: 28px; }
-		&.whatsapp-btn--lg { inline-size: var(--whatsapp-btn-h-lg, 36px); }
+		&.whatsapp-button--sm { inline-size: 28px; }
+		&.whatsapp-button--lg { inline-size: var(--whatsapp-btn-h-lg, 36px); }
 	}
 	&--block { inline-size: 100%; }
 
@@ -151,13 +151,13 @@
 }
 
 // a row of buttons: danger is anchored to the start of the bar, the rest sit at the end
-.whatsapp-btnbar {
+.whatsapp-button-bar {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	flex-wrap: wrap;
 
-	> .whatsapp-btn--danger:first-child { margin-inline-end: auto; }
+	> .whatsapp-button--danger:first-child { margin-inline-end: auto; }
 }
 
 // ---- badges --------------------------------------------------------------------------------
@@ -355,7 +355,7 @@
 // Two to four short options side by side. What a select becomes when the options are few — a
 // control Frappe does not have at all, and the product leans on constantly.
 
-.whatsapp-seg {
+.whatsapp-segmented {
 	display: inline-flex;
 	align-items: center;
 	gap: 2px;

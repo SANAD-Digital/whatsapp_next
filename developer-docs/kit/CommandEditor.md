@@ -98,7 +98,7 @@ new whatsapp.ui.CommandEditor({
 
 ## CSS hooks
 
-- Layer: `.whatsapp-kit.whatsapp-kit-ce-layer` > `.whatsapp-kit-ce-backdrop` + `.whatsapp-kit-ce` (dialog; `.whatsapp-kit-ce--readonly`). `body.whatsapp-kit-ce-open` locks scroll.
+- Layer: `.whatsapp-kit.whatsapp-kit-command-editor-layer` > `.whatsapp-kit-command-editor-backdrop` + `.whatsapp-kit-command-editor` (dialog; `.whatsapp-kit-command-editor--readonly`). `body.whatsapp-kit-command-editor-open` locks scroll.
 - Header: `__head`, `__head-row(--tabs)`, `__code`, `__dirty`, `__status.is-on` (`__track`, `__knob`), `__x`, `__tabs` / `__tab.is-sel`, `__count`, `__runs`, `__fnchip`.
 - Layout: `__grid--setup`, `__grid--preview`, `__col--surface|--bg|--span|--last`, `__col-head`, `__col-body`, `__pane`, `__foot`, `__foot-hint`, `__loading`.
 - Controls: `__combo`, `__pop`, `__opt.is-sel`, `__chip--pri|--ghost|--dg`, `__chip-x`, `__pill.is-on`, `__seg.is-sel`, `__card.is-off|.is-missing`, `__tag--warn|--ok`, `__token`, `__callout--warn|--danger|--muted`, `__note--warn|--danger`.

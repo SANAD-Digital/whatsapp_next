@@ -67,26 +67,26 @@ frappe.provide("whatsapp_next.campaign");
 
 		render() {
 			this.$wrapper.html(`
-				<div class="whatsapp-cb__stack">
+				<div class="whatsapp-campaign-builder__stack">
 					<div data-block="gate"></div>
-					<section class="whatsapp-cb__aud">
-						<div class="whatsapp-cb__aud-head">
-							<span class="whatsapp-cb__card-icon" aria-hidden="true">${ui.ico("users", "sm")}</span>
-							<span class="whatsapp-cb__card-title">${esc(__("Where the recipients come from"))}</span>
-							<span class="whatsapp-cb__aud-add" data-sources></span>
-							<span class="whatsapp-cb__aud-tags" aria-live="polite">
-								<span class="whatsapp-badge whatsapp-badge--pri whatsapp-badge--nodot whatsapp-cb__aud-total">
+					<section class="whatsapp-campaign-builder__aud">
+						<div class="whatsapp-campaign-builder__aud-head">
+							<span class="whatsapp-campaign-builder__card-icon" aria-hidden="true">${ui.ico("users", "sm")}</span>
+							<span class="whatsapp-campaign-builder__card-title">${esc(__("Where the recipients come from"))}</span>
+							<span class="whatsapp-campaign-builder__aud-add" data-sources></span>
+							<span class="whatsapp-campaign-builder__aud-tags" aria-live="polite">
+								<span class="whatsapp-badge whatsapp-badge--pri whatsapp-badge--nodot whatsapp-campaign-builder__aud-total">
 									<b class="whatsapp-kit-tabular" data-total>${esc(fmt_int(cint(this.ctx.doc.total_recipients)))}</b>
 									<span data-total-label>${esc(C.recipients_text(cint(this.ctx.doc.total_recipients)).replace(/^[\d\u0660-\u0669,.\s\u00a0]+/, ""))}</span>
 								</span>
-								<span class="whatsapp-cb__aud-parts" data-parts></span>
+								<span class="whatsapp-campaign-builder__aud-parts" data-parts></span>
 							</span>
 						</div>
-						<div class="whatsapp-cb__aud-bar">
-							<div class="whatsapp-cb__aud-filters" data-bar></div>
-							<span class="whatsapp-cb__aud-verbs" data-verbs></span>
+						<div class="whatsapp-campaign-builder__aud-bar">
+							<div class="whatsapp-campaign-builder__aud-filters" data-bar></div>
+							<span class="whatsapp-campaign-builder__aud-verbs" data-verbs></span>
 						</div>
-						<div class="whatsapp-cb__aud-table" data-table></div>
+						<div class="whatsapp-campaign-builder__aud-table" data-table></div>
 					</section>
 				</div>`);
 			this.$parts = this.$wrapper.find("[data-parts]");
@@ -134,7 +134,7 @@ frappe.provide("whatsapp_next.campaign");
 					usable
 						.map(
 							(e) =>
-								`<button type="button" class="whatsapp-btn whatsapp-btn--secondary whatsapp-btn--sm whatsapp-cb__aud-source" data-source="${esc(e.key)}" title="${esc(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.ico(SOURCE[e.key].icon, "sm")}<span>${esc(e.label || LABEL[e.key]())}</span></button>`
+								`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-campaign-builder__aud-source" data-source="${esc(e.key)}" title="${esc(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.ico(SOURCE[e.key].icon, "sm")}<span>${esc(e.label || LABEL[e.key]())}</span></button>`
 						)
 						.join("")
 				);
@@ -175,12 +175,12 @@ frappe.provide("whatsapp_next.campaign");
 			this.$wrapper.find("[data-total-label]").text(C.recipients_text(total).replace(/^[\d٠-٩,.\s ]+/, ""));
 			const by_source = (this.counts && this.counts.source_type) || {};
 			const parts = SOURCE_TYPES.filter((k) => cint(by_source[k])).map(
-				(k) => `<span class="whatsapp-cb__chip"><b class="whatsapp-kit-tabular">${esc(fmt_int(by_source[k]))}</b>${esc(__(k))}</span>`
+				(k) => `<span class="whatsapp-campaign-builder__chip"><b class="whatsapp-kit-tabular">${esc(fmt_int(by_source[k]))}</b>${esc(__(k))}</span>`
 			);
 			const excluded = this.ctx.excluded_unknown();
 			if (excluded) {
 				parts.push(
-					`<span class="whatsapp-cb__chip whatsapp-cb__chip--warn" title="${esc(__("They have never had a conversation on WhatsApp and this campaign excludes unknown numbers."))}">${ui.ico("warn", "xs")}<b class="whatsapp-kit-tabular">${esc(fmt_int(excluded))}</b>${esc(__("will not be sent to"))}</span>`
+					`<span class="whatsapp-campaign-builder__chip whatsapp-campaign-builder__chip--warn" title="${esc(__("They have never had a conversation on WhatsApp and this campaign excludes unknown numbers."))}">${ui.ico("warn", "xs")}<b class="whatsapp-kit-tabular">${esc(fmt_int(excluded))}</b>${esc(__("will not be sent to"))}</span>`
 				);
 			}
 			// one source and nothing excluded says nothing the total does not

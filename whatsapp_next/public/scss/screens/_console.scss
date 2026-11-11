@@ -8,7 +8,7 @@
 
 $wa-tones: "blue" "cyan" "amber" "red" "green";
 
-.whatsapp-ops {
+.whatsapp-operations-console {
 	border: var(--whatsapp-kit-border);
 	border-radius: var(--whatsapp-kit-radius);
 	background: var(--surface-base);
@@ -88,7 +88,7 @@ $wa-tones: "blue" "cyan" "amber" "red" "green";
 		border-radius: 50%;
 		background: currentColor;
 		flex: none;
-		animation: whatsapp-ops-pulse 2s ease-in-out infinite;
+		animation: whatsapp-operations-console-pulse 2s ease-in-out infinite;
 	}
 	&--paused &__pulse { animation: none; }
 
@@ -146,21 +146,21 @@ $wa-tones: "blue" "cyan" "amber" "red" "green";
 
 // the tone classes carry a soft surface; on a dot and on a metric's ink the colour is the signal
 @each $tone in $wa-tones {
-	.whatsapp-ops__dot.whatsapp-kit-tone--#{$tone} {
+	.whatsapp-operations-console__dot.whatsapp-kit-tone--#{$tone} {
 		background: currentColor;
 		border: 0;
 	}
-	.whatsapp-ops__value.whatsapp-kit-tone--#{$tone},
-	.whatsapp-ops__state.whatsapp-kit-tone--#{$tone} {
+	.whatsapp-operations-console__value.whatsapp-kit-tone--#{$tone},
+	.whatsapp-operations-console__state.whatsapp-kit-tone--#{$tone} {
 		background: none;
 		border: 0;
 	}
 }
 
-@keyframes whatsapp-ops-pulse {
+@keyframes whatsapp-operations-console-pulse {
 	0%, 100% { opacity: 1; }
 	50% { opacity: 0.35; }
 }
 @media (prefers-reduced-motion: reduce) {
-	.whatsapp-ops__pulse { animation: none !important; }
+	.whatsapp-operations-console__pulse { animation: none !important; }
 }

@@ -184,7 +184,7 @@ whatsapp.ui.Cards = class Cards {
 		const tone = tone_of(card.tone || "warn");
 		const cta =
 			card.cta && (card.action || card.onClick)
-				? `<button type="button" class="whatsapp-btn whatsapp-btn--${card.ctaStyle === "solid" ? "primary" : "secondary"} whatsapp-btn--sm whatsapp-card__cta" data-action="${esc(card.action || "")}" data-key="${esc(card.key || "")}">${esc(card.cta)}</button>`
+				? `<button type="button" class="whatsapp-button whatsapp-button--${card.ctaStyle === "solid" ? "primary" : "secondary"} whatsapp-button--sm whatsapp-card__cta" data-action="${esc(card.action || "")}" data-key="${esc(card.key || "")}">${esc(card.cta)}</button>`
 				: "";
 		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
 		return `<div class="whatsapp-card whatsapp-card--alert whatsapp-card--${tone}" role="${tone === "danger" ? "alert" : "status"}"${span}>

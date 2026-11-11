@@ -7,8 +7,8 @@
 //
 // Under the numbers are the four shapes every step is drawn with: a titled card, a labelled
 // field, a reading and a check. They are the prototype's own (`docs/component/Wizard.dc.html`,
-// `docs/component/Cards.dc.html`) and they are built from the kit's controls (`whatsapp-btn`,
-// `whatsapp-badge`, `whatsapp-seg`), so the builder takes the product's palette wherever it is mounted.
+// `docs/component/Cards.dc.html`) and they are built from the kit's controls (`whatsapp-button`,
+// `whatsapp-badge`, `whatsapp-segmented`), so the builder takes the product's palette wherever it is mounted.
 
 frappe.provide("whatsapp_next.campaign");
 
@@ -127,14 +127,14 @@ frappe.provide("whatsapp_next.campaign");
 	 * the setup step a reader should be able to leave closed.
 	 */
 	C.card = ({ key, icon, title, note, body = "", collapsible = false, open = true, cls = "" }) => `
-		<section class="whatsapp-cb__card${collapsible ? " whatsapp-cb__card--fold" : ""}${cls ? ` ${cls}` : ""}" data-card="${esc(key || "")}"${collapsible ? ` data-open="${open ? 1 : 0}"` : ""}>
-			<${collapsible ? "button type=\"button\"" : "header"} class="whatsapp-cb__card-head"${collapsible ? ` aria-expanded="${open}"` : ""}>
-				${icon ? `<span class="whatsapp-cb__card-icon" aria-hidden="true">${ui.ico(icon, "sm")}</span>` : ""}
-				<span class="whatsapp-cb__card-title">${esc(title)}</span>
-				${note ? `<span class="whatsapp-cb__card-note">${esc(note)}</span>` : ""}
-				${collapsible ? `<span class="whatsapp-cb__card-caret" aria-hidden="true">${ui.ico("caret", "sm")}</span>` : ""}
+		<section class="whatsapp-campaign-builder__card${collapsible ? " whatsapp-campaign-builder__card--fold" : ""}${cls ? ` ${cls}` : ""}" data-card="${esc(key || "")}"${collapsible ? ` data-open="${open ? 1 : 0}"` : ""}>
+			<${collapsible ? "button type=\"button\"" : "header"} class="whatsapp-campaign-builder__card-head"${collapsible ? ` aria-expanded="${open}"` : ""}>
+				${icon ? `<span class="whatsapp-campaign-builder__card-icon" aria-hidden="true">${ui.ico(icon, "sm")}</span>` : ""}
+				<span class="whatsapp-campaign-builder__card-title">${esc(title)}</span>
+				${note ? `<span class="whatsapp-campaign-builder__card-note">${esc(note)}</span>` : ""}
+				${collapsible ? `<span class="whatsapp-campaign-builder__card-caret" aria-hidden="true">${ui.ico("caret", "sm")}</span>` : ""}
 			</${collapsible ? "button" : "header"}>
-			<div class="whatsapp-cb__card-body"${collapsible && !open ? " hidden" : ""}>${body}</div>
+			<div class="whatsapp-campaign-builder__card-body"${collapsible && !open ? " hidden" : ""}>${body}</div>
 		</section>`;
 
 	/**
@@ -146,19 +146,19 @@ frappe.provide("whatsapp_next.campaign");
 		<div class="whatsapp-field${wide ? " whatsapp-field--wide" : ""}">
 			<label class="whatsapp-field__label" for="${esc(id)}">${esc(label)}${required ? ` <b class="whatsapp-field__req" aria-hidden="true">*</b>` : ""}</label>
 			${control}
-			${counter !== undefined ? `<span class="whatsapp-field__hint whatsapp-cb__counter whatsapp-kit-tabular" dir="ltr" data-counter="${esc(id)}">${esc(counter)}</span>` : ""}
+			${counter !== undefined ? `<span class="whatsapp-field__hint whatsapp-campaign-builder__counter whatsapp-kit-tabular" dir="ltr" data-counter="${esc(id)}">${esc(counter)}</span>` : ""}
 			${hint ? `<span class="whatsapp-field__hint">${esc(hint)}</span>` : ""}
 		</div>`;
 
 	/** One reading of the campaign: an icon tile, what it is, and the figure. */
 	C.reading = ({ icon, tone = "muted", label, value, sub }) => `
-		<div class="whatsapp-cb__reading">
-			<span class="whatsapp-cb__reading-icon whatsapp-cb__reading-icon--${esc(tone)}" aria-hidden="true">${ui.ico(icon, "sm")}</span>
-			<span class="whatsapp-cb__reading-text">
-				<span class="whatsapp-cb__reading-label">${esc(label)}</span>
-				<span class="whatsapp-cb__reading-value whatsapp-kit-tabular">${esc(value)}</span>
+		<div class="whatsapp-campaign-builder__reading">
+			<span class="whatsapp-campaign-builder__reading-icon whatsapp-campaign-builder__reading-icon--${esc(tone)}" aria-hidden="true">${ui.ico(icon, "sm")}</span>
+			<span class="whatsapp-campaign-builder__reading-text">
+				<span class="whatsapp-campaign-builder__reading-label">${esc(label)}</span>
+				<span class="whatsapp-campaign-builder__reading-value whatsapp-kit-tabular">${esc(value)}</span>
 			</span>
-			${sub ? `<span class="whatsapp-cb__reading-sub">${esc(sub)}</span>` : ""}
+			${sub ? `<span class="whatsapp-campaign-builder__reading-sub">${esc(sub)}</span>` : ""}
 		</div>`;
 
 	/**
@@ -166,28 +166,28 @@ frappe.provide("whatsapp_next.campaign");
 	 * that has not been run yet (an unsaved campaign) is a third state, not a silent pass.
 	 */
 	C.check = ({ state = "todo", label, note, action, key }) => `
-		<div class="whatsapp-cb__check whatsapp-cb__check--${esc(state)}" data-check="${esc(key || "")}">
-			<span class="whatsapp-cb__check-mark" aria-hidden="true">${ui.ico(state === "ok" ? "tick" : state === "bad" ? "x" : "clock", "xs")}</span>
-			<span class="whatsapp-cb__check-text">
-				<span class="whatsapp-cb__check-label">${esc(label)}</span>
-				${note ? `<span class="whatsapp-cb__check-note">${esc(note)}</span>` : ""}
+		<div class="whatsapp-campaign-builder__check whatsapp-campaign-builder__check--${esc(state)}" data-check="${esc(key || "")}">
+			<span class="whatsapp-campaign-builder__check-mark" aria-hidden="true">${ui.ico(state === "ok" ? "tick" : state === "bad" ? "x" : "clock", "xs")}</span>
+			<span class="whatsapp-campaign-builder__check-text">
+				<span class="whatsapp-campaign-builder__check-label">${esc(label)}</span>
+				${note ? `<span class="whatsapp-campaign-builder__check-note">${esc(note)}</span>` : ""}
 			</span>
-			${action ? `<button type="button" class="whatsapp-cb__check-fix" data-fix="${esc(action.key)}">${esc(action.label)}</button>` : ""}
+			${action ? `<button type="button" class="whatsapp-campaign-builder__check-fix" data-fix="${esc(action.key)}">${esc(action.label)}</button>` : ""}
 			<span class="whatsapp-kit-visually-hidden">${esc(state === "ok" ? __("Ready") : state === "bad" ? __("Needs attention") : __("Not checked yet"))}</span>
 		</div>`;
 
 	/** A tinted note — the prototype's one way of saying something the reader has not asked for. */
 	C.note = ({ tone = "info", icon = "info", title, text, cta }) => `
-		<div class="whatsapp-cb__note whatsapp-cb__note--${esc(tone)}">
-			<span class="whatsapp-cb__note-icon" aria-hidden="true">${ui.ico(icon, "sm")}</span>
-			<span class="whatsapp-cb__note-text">${title ? `<b class="whatsapp-cb__note-title">${esc(title)}</b>` : ""}${esc(text)}</span>
-			${cta ? `<button type="button" class="whatsapp-cb__note-cta" data-note-cta="${esc(cta.key)}">${esc(cta.label)}</button>` : ""}
+		<div class="whatsapp-campaign-builder__note whatsapp-campaign-builder__note--${esc(tone)}">
+			<span class="whatsapp-campaign-builder__note-icon" aria-hidden="true">${ui.ico(icon, "sm")}</span>
+			<span class="whatsapp-campaign-builder__note-text">${title ? `<b class="whatsapp-campaign-builder__note-title">${esc(title)}</b>` : ""}${esc(text)}</span>
+			${cta ? `<button type="button" class="whatsapp-campaign-builder__note-cta" data-note-cta="${esc(cta.key)}">${esc(cta.label)}</button>` : ""}
 		</div>`;
 
 	/** A key and its value, on one line — what a review and a recap are made of. */
 	C.pair = ({ label, value, ltr, tone }) => `
-		<div class="whatsapp-cb__pair">
-			<span class="whatsapp-cb__pair-label">${esc(label)}</span>
-			<span class="whatsapp-cb__pair-value${ltr ? " whatsapp-kit-tabular" : ""}${tone ? ` whatsapp-kit-tone--${esc(tone)}` : ""}"${ltr ? ' dir="ltr"' : ""}>${esc(value)}</span>
+		<div class="whatsapp-campaign-builder__pair">
+			<span class="whatsapp-campaign-builder__pair-label">${esc(label)}</span>
+			<span class="whatsapp-campaign-builder__pair-value${ltr ? " whatsapp-kit-tabular" : ""}${tone ? ` whatsapp-kit-tone--${esc(tone)}` : ""}"${ltr ? ' dir="ltr"' : ""}>${esc(value)}</span>
 		</div>`;
 })();

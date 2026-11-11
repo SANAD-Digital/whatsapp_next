@@ -80,32 +80,32 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 	make() {
 		const title_id = `${this.id}-title`;
 		const width = this.opts.width ? (typeof this.opts.width === "number" ? `${this.opts.width}px` : this.opts.width) : "";
-		this.$backdrop = $(`<div class="whatsapp-kit whatsapp-kit-backdrop whatsapp-kit-convo__backdrop"></div>`);
+		this.$backdrop = $(`<div class="whatsapp-kit whatsapp-kit-backdrop whatsapp-kit-conversation__backdrop"></div>`);
 		this.$root = $(`
-			<aside class="whatsapp-kit whatsapp-kit-panel whatsapp-kit-convo" id="${this.id}" role="dialog" aria-modal="true" aria-labelledby="${title_id}"${width ? ` style="--whatsapp-kit-panel-width:${ui.escape(width)}"` : ""}>
+			<aside class="whatsapp-kit whatsapp-kit-panel whatsapp-kit-conversation" id="${this.id}" role="dialog" aria-modal="true" aria-labelledby="${title_id}"${width ? ` style="--whatsapp-kit-panel-width:${ui.escape(width)}"` : ""}>
 				<header class="whatsapp-kit-panel__header">
-					<div class="whatsapp-kit-convo__avatar" aria-hidden="true"></div>
+					<div class="whatsapp-kit-conversation__avatar" aria-hidden="true"></div>
 					<div class="whatsapp-kit-panel__title">
-						<h2 class="whatsapp-kit-convo__title" id="${title_id}"></h2>
-						<div class="whatsapp-kit-panel__subtitle whatsapp-kit-convo__sub whatsapp-kit-tabular"></div>
+						<h2 class="whatsapp-kit-conversation__title" id="${title_id}"></h2>
+						<div class="whatsapp-kit-panel__subtitle whatsapp-kit-conversation__sub whatsapp-kit-tabular"></div>
 					</div>
-					<div class="whatsapp-kit-convo__badge"></div>
-					<button type="button" class="btn btn-sm btn-default whatsapp-kit-convo__close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "sm")}</button>
+					<div class="whatsapp-kit-conversation__badge"></div>
+					<button type="button" class="btn btn-sm btn-default whatsapp-kit-conversation__close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "sm")}</button>
 				</header>
-				<div class="whatsapp-kit-panel__actions whatsapp-kit-convo__actions" role="group" aria-label="${ui.escape(__("Conversation actions"))}"></div>
-				<div class="whatsapp-kit-panel__body whatsapp-kit-convo__body">
-					<div class="whatsapp-kit-convo__state"></div>
-					<div class="whatsapp-kit-convo__thread"></div>
+				<div class="whatsapp-kit-panel__actions whatsapp-kit-conversation__actions" role="group" aria-label="${ui.escape(__("Conversation actions"))}"></div>
+				<div class="whatsapp-kit-panel__body whatsapp-kit-conversation__body">
+					<div class="whatsapp-kit-conversation__state"></div>
+					<div class="whatsapp-kit-conversation__thread"></div>
 				</div>
 			</aside>`);
-		this.$title = this.$root.find(".whatsapp-kit-convo__title");
-		this.$sub = this.$root.find(".whatsapp-kit-convo__sub");
-		this.$avatar = this.$root.find(".whatsapp-kit-convo__avatar");
-		this.$badge = this.$root.find(".whatsapp-kit-convo__badge");
-		this.$actions = this.$root.find(".whatsapp-kit-convo__actions");
-		this.$thread = this.$root.find(".whatsapp-kit-convo__thread");
-		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-convo__state"), state: "loading", rows: 4 });
-		this.$root.find(".whatsapp-kit-convo__close").on("click", () => this.close());
+		this.$title = this.$root.find(".whatsapp-kit-conversation__title");
+		this.$sub = this.$root.find(".whatsapp-kit-conversation__sub");
+		this.$avatar = this.$root.find(".whatsapp-kit-conversation__avatar");
+		this.$badge = this.$root.find(".whatsapp-kit-conversation__badge");
+		this.$actions = this.$root.find(".whatsapp-kit-conversation__actions");
+		this.$thread = this.$root.find(".whatsapp-kit-conversation__thread");
+		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-conversation__state"), state: "loading", rows: 4 });
+		this.$root.find(".whatsapp-kit-conversation__close").on("click", () => this.close());
 		this.$backdrop.on("click", () => this.close());
 		this.$root.on("keydown", (e) => {
 			if (e.key === "Escape") {
@@ -120,7 +120,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 	open() {
 		window.requestAnimationFrame(() => this.$root.addClass("whatsapp-kit-panel--open"));
 		this.untrap = ui.trap_focus(this.$root);
-		this.$root.find(".whatsapp-kit-convo__close").trigger("focus");
+		this.$root.find(".whatsapp-kit-conversation__close").trigger("focus");
 		this.subscribe();
 		this.load_number();
 		this.load_first_page();
@@ -162,7 +162,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 		this.$sub.text(ui.phone(this.key) !== name ? ui.phone(this.key) : "");
 		this.$avatar.text(cstr(name).trim().slice(0, 2).toUpperCase());
 		if (n === undefined) {
-			this.$badge.html(`<span class="whatsapp-kit-skeleton__line whatsapp-kit-convo__badge-skeleton" aria-hidden="true"></span>`);
+			this.$badge.html(`<span class="whatsapp-kit-skeleton__line whatsapp-kit-conversation__badge-skeleton" aria-hidden="true"></span>`);
 		} else {
 			this.$badge.html(whatsapp.ui.ConversationDrawer.link_badge(linked));
 		}
@@ -259,7 +259,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 			return;
 		}
 		ui.visible_actions(this.action_specs(), this.number).forEach((a) => {
-			$(`<button type="button" class="btn btn-sm btn-default whatsapp-kit-convo__action">${a.icon ? ui.icon(a.icon, "xs") : ""}<span>${ui.escape(a.label)}</span></button>`)
+			$(`<button type="button" class="btn btn-sm btn-default whatsapp-kit-conversation__action">${a.icon ? ui.icon(a.icon, "xs") : ""}<span>${ui.escape(a.label)}</span></button>`)
 				.on("click", () => a.handler(this.number, this))
 				.appendTo(this.$actions);
 		});

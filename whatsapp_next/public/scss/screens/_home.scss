@@ -28,8 +28,8 @@
 	--whatsapp-gutter: 38px;
 
 	// PageHeader stacks its own parts; the bands need more air between them than a list needs
-	.whatsapp-kit-pagehead__blocks { gap: var(--whatsapp-kit-gap-lg); }
-	.whatsapp-kit-pagehead { gap: var(--whatsapp-kit-gap-lg); }
+	.whatsapp-kit-page-header__blocks { gap: var(--whatsapp-kit-gap-lg); }
+	.whatsapp-kit-page-header { gap: var(--whatsapp-kit-gap-lg); }
 
 	// The kit's focus ring is scoped to `.whatsapp-kit`; this screen draws its own buttons, and
 	// every one of them has to show where the keyboard is.
@@ -377,7 +377,7 @@
 			white-space: nowrap;
 		}
 		// a head link is still a target: it keeps the control height the chips and buttons keep
-		.whatsapp-ops__link {
+		.whatsapp-operations-console__link {
 			display: inline-flex;
 			align-items: center;
 			min-block-size: var(--whatsapp-kit-target);
@@ -404,7 +404,7 @@
 			inline-size: 100%;
 			justify-content: flex-end;
 			.btn { flex: 1; }
-			.whatsapp-ops__link { margin-inline-start: auto; }
+			.whatsapp-operations-console__link { margin-inline-start: auto; }
 		}
 	}
 }
@@ -679,9 +679,9 @@
 	}
 
 	// the kit draws every record here, so the rows only need their own hairlines
-	.whatsapp-kit-ent-list { gap: 0; }
-	.whatsapp-kit-ent-list__item + .whatsapp-kit-ent-list__item { border-block-start: var(--whatsapp-kit-border); }
-	.whatsapp-kit-ent {
+	.whatsapp-kit-entity-list { gap: 0; }
+	.whatsapp-kit-entity-list__item + .whatsapp-kit-entity-list__item { border-block-start: var(--whatsapp-kit-border); }
+	.whatsapp-kit-entity {
 		padding-block: var(--whatsapp-kit-gap-sm);
 		padding-inline: var(--whatsapp-kit-gap-xs);
 	}

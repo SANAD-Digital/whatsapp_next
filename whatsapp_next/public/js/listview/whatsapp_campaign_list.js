@@ -171,7 +171,7 @@ function metrics_html(o) {
 	const per_minute = o.per_minute == null ? null : Math.round(o.per_minute);
 
 	return `
-		<div class="whatsapp-ops__metrics">
+		<div class="whatsapp-operations-console__metrics">
 			${state_metric({
 				label: __("Sending now"),
 				state: running ? whatsapp.ui.plural(running, { one: __("{0} campaign"), other: __("{0} campaigns") }) : __("Nothing"),
@@ -209,7 +209,7 @@ function metrics_html(o) {
 				__("Failed"),
 				esc(fmt_int(totals.failed)),
 				cint(totals.failed)
-					? `<button type="button" class="whatsapp-ops__link" data-go="failed">${esc(__("See the messages"))}</button>`
+					? `<button type="button" class="whatsapp-operations-console__link" data-go="failed">${esc(__("See the messages"))}</button>`
 					: esc(__("no failures")),
 				{ tone: cint(totals.failed) ? "red" : "" },
 			)}
@@ -228,7 +228,7 @@ function render_console($el, header) {
 		.then(([o, rows]) => {
 			// `Paused` is stated by the metric row ("2 paused"); the strips are for what moves
 			const live = (rows || []).filter((r) => ["Running", "Queued"].includes(r.status));
-			$el.html(`<section class="whatsapp-ops">${metrics_html(o)}</section>
+			$el.html(`<section class="whatsapp-operations-console">${metrics_html(o)}</section>
 				<div class="whatsapp-strips"></div>`);
 			// the campaigns' failures, not every failed message of the site
 		$el.find("[data-go=failed]").on("click", () => frappe.set_route("List", "WhatsApp Log", { status: "Failed", campaign: ["is", "set"] }));

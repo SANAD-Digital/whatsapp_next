@@ -67,24 +67,24 @@ frappe.provide("whatsapp.ui");
 		// ---- shell ---------------------------------------------------------------------------------
 
 		show() {
-			this.id = whatsapp.ui.uid("whatsapp-kit-bs");
+			this.id = whatsapp.ui.uid("whatsapp-kit-bulk-send");
 			this.previous_focus = document.activeElement;
 			this.$root = $(`
-				<div class="whatsapp-kit whatsapp-kit-ce-layer whatsapp-kit-bs-layer" role="presentation">
-					<div class="whatsapp-kit-ce-backdrop" data-act="close"></div>
-					<div class="whatsapp-kit-ce whatsapp-kit-bs" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title">
-						<div class="whatsapp-kit-bs__top">
-							<span class="whatsapp-kit-bs__top-text">
-								<span class="whatsapp-kit-bs__title" id="${this.id}-title">${esc(this.opts.title || __("Send a bulk message"))}</span>
-								<span class="whatsapp-kit-bs__subtitle">${esc(this.opts.subtitle || __("Pick the recipients, write the message, then send. The send is real and counts against the plan."))}</span>
+				<div class="whatsapp-kit whatsapp-kit-command-editor-layer whatsapp-kit-bulk-send-layer" role="presentation">
+					<div class="whatsapp-kit-command-editor-backdrop" data-act="close"></div>
+					<div class="whatsapp-kit-command-editor whatsapp-kit-bulk-send" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title">
+						<div class="whatsapp-kit-bulk-send__top">
+							<span class="whatsapp-kit-bulk-send__top-text">
+								<span class="whatsapp-kit-bulk-send__title" id="${this.id}-title">${esc(this.opts.title || __("Send a bulk message"))}</span>
+								<span class="whatsapp-kit-bulk-send__subtitle">${esc(this.opts.subtitle || __("Pick the recipients, write the message, then send. The send is real and counts against the plan."))}</span>
 							</span>
-							<button type="button" class="whatsapp-kit-ce__x" data-act="close" title="${esc(__("Close (Esc)"))}" aria-label="${esc(__("Close"))}">×</button>
+							<button type="button" class="whatsapp-kit-command-editor__x" data-act="close" title="${esc(__("Close (Esc)"))}" aria-label="${esc(__("Close"))}">×</button>
 						</div>
-						<div class="whatsapp-kit-bs__body" data-slot="body"><div class="whatsapp-kit-ce__loading">${esc(__("Loading…"))}</div></div>
+						<div class="whatsapp-kit-bulk-send__body" data-slot="body"><div class="whatsapp-kit-command-editor__loading">${esc(__("Loading…"))}</div></div>
 					</div>
 				</div>`).appendTo(document.body);
 			this.$body = this.$root.find("[data-slot=body]");
-			$("body").addClass("whatsapp-kit-ce-open");
+			$("body").addClass("whatsapp-kit-command-editor-open");
 			this.$root.on("click", "[data-act]", (e) => this.on_act(e));
 			this.$root.on("click", "[data-attach-clear]", () => {
 				this.state.attach = null;
@@ -101,7 +101,7 @@ frappe.provide("whatsapp.ui");
 			if (!this.$root) return;
 			this.$root.remove();
 			this.$root = null;
-			if (!$(".whatsapp-kit-ce-layer").length) $("body").removeClass("whatsapp-kit-ce-open");
+			if (!$(".whatsapp-kit-command-editor-layer").length) $("body").removeClass("whatsapp-kit-command-editor-open");
 			if (whatsapp.ui.overlay) whatsapp.ui.overlay.close(this);
 		}
 
@@ -123,7 +123,7 @@ frappe.provide("whatsapp.ui");
 				const s = this.$root.find("[data-f=q]").get(0);
 				s && s.focus();
 			} catch (err) {
-				this.$body.html(`<div class="whatsapp-kit-ce__loading" role="alert"><span>${esc(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span></div>`);
+				this.$body.html(`<div class="whatsapp-kit-command-editor__loading" role="alert"><span>${esc(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span></div>`);
 			}
 		}
 
@@ -157,7 +157,7 @@ frappe.provide("whatsapp.ui");
 		render() {
 			if (!this.$root || !this.ctx) return;
 			const restore = whatsapp.ui.hold_focus(this.$root);
-			this.$body.html(`<div class="whatsapp-kit-bs__grid">${this.render_list()}${this.render_message()}</div>`);
+			this.$body.html(`<div class="whatsapp-kit-bulk-send__grid">${this.render_list()}${this.render_message()}</div>`);
 			restore();
 		}
 
@@ -172,41 +172,41 @@ frappe.provide("whatsapp.ui");
 			const placeholder = s.src === "groups" ? __("Search the groups…") : selected ? __("Search the selected…") : __("Search by name or number…");
 			let body;
 			if (s.src === "manual") {
-				body = `<div class="whatsapp-kit-bs__manual">
-					<textarea class="whatsapp-kit-bs__numbers" dir="ltr" rows="6" data-f="numbers" data-in="numbers" placeholder="${esc(__("One number per line, or separated by commas."))}">${esc(s.numbers_text)}</textarea>
-					<button type="button" class="whatsapp-kit-ce__btn" data-act="add-numbers">${esc(__("Add the numbers"))}</button>
-					<span class="whatsapp-kit-ce__note">${esc(__("Invalid and repeated numbers are skipped. The added ones show under «Selected»."))}</span>
+				body = `<div class="whatsapp-kit-bulk-send__manual">
+					<textarea class="whatsapp-kit-bulk-send__numbers" dir="ltr" rows="6" data-f="numbers" data-in="numbers" placeholder="${esc(__("One number per line, or separated by commas."))}">${esc(s.numbers_text)}</textarea>
+					<button type="button" class="whatsapp-kit-command-editor__btn" data-act="add-numbers">${esc(__("Add the numbers"))}</button>
+					<span class="whatsapp-kit-command-editor__note">${esc(__("Invalid and repeated numbers are skipped. The added ones show under «Selected»."))}</span>
 				</div>`;
 			} else {
 				const rows = this.rows();
 				body = rows.length
 					? rows.map((r) => this.row_html(r)).join("")
-					: `<span class="whatsapp-kit-bs__none">${esc(s.loading ? __("Loading…") : selected ? __("No recipient selected yet.") : __("No results match the search."))}</span>`;
+					: `<span class="whatsapp-kit-bulk-send__none">${esc(s.loading ? __("Loading…") : selected ? __("No recipient selected yet.") : __("No results match the search."))}</span>`;
 			}
 			const n = this.picked_count();
-			return `<section class="whatsapp-kit-bs__list-pane" aria-label="${esc(__("Recipients", null, "Bulk Send"))}">
-				<div class="whatsapp-kit-bs__list-head">
-					<span class="whatsapp-kit-bs__list-title">${esc(__("Recipients", null, "Bulk Send"))}</span>
-					<span class="whatsapp-kit-bs__segs" role="tablist">${tabs
+			return `<section class="whatsapp-kit-bulk-send__list-pane" aria-label="${esc(__("Recipients", null, "Bulk Send"))}">
+				<div class="whatsapp-kit-bulk-send__list-head">
+					<span class="whatsapp-kit-bulk-send__list-title">${esc(__("Recipients", null, "Bulk Send"))}</span>
+					<span class="whatsapp-kit-bulk-send__segs" role="tablist">${tabs
 						.map(
-							(t) => `<button type="button" role="tab" class="whatsapp-kit-bs__seg${s.src === t.key ? " is-sel" : ""}" aria-selected="${s.src === t.key}" data-act="src" data-key="${t.key}">${esc(t.label)}${
-								t.count ? `<span class="whatsapp-kit-bs__seg-n" dir="ltr">${whatsapp.ui.format_int(t.count)}</span>` : ""
+							(t) => `<button type="button" role="tab" class="whatsapp-kit-bulk-send__seg${s.src === t.key ? " is-sel" : ""}" aria-selected="${s.src === t.key}" data-act="src" data-key="${t.key}">${esc(t.label)}${
+								t.count ? `<span class="whatsapp-kit-bulk-send__seg-n" dir="ltr">${whatsapp.ui.format_int(t.count)}</span>` : ""
 							}</button>`
 						)
 						.join("")}</span>
 					${
 						s.src === "manual"
 							? ""
-							: `<label class="whatsapp-kit-bs__search">${SEARCH_ICON}<input type="text" data-whatsapp-bare data-f="q" data-in="q" value="${esc(s.q)}" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" autocomplete="off" /></label>`
+							: `<label class="whatsapp-kit-bulk-send__search">${SEARCH_ICON}<input type="text" data-whatsapp-bare data-f="q" data-in="q" value="${esc(s.q)}" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" autocomplete="off" /></label>`
 					}
 				</div>
-				<div class="whatsapp-kit-bs__list" data-scroll="list" role="list">${body}</div>
-				<div class="whatsapp-kit-bs__list-foot">
-					<span class="whatsapp-kit-bs__picked">${esc(__("Selected", null, "Bulk Send"))} <span dir="ltr" class="whatsapp-kit-bs__picked-n">${whatsapp.ui.format_int(this.total())}</span></span>
+				<div class="whatsapp-kit-bulk-send__list" data-scroll="list" role="list">${body}</div>
+				<div class="whatsapp-kit-bulk-send__list-foot">
+					<span class="whatsapp-kit-bulk-send__picked">${esc(__("Selected", null, "Bulk Send"))} <span dir="ltr" class="whatsapp-kit-bulk-send__picked-n">${whatsapp.ui.format_int(this.total())}</span></span>
 					${
 						n
-							? `<button type="button" class="whatsapp-kit-bs__show${selected ? " is-on" : ""}" data-act="show-selected">${esc(selected ? __("Back to picking") : __("Show the selected"))}</button>
-								<button type="button" class="whatsapp-kit-bs__clear" data-act="clear">${esc(__("Remove all"))}</button>`
+							? `<button type="button" class="whatsapp-kit-bulk-send__show${selected ? " is-on" : ""}" data-act="show-selected">${esc(selected ? __("Back to picking") : __("Show the selected"))}</button>
+								<button type="button" class="whatsapp-kit-bulk-send__clear" data-act="clear">${esc(__("Remove all"))}</button>`
 							: ""
 					}
 				</div>
@@ -263,14 +263,14 @@ frappe.provide("whatsapp.ui");
 		}
 
 		row_html(r) {
-			return `<button type="button" role="listitem" class="whatsapp-kit-bs__row${r.on ? " is-on" : ""}" data-act="${r.act}" data-key="${esc(r.key)}" aria-pressed="${!!r.on}">
-				<span class="whatsapp-kit-bs__avatar${r.avatar_tone ? ` whatsapp-kit-bs__avatar--${r.avatar_tone}` : ""}${r.on || r.remove ? " is-on" : ""}" aria-hidden="true">${esc(r.initials)}</span>
-				<span class="whatsapp-kit-bs__row-text">
-					<span class="whatsapp-kit-bs__row-name">${esc(r.name)}</span>
-					<span class="whatsapp-kit-bs__row-sub${r.sub_ltr ? " whatsapp-kit-ce__mono" : ""}"${r.sub_ltr ? ' dir="ltr"' : ""}>${esc(r.sub || "")}</span>
+			return `<button type="button" role="listitem" class="whatsapp-kit-bulk-send__row${r.on ? " is-on" : ""}" data-act="${r.act}" data-key="${esc(r.key)}" aria-pressed="${!!r.on}">
+				<span class="whatsapp-kit-bulk-send__avatar${r.avatar_tone ? ` whatsapp-kit-bulk-send__avatar--${r.avatar_tone}` : ""}${r.on || r.remove ? " is-on" : ""}" aria-hidden="true">${esc(r.initials)}</span>
+				<span class="whatsapp-kit-bulk-send__row-text">
+					<span class="whatsapp-kit-bulk-send__row-name">${esc(r.name)}</span>
+					<span class="whatsapp-kit-bulk-send__row-sub${r.sub_ltr ? " whatsapp-kit-command-editor__mono" : ""}"${r.sub_ltr ? ' dir="ltr"' : ""}>${esc(r.sub || "")}</span>
 				</span>
-				${r.badge ? `<span class="whatsapp-kit-bs__badge whatsapp-kit-bs__badge--${r.badge_tone}">${esc(r.badge)}</span>` : ""}
-				<span class="whatsapp-kit-bs__mark${r.remove ? " is-rm" : r.on ? " is-on" : ""}" aria-hidden="true">${r.remove ? "×" : r.on ? "✓" : ""}</span>
+				${r.badge ? `<span class="whatsapp-kit-bulk-send__badge whatsapp-kit-bulk-send__badge--${r.badge_tone}">${esc(r.badge)}</span>` : ""}
+				<span class="whatsapp-kit-bulk-send__mark${r.remove ? " is-rm" : r.on ? " is-on" : ""}" aria-hidden="true">${r.remove ? "×" : r.on ? "✓" : ""}</span>
 			</button>`;
 		}
 
@@ -294,49 +294,49 @@ frappe.provide("whatsapp.ui");
 			const eta = !total ? "—" : mins < 1 ? __("under a minute") : mins < 60 ? __("{0} minutes", [Math.round(mins)]) : __("{0} hours", [Math.round(mins / 60)]);
 			const ready = total > 0 && (!!s.body.trim() || !!s.attach) && dev && dev.status === "Connected";
 			const send_label = s.when === "later" ? __("Schedule the send") : total ? __("Send to {0}", [whatsapp.ui.format_int(total)]) : __("Send", null, "Bulk Send");
-			return `<section class="whatsapp-kit-bs__main" aria-label="${esc(__("The message"))}">
-				<div class="whatsapp-kit-bs__head">
-					<span class="whatsapp-kit-bs__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
-					<span class="whatsapp-kit-bs__head-text">
-						<span class="whatsapp-kit-bs__head-title">${esc(head_title)}</span>
-						<span class="whatsapp-kit-bs__head-sub">${esc(head_sub)}</span>
+			return `<section class="whatsapp-kit-bulk-send__main" aria-label="${esc(__("The message"))}">
+				<div class="whatsapp-kit-bulk-send__head">
+					<span class="whatsapp-kit-bulk-send__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
+					<span class="whatsapp-kit-bulk-send__head-text">
+						<span class="whatsapp-kit-bulk-send__head-title">${esc(head_title)}</span>
+						<span class="whatsapp-kit-bulk-send__head-sub">${esc(head_sub)}</span>
 					</span>
-					<button type="button" class="whatsapp-kit-bs__settings-btn" data-act="settings" aria-expanded="${s.settings}">${GEAR_ICON}<span>${esc(s.settings ? __("Hide the settings") : tpl ? tpl.template_name || tpl.name : __("Send settings"))}</span></button>
+					<button type="button" class="whatsapp-kit-bulk-send__settings-btn" data-act="settings" aria-expanded="${s.settings}">${GEAR_ICON}<span>${esc(s.settings ? __("Hide the settings") : tpl ? tpl.template_name || tpl.name : __("Send settings"))}</span></button>
 				</div>
 				${s.settings ? this.render_settings() : ""}
-				<div class="whatsapp-kit-bs__who">
-					<span class="whatsapp-kit-ce__avatar${first ? "" : " whatsapp-kit-bs__avatar--q"}" aria-hidden="true">${esc(first ? whatsapp.ui.initials(first.label || "#") : "?")}</span>
-					<span class="whatsapp-kit-ce__switch-text"><span class="whatsapp-kit-ce__card-name">${esc(first ? first.label || __("First recipient") : __("No recipient yet", null, "Bulk Send"))}</span><span class="whatsapp-kit-ce__opt-sub"${first ? ' dir="auto"' : ""}>${esc(first ? first.phone || "" : __("The preview shows once a recipient is picked"))}</span></span>
-					<span class="whatsapp-kit-ce__tag ${first ? "" : "whatsapp-kit-ce__tag--warn"}">${esc(first ? __("Preview of the first recipient") : __("No recipients"))}</span>
+				<div class="whatsapp-kit-bulk-send__who">
+					<span class="whatsapp-kit-command-editor__avatar${first ? "" : " whatsapp-kit-bulk-send__avatar--q"}" aria-hidden="true">${esc(first ? whatsapp.ui.initials(first.label || "#") : "?")}</span>
+					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${esc(first ? first.label || __("First recipient") : __("No recipient yet", null, "Bulk Send"))}</span><span class="whatsapp-kit-command-editor__opt-sub"${first ? ' dir="auto"' : ""}>${esc(first ? first.phone || "" : __("The preview shows once a recipient is picked"))}</span></span>
+					<span class="whatsapp-kit-command-editor__tag ${first ? "" : "whatsapp-kit-command-editor__tag--warn"}">${esc(first ? __("Preview of the first recipient") : __("No recipients"))}</span>
 				</div>
-				<div class="whatsapp-kit-bs__note"><span class="whatsapp-kit-bs__note-dot" aria-hidden="true"></span><span>${esc(__("The send is real — the text is sent as it is to every recipient."))}</span></div>
-				<div class="whatsapp-kit-bs__thread">
+				<div class="whatsapp-kit-bulk-send__note"><span class="whatsapp-kit-bulk-send__note-dot" aria-hidden="true"></span><span>${esc(__("The send is real — the text is sent as it is to every recipient."))}</span></div>
+				<div class="whatsapp-kit-bulk-send__thread">
 					${
 						s.body.trim() || s.attach
-							? `<span class="whatsapp-kit-bs__day">${esc(__("Today"))}</span><div class="whatsapp-kit-bs__bubble" dir="auto">${
+							? `<span class="whatsapp-kit-bulk-send__day">${esc(__("Today"))}</span><div class="whatsapp-kit-bulk-send__bubble" dir="auto">${
 									s.attach
-										? `<span class="whatsapp-kit-bs__bubble-file">${whatsapp.ui.AttachMenu.icon(s.attach.kind)}<bdi>${esc(s.attach.file_name || s.attach.contact_label || whatsapp.ui.AttachMenu.label(s.attach.kind))}</bdi></span>`
+										? `<span class="whatsapp-kit-bulk-send__bubble-file">${whatsapp.ui.AttachMenu.icon(s.attach.kind)}<bdi>${esc(s.attach.file_name || s.attach.contact_label || whatsapp.ui.AttachMenu.label(s.attach.kind))}</bdi></span>`
 										: ""
-							  }${esc(s.body)}<span class="whatsapp-kit-bs__bubble-at" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} 🕓</span></div>`
-							: `<div class="whatsapp-kit-bs__empty"><strong>${esc(__("Write the message"))}</strong><span>${esc(__("Write in the box below or pick a template from the send settings — it shows here as the recipient gets it."))}</span></div>`
+							  }${esc(s.body)}<span class="whatsapp-kit-bulk-send__bubble-at" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} 🕓</span></div>`
+							: `<div class="whatsapp-kit-bulk-send__empty"><strong>${esc(__("Write the message"))}</strong><span>${esc(__("Write in the box below or pick a template from the send settings — it shows here as the recipient gets it."))}</span></div>`
 					}
 				</div>
-				${s.attach && whatsapp.ui.AttachMenu ? `<div class="whatsapp-kit-bs__attach">${whatsapp.ui.AttachMenu.chip_html(s.attach)}</div>` : ""}
-				<div class="whatsapp-kit-bs__composer">
-					<span class="whatsapp-kit-bs__tools"><button type="button" class="whatsapp-kit-bs__round whatsapp-kit-bs__round--plain" data-act="plus" title="${esc(__("Message type"))}" aria-label="${esc(__("Message type"))}" aria-haspopup="dialog">+</button></span>
-					<span class="whatsapp-kit-bs__field">
-						<textarea class="whatsapp-kit-bs__input" rows="2" data-f="body" data-in="body" placeholder="${esc(s.attach ? __("Caption (optional)…") : __("Write your message…"))}" aria-label="${esc(__("Message"))}">${esc(s.body)}</textarea>
-						<button type="button" class="whatsapp-kit-bs__clear-x" data-act="clear-body" aria-label="${esc(__("Clear the text"))}" title="${esc(__("Clear the text"))}">×</button>
+				${s.attach && whatsapp.ui.AttachMenu ? `<div class="whatsapp-kit-bulk-send__attach">${whatsapp.ui.AttachMenu.chip_html(s.attach)}</div>` : ""}
+				<div class="whatsapp-kit-bulk-send__composer">
+					<span class="whatsapp-kit-bulk-send__tools"><button type="button" class="whatsapp-kit-bulk-send__round whatsapp-kit-bulk-send__round--plain" data-act="plus" title="${esc(__("Message type"))}" aria-label="${esc(__("Message type"))}" aria-haspopup="dialog">+</button></span>
+					<span class="whatsapp-kit-bulk-send__field">
+						<textarea class="whatsapp-kit-bulk-send__input" rows="2" data-f="body" data-in="body" placeholder="${esc(s.attach ? __("Caption (optional)…") : __("Write your message…"))}" aria-label="${esc(__("Message"))}">${esc(s.body)}</textarea>
+						<button type="button" class="whatsapp-kit-bulk-send__clear-x" data-act="clear-body" aria-label="${esc(__("Clear the text"))}" title="${esc(__("Clear the text"))}">×</button>
 					</span>
-					<button type="button" class="whatsapp-kit-bs__round whatsapp-kit-bs__round--pri" data-act="send" title="${esc(__("Send", null, "Bulk Send"))}" aria-label="${esc(__("Send", null, "Bulk Send"))}">${SEND_ICON}</button>
+					<button type="button" class="whatsapp-kit-bulk-send__round whatsapp-kit-bulk-send__round--pri" data-act="send" title="${esc(__("Send", null, "Bulk Send"))}" aria-label="${esc(__("Send", null, "Bulk Send"))}">${SEND_ICON}</button>
 				</div>
-				<div class="whatsapp-kit-bs__bar">
-					<span class="whatsapp-kit-bs__estimates">
-						<span class="whatsapp-kit-bs__est"><span class="whatsapp-kit-bs__est-k">${esc(__("Recipients", null, "Bulk Send"))}</span><span class="whatsapp-kit-bs__est-v whatsapp-kit-ce__mono" dir="ltr">${whatsapp.ui.format_int(total)}</span></span>
-						<span class="whatsapp-kit-bs__est"><span class="whatsapp-kit-bs__est-k">${esc(__("Expected time"))}</span><span class="whatsapp-kit-bs__est-v">${esc(eta)}</span></span>
-						<span class="whatsapp-kit-bs__est"><span class="whatsapp-kit-bs__est-k">${esc(__("From the plan"))}</span><span class="whatsapp-kit-bs__est-v whatsapp-kit-ce__mono" dir="ltr">${remaining == null ? "—" : whatsapp.ui.format_int(Math.min(total, cint(remaining)))}</span></span>
+				<div class="whatsapp-kit-bulk-send__bar">
+					<span class="whatsapp-kit-bulk-send__estimates">
+						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${esc(__("Recipients", null, "Bulk Send"))}</span><span class="whatsapp-kit-bulk-send__est-v whatsapp-kit-command-editor__mono" dir="ltr">${whatsapp.ui.format_int(total)}</span></span>
+						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${esc(__("Expected time"))}</span><span class="whatsapp-kit-bulk-send__est-v">${esc(eta)}</span></span>
+						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${esc(__("From the plan"))}</span><span class="whatsapp-kit-bulk-send__est-v whatsapp-kit-command-editor__mono" dir="ltr">${remaining == null ? "—" : whatsapp.ui.format_int(Math.min(total, cint(remaining)))}</span></span>
 					</span>
-					<button type="button" class="whatsapp-kit-bs__send${ready ? " is-ready" : ""}" data-act="send">${esc(send_label)}</button>
+					<button type="button" class="whatsapp-kit-bulk-send__send${ready ? " is-ready" : ""}" data-act="send">${esc(send_label)}</button>
 				</div>
 			</section>`;
 		}
@@ -345,35 +345,35 @@ frappe.provide("whatsapp.ui");
 			const s = this.state;
 			const ctx = this.ctx;
 			const dev = this.device();
-			return `<div class="whatsapp-kit-bs__settings">
-				<div class="whatsapp-kit-bs__form">
-					<label class="whatsapp-kit-bs__fld"><span class="whatsapp-kit-ce__label">${esc(__("Message template"))}</span>
-						<select class="whatsapp-kit-ce__input whatsapp-kit-ce__select whatsapp-kit-bs__ctl" data-ch="template">
+			return `<div class="whatsapp-kit-bulk-send__settings">
+				<div class="whatsapp-kit-bulk-send__form">
+					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${esc(__("Message template"))}</span>
+						<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select whatsapp-kit-bulk-send__ctl" data-ch="template">
 							<option value="">${esc(__("No template — free text"))}</option>
 							${(ctx.templates || []).map((t) => `<option value="${esc(t.name)}" ${t.name === s.template ? "selected" : ""}>${esc((t.template_name || t.name) + (t.category ? ` · ${t.category}` : ""))}</option>`).join("")}
 						</select></label>
-					<label class="whatsapp-kit-bs__fld"><span class="whatsapp-kit-ce__label">${esc(__("Sending device"))}</span>
-						<select class="whatsapp-kit-ce__input whatsapp-kit-ce__select whatsapp-kit-bs__ctl" data-ch="device">
+					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${esc(__("Sending device"))}</span>
+						<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select whatsapp-kit-bulk-send__ctl" data-ch="device">
 							${(ctx.devices || []).map((d) => `<option value="${esc(d.name)}" ${d.name === s.device ? "selected" : ""}>${esc((d.device_name || d.name) + (d.status === "Connected" ? "" : ` — ${__("not connected")}`))}</option>`).join("")}
 						</select>
-						${dev && dev.status !== "Connected" ? `<span class="whatsapp-kit-ce__note whatsapp-kit-ce__note--warn">${esc(__("The device is not connected."))}</span>` : ""}</label>
-					<label class="whatsapp-kit-bs__fld"><span class="whatsapp-kit-ce__label">${esc(__("Rate (messages/minute)"))}</span>
-						<input type="number" min="1"${ctx.max_rate ? ` max="${cint(ctx.max_rate)}"` : ""} class="whatsapp-kit-ce__input whatsapp-kit-bs__ctl whatsapp-kit-ce__mono" data-f="rate" data-in="rate" value="${esc(s.rate || "")}" />
-						<span class="whatsapp-kit-ce__note${this.rate_problem() || cint(s.rate) > 30 ? " whatsapp-kit-ce__note--warn" : ""}">${esc(
+						${dev && dev.status !== "Connected" ? `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--warn">${esc(__("The device is not connected."))}</span>` : ""}</label>
+					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${esc(__("Rate (messages/minute)"))}</span>
+						<input type="number" min="1"${ctx.max_rate ? ` max="${cint(ctx.max_rate)}"` : ""} class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__ctl whatsapp-kit-command-editor__mono" data-f="rate" data-in="rate" value="${esc(s.rate || "")}" />
+						<span class="whatsapp-kit-command-editor__note${this.rate_problem() || cint(s.rate) > 30 ? " whatsapp-kit-command-editor__note--warn" : ""}">${esc(
 							this.rate_problem() || (cint(s.rate) > 30 ? __("A high rate — raises the risk of a ban.") : __("Recommended 20–30."))
 						)}</span></label>
-					<div class="whatsapp-kit-bs__fld"><span class="whatsapp-kit-ce__label">${esc(__("Timing"))}</span>
-						<span class="whatsapp-kit-bs__segs whatsapp-kit-bs__segs--sm">
-							<button type="button" class="whatsapp-kit-bs__seg${s.when === "now" ? " is-sel" : ""}" data-act="when" data-key="now">${esc(__("Now", null, "Bulk Send"))}</button>
-							<button type="button" class="whatsapp-kit-bs__seg${s.when === "later" ? " is-sel" : ""}" data-act="when" data-key="later">${esc(__("At a time"))}</button>
+					<div class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${esc(__("Timing"))}</span>
+						<span class="whatsapp-kit-bulk-send__segs whatsapp-kit-bulk-send__segs--sm">
+							<button type="button" class="whatsapp-kit-bulk-send__seg${s.when === "now" ? " is-sel" : ""}" data-act="when" data-key="now">${esc(__("Now", null, "Bulk Send"))}</button>
+							<button type="button" class="whatsapp-kit-bulk-send__seg${s.when === "later" ? " is-sel" : ""}" data-act="when" data-key="later">${esc(__("At a time"))}</button>
 						</span></div>
 					${
 						s.when === "later"
-							? `<label class="whatsapp-kit-bs__fld"><span class="whatsapp-kit-ce__label">${esc(__("Start time"))}</span><input type="datetime-local" class="whatsapp-kit-ce__input whatsapp-kit-bs__ctl" data-ch="at" value="${esc(s.at)}" /></label>`
+							? `<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${esc(__("Start time"))}</span><input type="datetime-local" class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__ctl" data-ch="at" value="${esc(s.at)}" /></label>`
 							: ""
 					}
 				</div>
-				${this.opts.on_templates ? `<button type="button" class="whatsapp-kit-ce__link" data-act="templates">${esc(__("Manage message templates"))}</button>` : ""}
+				${this.opts.on_templates ? `<button type="button" class="whatsapp-kit-command-editor__link" data-act="templates">${esc(__("Manage message templates"))}</button>` : ""}
 			</div>`;
 		}
 

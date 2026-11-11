@@ -53,7 +53,7 @@ whatsapp.ui.GroupCreate = class GroupCreate {
 			primary_action_label: __("Create group"),
 			primary_action: (values) => this.create(values),
 		});
-		this.dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-groupcreate");
+		this.dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-group-create");
 		this.$members = this.dialog.get_field("members").$wrapper;
 		this.draw_members();
 	}
@@ -81,21 +81,21 @@ whatsapp.ui.GroupCreate = class GroupCreate {
 	draw_members() {
 		const esc = ui.escape;
 		const rows = [...this.members.values()];
-		this.$members.html(`<div class="whatsapp-kit-groupcreate__members">
-			<div class="whatsapp-kit-groupcreate__bar">
-				<span class="whatsapp-kit-groupcreate__count">${esc(whatsapp.ui.plural(rows.length, { one: __("{0} number"), other: __("{0} numbers") }))}</span>
-				<button type="button" class="btn btn-xs btn-default whatsapp-kit-groupcreate__pick">${ui.icon("es-line-add", "xs")} ${esc(__("Choose numbers"))}</button>
+		this.$members.html(`<div class="whatsapp-kit-group-create__members">
+			<div class="whatsapp-kit-group-create__bar">
+				<span class="whatsapp-kit-group-create__count">${esc(whatsapp.ui.plural(rows.length, { one: __("{0} number"), other: __("{0} numbers") }))}</span>
+				<button type="button" class="btn btn-xs btn-default whatsapp-kit-group-create__pick">${ui.icon("es-line-add", "xs")} ${esc(__("Choose numbers"))}</button>
 			</div>
 			${rows.length
-				? `<ul class="whatsapp-kit-groupcreate__list">${rows.map((m) => `<li data-key="${esc(m.phone_e164)}">
-					<span class="whatsapp-kit-groupcreate__name">${esc(m.display_name || "")}</span>
+				? `<ul class="whatsapp-kit-group-create__list">${rows.map((m) => `<li data-key="${esc(m.phone_e164)}">
+					<span class="whatsapp-kit-group-create__name">${esc(m.display_name || "")}</span>
 					<bdi class="whatsapp-kit-tabular" dir="ltr">${esc(whatsapp.ui.phone ? whatsapp.ui.phone(m.phone_e164) : m.phone_e164)}</bdi>
-					<button type="button" class="whatsapp-kit-groupcreate__drop" aria-label="${esc(__("Remove {0}", [m.display_name || m.phone_e164]))}">${ui.icon("es-line-close", "xs")}</button>
+					<button type="button" class="whatsapp-kit-group-create__drop" aria-label="${esc(__("Remove {0}", [m.display_name || m.phone_e164]))}">${ui.icon("es-line-close", "xs")}</button>
 				</li>`).join("")}</ul>`
-				: `<p class="whatsapp-kit-groupcreate__empty">${esc(__("No numbers yet. Choose the people to add."))}</p>`}
+				: `<p class="whatsapp-kit-group-create__empty">${esc(__("No numbers yet. Choose the people to add."))}</p>`}
 		</div>`);
-		this.$members.find(".whatsapp-kit-groupcreate__pick").on("click", () => this.pick());
-		this.$members.find(".whatsapp-kit-groupcreate__drop").on("click", (e) => {
+		this.$members.find(".whatsapp-kit-group-create__pick").on("click", () => this.pick());
+		this.$members.find(".whatsapp-kit-group-create__drop").on("click", (e) => {
 			this.members.delete($(e.currentTarget).closest("li").data("key"));
 			this.draw_members();
 		});
@@ -139,7 +139,7 @@ whatsapp.ui.GroupCreate = class GroupCreate {
 		const names = Object.fromEntries([...this.members.values()].map((m) => [String(m.phone_e164).replace(/^\+/, ""), m.display_name]));
 		const rows = members.map((m) => {
 			const s = STATUS[m.status] || STATUS.failed;
-			return `<li><span class="whatsapp-kit-groupcreate__name">${esc(names[m.phone] || "")}</span>
+			return `<li><span class="whatsapp-kit-group-create__name">${esc(names[m.phone] || "")}</span>
 				<bdi class="whatsapp-kit-tabular" dir="ltr">${esc("+" + m.phone)}</bdi>
 				${whatsapp.ui.StatusBadge.html({ label: s.label(), colour: s.colour })}</li>`;
 		}).join("");
@@ -150,17 +150,17 @@ whatsapp.ui.GroupCreate = class GroupCreate {
 			primary_action_label: __("Done"),
 			primary_action: () => d.hide(),
 		});
-		d.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-groupcreate");
+		d.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-group-create");
 		const invite = r.invite_link
-			? `<div class="whatsapp-kit-groupcreate__invite">
+			? `<div class="whatsapp-kit-group-create__invite">
 				<p>${esc(__("Some people's privacy settings refuse being added to groups. Send them this link to join:"))}</p>
-				<div class="whatsapp-kit-groupcreate__link"><bdi dir="ltr">${esc(r.invite_link)}</bdi>
-				<button type="button" class="btn btn-xs btn-default whatsapp-kit-groupcreate__copy">${esc(__("Copy"))}</button></div>
+				<div class="whatsapp-kit-group-create__link"><bdi dir="ltr">${esc(r.invite_link)}</bdi>
+				<button type="button" class="btn btn-xs btn-default whatsapp-kit-group-create__copy">${esc(__("Copy"))}</button></div>
 			</div>`
 			: "";
-		const saved = r.saved_to_contact ? `<p class="whatsapp-kit-groupcreate__saved">${esc(__("The group is saved among the contact's numbers."))}</p>` : "";
-		d.get_field("body").$wrapper.html(`${saved}<ul class="whatsapp-kit-groupcreate__list whatsapp-kit-groupcreate__list--report">${rows}</ul>${invite}`);
-		d.get_field("body").$wrapper.find(".whatsapp-kit-groupcreate__copy").on("click", () => {
+		const saved = r.saved_to_contact ? `<p class="whatsapp-kit-group-create__saved">${esc(__("The group is saved among the contact's numbers."))}</p>` : "";
+		d.get_field("body").$wrapper.html(`${saved}<ul class="whatsapp-kit-group-create__list whatsapp-kit-group-create__list--report">${rows}</ul>${invite}`);
+		d.get_field("body").$wrapper.find(".whatsapp-kit-group-create__copy").on("click", () => {
 			frappe.utils.copy_to_clipboard(r.invite_link);
 		});
 		d.show();

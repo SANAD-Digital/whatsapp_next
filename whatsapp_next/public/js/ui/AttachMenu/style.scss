@@ -2,7 +2,7 @@
 // a 14 px-radius popover with a 3-column grid (88 px minimum), a 38 px round icon in each kind's
 // tone over an 11 px label, and the chip the picked kind leaves above the field. Product tokens only.
 
-.whatsapp-kit-am {
+.whatsapp-kit-attach-menu {
 	position: fixed;
 	z-index: 1070; // over the kit's modals (1040/1041) and Frappe's dialogs
 	padding: 8px;
@@ -115,7 +115,7 @@
 }
 
 // the chip a picked kind leaves above the field
-.whatsapp-kit-am__chip {
+.whatsapp-kit-attach-menu__chip {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
@@ -138,6 +138,6 @@
 	svg { inline-size: 16px; block-size: 16px; }
 }
 
-.whatsapp-kit-am__chip-icon { display: inline-flex; flex: none; }
-.whatsapp-kit-am__chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.whatsapp-kit-am__chip-x { border: 0; background: transparent; padding: 0; font-size: 13px; line-height: 1; color: var(--whatsapp-ink-4); cursor: pointer; }
+.whatsapp-kit-attach-menu__chip-icon { display: inline-flex; flex: none; }
+.whatsapp-kit-attach-menu__chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whatsapp-kit-attach-menu__chip-x { border: 0; background: transparent; padding: 0; font-size: 13px; line-height: 1; color: var(--whatsapp-ink-4); cursor: pointer; }

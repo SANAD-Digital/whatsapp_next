@@ -4,7 +4,7 @@
 // these, at this weight, on this 20×20 grid, and a screen that mixes the two reads as two screens.
 // Every glyph below is copied from `docs/shared/ui-kit.js` and `docs/component/*.dc.html` exactly
 // as it was drawn — `currentColor` throughout, so a glyph takes the colour of whatever it sits in,
-// and `width`/`height` are overridden by the `.whatsapp-ico` class rather than by editing the markup.
+// and `width`/`height` are overridden by the `.whatsapp-icon` class rather than by editing the markup.
 //
 // `ui.ico(name, size)` returns the markup; an unknown name returns an empty string rather than a
 // broken glyph, so a typo never paints a box.
@@ -69,7 +69,7 @@ const ICONS = {
 export function ico(name, size = "sm", cls = "") {
 	const glyph = ICONS[name];
 	if (!glyph) return "";
-	return `<span class="whatsapp-ico whatsapp-ico--${size}${cls ? ` ${cls}` : ""}" aria-hidden="true">${glyph}</span>`;
+	return `<span class="whatsapp-icon whatsapp-icon--${size}${cls ? ` ${cls}` : ""}" aria-hidden="true">${glyph}</span>`;
 }
 
 export const ICON_NAMES = Object.keys(ICONS);

@@ -241,7 +241,7 @@
 // A sticky element only sticks inside its parent's box. Where a screen wraps its header in a box
 // of its own (Contacts, Functions), that box and the header give up theirs, so the title row sticks
 // against the whole screen instead of the header's few lines.
-.whatsapp-kit-pinned-page > [class$="__head"]:has(.whatsapp-kit-pagehead__row.whatsapp-kit-pin),
-.whatsapp-kit-pinned-page > [class$="__head"] > .whatsapp-kit-pagehead:has(> .whatsapp-kit-pagehead__row.whatsapp-kit-pin) {
+.whatsapp-kit-pinned-page > [class$="__head"]:has(.whatsapp-kit-page-header__row.whatsapp-kit-pin),
+.whatsapp-kit-pinned-page > [class$="__head"] > .whatsapp-kit-page-header:has(> .whatsapp-kit-page-header__row.whatsapp-kit-pin) {
 	display: contents;
 }

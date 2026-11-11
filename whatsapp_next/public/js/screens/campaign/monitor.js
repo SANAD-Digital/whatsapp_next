@@ -68,9 +68,9 @@ frappe.provide("whatsapp_next.campaign");
 			const tabs = this.tabs()
 				.map(
 					(t) => `
-					<button type="button" role="tab" class="whatsapp-cb__tab${t.key === this.tab ? " whatsapp-cb__tab--on" : ""}" data-tab="${esc(t.key)}" aria-selected="${t.key === this.tab}">
+					<button type="button" role="tab" class="whatsapp-campaign-builder__tab${t.key === this.tab ? " whatsapp-campaign-builder__tab--on" : ""}" data-tab="${esc(t.key)}" aria-selected="${t.key === this.tab}">
 						${ui.ico(t.icon, "sm")}<span>${esc(t.label)}</span>
-						${t.count ? `<span class="whatsapp-cb__tab-count whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(t.count))}</span>` : ""}
+						${t.count ? `<span class="whatsapp-campaign-builder__tab-count whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(t.count))}</span>` : ""}
 					</button>`
 				)
 				.join("");
@@ -78,11 +78,11 @@ frappe.provide("whatsapp_next.campaign");
 			// surface, one border, nothing between them — and the tabs pin under the header band
 			// while the page scrolls.
 			this.$wrapper.html(`
-				<div class="whatsapp-cb__monitor">
+				<div class="whatsapp-campaign-builder__monitor">
 					<div data-block="band"></div>
-					<div class="whatsapp-cb__panel">
-						<div class="whatsapp-cb__tabs" role="tablist" aria-label="${esc(__("Campaign"))}">${tabs}</div>
-						<div class="whatsapp-cb__pane" role="tabpanel" data-pane></div>
+					<div class="whatsapp-campaign-builder__panel">
+						<div class="whatsapp-campaign-builder__tabs" role="tablist" aria-label="${esc(__("Campaign"))}">${tabs}</div>
+						<div class="whatsapp-campaign-builder__pane" role="tabpanel" data-pane></div>
 					</div>
 				</div>`);
 			this.$wrapper.find("[data-tab]").on("click", (e) => this.go($(e.currentTarget).attr("data-tab")));
@@ -96,7 +96,7 @@ frappe.provide("whatsapp_next.campaign");
 			this.ctx.frm.wa_monitor_tab = tab;
 			this.$wrapper.find("[data-tab]").each((i, el) => {
 				const on = $(el).attr("data-tab") === tab;
-				$(el).toggleClass("whatsapp-cb__tab--on", on).attr("aria-selected", on);
+				$(el).toggleClass("whatsapp-campaign-builder__tab--on", on).attr("aria-selected", on);
 			});
 			this.render_pane();
 		}
@@ -153,16 +153,16 @@ frappe.provide("whatsapp_next.campaign");
 			const tone = TONE[K.INDICATOR[doc.status]] || "muted";
 			const running = ["Running", "Queued"].includes(doc.status);
 			this.$wrapper.find('[data-block="band"]').html(`
-				<div class="whatsapp-cb__band whatsapp-cb__band--${tone}">
-					<div class="whatsapp-cb__band-state">
-						<span class="whatsapp-cb__band-dot${running ? " whatsapp-cb__band-dot--live" : ""}" aria-hidden="true"></span>
-						<span class="whatsapp-cb__band-text">
+				<div class="whatsapp-campaign-builder__band whatsapp-campaign-builder__band--${tone}">
+					<div class="whatsapp-campaign-builder__band-state">
+						<span class="whatsapp-campaign-builder__band-dot${running ? " whatsapp-campaign-builder__band-dot--live" : ""}" aria-hidden="true"></span>
+						<span class="whatsapp-campaign-builder__band-text">
 							<b>${esc(__(doc.status, null, "campaign"))}</b>
 							<span dir="auto">${esc(this.state_sub())}</span>
 						</span>
-						<span class="whatsapp-cb__band-verbs" data-verbs></span>
+						<span class="whatsapp-campaign-builder__band-verbs" data-verbs></span>
 					</div>
-					<p class="whatsapp-cb__band-line" aria-live="polite" dir="auto">${esc(t.produced ? K.eta_text(this.live_doc(), this.data.progress) : __("Nothing has been produced yet."))}</p>
+					<p class="whatsapp-campaign-builder__band-line" aria-live="polite" dir="auto">${esc(t.produced ? K.eta_text(this.live_doc(), this.data.progress) : __("Nothing has been produced yet."))}</p>
 				</div>`);
 			this.render_verbs();
 		}
@@ -254,11 +254,11 @@ frappe.provide("whatsapp_next.campaign");
 			const readings = this.stages(t)
 				.map(
 					(s) => `
-					<div class="whatsapp-cb__stage whatsapp-cb__stage--${s.tone}">
-						<span class="whatsapp-cb__stage-label">${esc(s.label)}</span>
-						<span class="whatsapp-cb__stage-value whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(s.value))}<span class="whatsapp-cb__stage-of">/ ${esc(fmt_int(s.of))}</span></span>
-						<span class="whatsapp-cb__stage-share whatsapp-kit-tabular" dir="ltr">${esc(pct(share(s.value, s.of)))}</span>
-						<span class="whatsapp-cb__stage-note">${esc(s.of_label)}</span>
+					<div class="whatsapp-campaign-builder__stage whatsapp-campaign-builder__stage--${s.tone}">
+						<span class="whatsapp-campaign-builder__stage-label">${esc(s.label)}</span>
+						<span class="whatsapp-campaign-builder__stage-value whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(s.value))}<span class="whatsapp-campaign-builder__stage-of">/ ${esc(fmt_int(s.of))}</span></span>
+						<span class="whatsapp-campaign-builder__stage-share whatsapp-kit-tabular" dir="ltr">${esc(pct(share(s.value, s.of)))}</span>
+						<span class="whatsapp-campaign-builder__stage-note">${esc(s.of_label)}</span>
 					</div>`
 				)
 				.join("");
@@ -273,11 +273,11 @@ frappe.provide("whatsapp_next.campaign");
 				.map((s, i) => {
 					const width = t.produced ? (s.value / t.produced) * 100 : 0;
 					return `
-					<div class="whatsapp-cb__funnel-row">
-						<span class="whatsapp-cb__funnel-label">${esc(s.label)}</span>
-						<span class="whatsapp-cb__funnel-track"><span class="whatsapp-cb__funnel-bar" style="inline-size:${width.toFixed(2)}%"></span></span>
-						<span class="whatsapp-cb__funnel-value whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(s.value))}</span>
-						<span class="whatsapp-cb__funnel-share whatsapp-kit-tabular" dir="ltr">${esc(i === 0 ? "" : pct(share(s.value, s.of)))}</span>
+					<div class="whatsapp-campaign-builder__funnel-row">
+						<span class="whatsapp-campaign-builder__funnel-label">${esc(s.label)}</span>
+						<span class="whatsapp-campaign-builder__funnel-track"><span class="whatsapp-campaign-builder__funnel-bar" style="inline-size:${width.toFixed(2)}%"></span></span>
+						<span class="whatsapp-campaign-builder__funnel-value whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(s.value))}</span>
+						<span class="whatsapp-campaign-builder__funnel-share whatsapp-kit-tabular" dir="ltr">${esc(i === 0 ? "" : pct(share(s.value, s.of)))}</span>
 					</div>`;
 				})
 				.join("");
@@ -292,31 +292,31 @@ frappe.provide("whatsapp_next.campaign");
 				{ label: __("Cancelled", null, "campaign"), value: t.cancelled, tone: "warn" },
 			].filter((b) => b.value > 0);
 			const bar = buckets
-				.map((b) => `<span class="whatsapp-cb__dist-seg whatsapp-cb__dist-seg--${b.tone}" style="flex-basis:${((b.value / Math.max(t.produced, 1)) * 100).toFixed(2)}%" title="${esc(`${b.label} · ${fmt_int(b.value)}`)}"></span>`)
+				.map((b) => `<span class="whatsapp-campaign-builder__dist-seg whatsapp-campaign-builder__dist-seg--${b.tone}" style="flex-basis:${((b.value / Math.max(t.produced, 1)) * 100).toFixed(2)}%" title="${esc(`${b.label} · ${fmt_int(b.value)}`)}"></span>`)
 				.join("");
 			const legend = buckets
-				.map((b) => `<span class="whatsapp-cb__dist-key"><span class="whatsapp-cb__dist-dot whatsapp-cb__dist-seg--${b.tone}"></span>${esc(b.label)}<b class="whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(b.value))}</b></span>`)
+				.map((b) => `<span class="whatsapp-campaign-builder__dist-key"><span class="whatsapp-campaign-builder__dist-dot whatsapp-campaign-builder__dist-seg--${b.tone}"></span>${esc(b.label)}<b class="whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(b.value))}</b></span>`)
 				.join("");
 
 			$pane.html(`
-				<div class="whatsapp-cb__stack">
+				<div class="whatsapp-campaign-builder__stack">
 					${C.card({
 						key: "stages",
 						icon: "chart",
 						title: __("How far each message got"),
 						note: __("one message per recipient, per message of the campaign"),
-						body: `<div class="whatsapp-cb__stages">${readings}</div>`,
+						body: `<div class="whatsapp-campaign-builder__stages">${readings}</div>`,
 					})}
-					<div class="whatsapp-cb__two">
-						${C.card({ key: "funnel", icon: "sigma", title: __("Delivery funnel"), note: __("each step of the one above it"), body: `<div class="whatsapp-cb__funnel">${funnel}</div>` })}
+					<div class="whatsapp-campaign-builder__two">
+						${C.card({ key: "funnel", icon: "sigma", title: __("Delivery funnel"), note: __("each step of the one above it"), body: `<div class="whatsapp-campaign-builder__funnel">${funnel}</div>` })}
 						${C.card({
 							key: "dist",
 							icon: "cards",
 							title: __("Where they stand now"),
 							note: __("these do not overlap"),
 							body: buckets.length
-								? `<div class="whatsapp-cb__dist"><span class="whatsapp-cb__dist-bar">${bar}</span><div class="whatsapp-cb__dist-legend">${legend}</div></div>`
-								: `<p class="whatsapp-cb__readings-foot">${esc(__("Nothing has been produced yet."))}</p>`,
+								? `<div class="whatsapp-campaign-builder__dist"><span class="whatsapp-campaign-builder__dist-bar">${bar}</span><div class="whatsapp-campaign-builder__dist-legend">${legend}</div></div>`
+								: `<p class="whatsapp-campaign-builder__readings-foot">${esc(__("Nothing has been produced yet."))}</p>`,
 						})}
 					</div>
 					${
@@ -349,16 +349,16 @@ frappe.provide("whatsapp_next.campaign");
 							const failed = cint(counts.Failed);
 							const total = cint(row.total);
 							return `
-							<div class="whatsapp-cb__mrow">
-								<span class="whatsapp-cb__mrow-num whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(row.idx))}</span>
-								<span class="whatsapp-cb__mrow-text">
-									<span class="whatsapp-cb__mrow-type">${esc(__(row.message_type))}${row.delay_seconds ? ` · ${esc(__("after {0}s", [fmt_int(row.delay_seconds)]))}` : ""}</span>
-									<span class="whatsapp-cb__mrow-body" dir="auto">${esc(row.preview || (row.attachment ? __("a file") : "—"))}</span>
+							<div class="whatsapp-campaign-builder__mrow">
+								<span class="whatsapp-campaign-builder__mrow-num whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(row.idx))}</span>
+								<span class="whatsapp-campaign-builder__mrow-text">
+									<span class="whatsapp-campaign-builder__mrow-type">${esc(__(row.message_type))}${row.delay_seconds ? ` · ${esc(__("after {0}s", [fmt_int(row.delay_seconds)]))}` : ""}</span>
+									<span class="whatsapp-campaign-builder__mrow-body" dir="auto">${esc(row.preview || (row.attachment ? __("a file") : "—"))}</span>
 								</span>
-								<span class="whatsapp-cb__mrow-counts">
-									<span class="whatsapp-cb__mrow-count"><b class="whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(done))}</b>${esc(__("left"))}</span>
-									<span class="whatsapp-cb__mrow-count${failed ? " whatsapp-kit-tone--red" : ""}"><b class="whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(failed))}</b>${esc(__("failed"))}</span>
-									<span class="whatsapp-cb__mrow-count"><b class="whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(total))}</b>${esc(__("in total"))}</span>
+								<span class="whatsapp-campaign-builder__mrow-counts">
+									<span class="whatsapp-campaign-builder__mrow-count"><b class="whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(done))}</b>${esc(__("left"))}</span>
+									<span class="whatsapp-campaign-builder__mrow-count${failed ? " whatsapp-kit-tone--red" : ""}"><b class="whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(failed))}</b>${esc(__("failed"))}</span>
+									<span class="whatsapp-campaign-builder__mrow-count"><b class="whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(total))}</b>${esc(__("in total"))}</span>
 								</span>
 							</div>`;
 						})
@@ -368,11 +368,11 @@ frappe.provide("whatsapp_next.campaign");
 							key: "messages",
 							icon: "chat",
 							title: __("Each message, and what became of it"),
-							body: rows || `<p class="whatsapp-cb__readings-foot">${esc(__("Nothing has been sent yet."))}</p>`,
+							body: rows || `<p class="whatsapp-campaign-builder__readings-foot">${esc(__("Nothing has been sent yet."))}</p>`,
 						})
 					);
 				})
-				.catch((err) => $pane.html(`<p class="whatsapp-cb__test-errors" role="alert">${esc(err.message)}</p>`));
+				.catch((err) => $pane.html(`<p class="whatsapp-campaign-builder__test-errors" role="alert">${esc(err.message)}</p>`));
 		}
 
 		// -- recipients -------------------------------------------------------------------------
@@ -390,26 +390,26 @@ frappe.provide("whatsapp_next.campaign");
 					if (!$pane.closest("body").length) return;
 					this.data.failures = r;
 					if (!cint(r.total)) {
-						$pane.html(C.card({ key: "failures", icon: "tick", title: __("Failures", null, "campaign"), body: `<p class="whatsapp-cb__readings-foot">${esc(__("Nothing has failed."))}</p>` }));
+						$pane.html(C.card({ key: "failures", icon: "tick", title: __("Failures", null, "campaign"), body: `<p class="whatsapp-campaign-builder__readings-foot">${esc(__("Nothing has failed."))}</p>` }));
 						return;
 					}
 					const rows = (r.rows || [])
 						.map(
 							(row) => `
-							<div class="whatsapp-cb__frow">
-								<span class="whatsapp-cb__frow-count whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(row.count))}</span>
-								<span class="whatsapp-cb__frow-text">
-									<span class="whatsapp-cb__frow-label">${esc(error_text(row.error_code))}</span>
-									<span class="whatsapp-cb__frow-code whatsapp-kit-tabular" dir="ltr">${esc(row.error_code)}${row.retryable ? ` · ${esc(__("can be retried"))}` : ""}</span>
+							<div class="whatsapp-campaign-builder__frow">
+								<span class="whatsapp-campaign-builder__frow-count whatsapp-kit-tabular" dir="ltr">${esc(fmt_int(row.count))}</span>
+								<span class="whatsapp-campaign-builder__frow-text">
+									<span class="whatsapp-campaign-builder__frow-label">${esc(error_text(row.error_code))}</span>
+									<span class="whatsapp-campaign-builder__frow-code whatsapp-kit-tabular" dir="ltr">${esc(row.error_code)}${row.retryable ? ` · ${esc(__("can be retried"))}` : ""}</span>
 								</span>
-								<span class="whatsapp-cb__frow-share whatsapp-kit-tabular" dir="ltr">${esc(row.share)}%</span>
-								<button type="button" class="whatsapp-cb__frow-go" data-code="${esc(row.error_code)}">${esc(__("See the messages"))}</button>
+								<span class="whatsapp-campaign-builder__frow-share whatsapp-kit-tabular" dir="ltr">${esc(row.share)}%</span>
+								<button type="button" class="whatsapp-campaign-builder__frow-go" data-code="${esc(row.error_code)}">${esc(__("See the messages"))}</button>
 							</div>`
 						)
 						.join("");
 					const can_retry = cint(r.retryable) && K.is_manager() && this.doc.status !== "Cancelled";
 					$pane.html(`
-						<div class="whatsapp-cb__stack">
+						<div class="whatsapp-campaign-builder__stack">
 							${C.card({
 								key: "failures",
 								icon: "warn",
@@ -424,8 +424,8 @@ frappe.provide("whatsapp_next.campaign");
 											icon: "queue",
 											title: __("Send them again"),
 											body: `
-												<p class="whatsapp-cb__readings-foot">${esc(__("{0} failed for a passing reason — a disconnected device, a timeout, a rate limit. Sending again creates a new message for each of them; the failed one stays in the log.", [C.messages_text(r.retryable)]))}</p>
-												<div class="whatsapp-cb__row-actions">${ui.btn({ label: __("Retry {0}", [fmt_int(r.retryable)]), variant: "primary", size: "sm", attrs: { "data-retry": "1" } })}</div>`,
+												<p class="whatsapp-campaign-builder__readings-foot">${esc(__("{0} failed for a passing reason — a disconnected device, a timeout, a rate limit. Sending again creates a new message for each of them; the failed one stays in the log.", [C.messages_text(r.retryable)]))}</p>
+												<div class="whatsapp-campaign-builder__row-actions">${ui.btn({ label: __("Retry {0}", [fmt_int(r.retryable)]), variant: "primary", size: "sm", attrs: { "data-retry": "1" } })}</div>`,
 										})
 									: ""
 							}
@@ -433,7 +433,7 @@ frappe.provide("whatsapp_next.campaign");
 					$pane.find("[data-code]").on("click", (e) => frappe.set_route("List", "WhatsApp Log", { campaign: this.doc.name, status: "Failed", error_code: $(e.currentTarget).attr("data-code") }));
 					$pane.find("[data-retry]").on("click", () => this.retry());
 				})
-				.catch((err) => $pane.html(`<p class="whatsapp-cb__test-errors" role="alert">${esc(err.message)}</p>`));
+				.catch((err) => $pane.html(`<p class="whatsapp-campaign-builder__test-errors" role="alert">${esc(err.message)}</p>`));
 		}
 
 		retry() {
@@ -474,11 +474,11 @@ frappe.provide("whatsapp_next.campaign");
 					const rows = events
 						.map(
 							(e) => `
-							<li class="whatsapp-cb__event">
-								<span class="whatsapp-cb__event-dot" aria-hidden="true"></span>
-								<span class="whatsapp-cb__event-text">
-									<span class="whatsapp-cb__event-label">${esc((EVENT_TEXT[e.key] || EVENT_TEXT.event)())}${e.reason ? ` — ${esc(e.reason)}` : ""}</span>
-									<span class="whatsapp-cb__event-when whatsapp-kit-tabular">${esc(whatsapp_next.fmt.dt(e.at))}${e.user && e.user !== "Administrator" ? ` · ${esc(e.user)}` : ""}</span>
+							<li class="whatsapp-campaign-builder__event">
+								<span class="whatsapp-campaign-builder__event-dot" aria-hidden="true"></span>
+								<span class="whatsapp-campaign-builder__event-text">
+									<span class="whatsapp-campaign-builder__event-label">${esc((EVENT_TEXT[e.key] || EVENT_TEXT.event)())}${e.reason ? ` — ${esc(e.reason)}` : ""}</span>
+									<span class="whatsapp-campaign-builder__event-when whatsapp-kit-tabular">${esc(whatsapp_next.fmt.dt(e.at))}${e.user && e.user !== "Administrator" ? ` · ${esc(e.user)}` : ""}</span>
 								</span>
 							</li>`
 						)
@@ -489,7 +489,7 @@ frappe.provide("whatsapp_next.campaign");
 							icon: "clock",
 							title: __("What happened"),
 							note: limit ? __("the latest") : "",
-							body: rows ? `<ol class="whatsapp-cb__timeline">${rows}</ol>` : `<p class="whatsapp-cb__readings-foot">${esc(__("Nothing has happened yet."))}</p>`,
+							body: rows ? `<ol class="whatsapp-campaign-builder__timeline">${rows}</ol>` : `<p class="whatsapp-campaign-builder__readings-foot">${esc(__("Nothing has happened yet."))}</p>`,
 						})
 					);
 				})

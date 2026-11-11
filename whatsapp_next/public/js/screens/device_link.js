@@ -37,14 +37,14 @@ frappe.provide("whatsapp_next.device_link");
 
 	/** Recolour every device dot on the page from what is known now. */
 	function paint(only) {
-		document.querySelectorAll(only ? `.whatsapp-devlink[data-device="${CSS.escape(only)}"]` : ".whatsapp-devlink[data-device]").forEach((el) => {
+		document.querySelectorAll(only ? `.whatsapp-device-link[data-device="${CSS.escape(only)}"]` : ".whatsapp-device-link[data-device]").forEach((el) => {
 			const row = state.rows && state.rows[el.dataset.device];
 			if (!row) return;
 			const l = look(row.status);
 			el.dataset.tone = l.tone;
-			const dot = el.querySelector(".whatsapp-devlink__dot");
+			const dot = el.querySelector(".whatsapp-device-link__dot");
 			if (dot) dot.title = l.label();
-			const sr = el.querySelector(".whatsapp-devlink__state");
+			const sr = el.querySelector(".whatsapp-device-link__state");
 			if (sr) sr.textContent = l.label();
 		});
 	}
@@ -56,7 +56,7 @@ frappe.provide("whatsapp_next.device_link");
 		const l = look(row && row.status);
 		// Desk hands the device's title when it fetched it; otherwise the known name, else the ID
 		const label = display && display !== name ? display : (row && row.device_name) || name;
-		return `<a class="whatsapp-devlink" href="${esc(frappe.utils.get_form_link(DOCTYPE, name))}" data-device="${esc(name)}" data-tone="${row ? l.tone : "gray"}" title="${esc(label)}"><span class="whatsapp-devlink__dot" aria-hidden="true" title="${esc(row ? l.label() : "")}"></span><span class="whatsapp-devlink__name" dir="auto">${esc(label)}</span><span class="sr-only whatsapp-devlink__state">${esc(row ? l.label() : "")}</span></a>`;
+		return `<a class="whatsapp-device-link" href="${esc(frappe.utils.get_form_link(DOCTYPE, name))}" data-device="${esc(name)}" data-tone="${row ? l.tone : "gray"}" title="${esc(label)}"><span class="whatsapp-device-link__dot" aria-hidden="true" title="${esc(row ? l.label() : "")}"></span><span class="whatsapp-device-link__name" dir="auto">${esc(label)}</span><span class="sr-only whatsapp-device-link__state">${esc(row ? l.label() : "")}</span></a>`;
 	}
 
 	whatsapp_next.device_link.html = html;

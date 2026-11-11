@@ -28,7 +28,7 @@ return shape `{rows, total, counts?}` and the default args `{name, page, page_le
 | `filters` | `Array<Filter>` | `[]` | Chip groups / selects above the table. |
 | `toolbar_actions` | `Array<ToolbarAction>` | `[]` | Buttons in the panel head. |
 | `empty_text` | string | "No rows yet" | Empty-state title. |
-| `hide_grid` | boolean | `true` | Add `whatsapp-kit-pct-host` to the field wrapper (hides the grid and the field label). |
+| `hide_grid` | boolean | `true` | Add `whatsapp-kit-paged-child-table-host` to the field wrapper (hides the grid and the field label). |
 | `search` | boolean | `true` | Search box, sent as `search` (debounced 300 ms). |
 
 - **Column** `{fieldname, label?, format?(value, row) → string | {html}, width?}` — a string is
@@ -83,9 +83,9 @@ frm.whatsapp_members = new whatsapp.ui.PagedChildTable({
 
 ## CSS hooks
 
-- `.whatsapp-kit-pct-host` on the field wrapper — hides `.grid-custom-buttons`, `.form-grid-container`,
+- `.whatsapp-kit-paged-child-table-host` on the field wrapper — hides `.grid-custom-buttons`, `.form-grid-container`,
   `.grid-footer`, `.control-label`, `.grid-label`.
-- Root `.whatsapp-kit.whatsapp-kit-pct[data-fieldname]`; `__head`, `__title`, `__count`, `__actions`,
+- Root `.whatsapp-kit.whatsapp-kit-paged-child-table[data-fieldname]`; `__head`, `__title`, `__count`, `__actions`,
   `__toolbar`, `__filters`, `__chips[data-field]`, `__chip[data-value][aria-pressed]`,
   `__chip-label`, `__chip-count`, `__select`, `__search`, `__note`, `__state`, `__scroll`
   (`.whatsapp-kit-table-wrap`), `__table` (`.whatsapp-kit-table`), `__th-actions`, `__row-actions`, `__pager`,
@@ -94,7 +94,7 @@ frm.whatsapp_members = new whatsapp.ui.PagedChildTable({
 ## Notes
 
 - **Mounting:** inside `field.grid.wrapper` (else `field.$wrapper`, else the form's first
-  `.form-page`). Idempotent: an existing `.whatsapp-kit-pct` for the same field is replaced.
+  `.form-page`). Idempotent: an existing `.whatsapp-kit-paged-child-table` for the same field is replaced.
 - **States:** EmptyState loading skeleton, empty (with "Try a different search or filter." when
   filtered), error with Retry; `aria-busy` on the table while loading. Unsaved document →
   "Save the document first".

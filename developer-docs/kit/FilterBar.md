@@ -117,7 +117,7 @@ new whatsapp.ui.FilterBar({
 - **Overflow:** `__more` / `__more-count`, `__hidden`, `__amore-item` / `__amore-label`, and `__native` (Desk's adopted Filter section).
 - **Extra filters and clear:** `__chipfilter` (with its `-label`, `-value` and `-x` parts) and `__clear`.
 - **Actions:** `__action`, `--icon`, `--group` and `--active`, plus `__levels`, `__level*` and `__column`.
-- **Phone:** `__mobile-toggle`, `__mobile-count` and `.whatsapp-kit-filter-sheet*` (the sheet rows). The bottom drawer is `.whatsapp-kit-optsheet` (`--in`, `__scrim`, `__panel`, `__list`, `__done`).
+- **Phone:** `__mobile-toggle`, `__mobile-count` and `.whatsapp-kit-filter-sheet*` (the sheet rows). The bottom drawer is `.whatsapp-kit-options-sheet` (`--in`, `__scrim`, `__panel`, `__list`, `__done`).
 - **Page:** `.whatsapp-kit-hide-page-form` on the page wrapper keeps Desk's `page_form` row hidden.
 
 ## Notes

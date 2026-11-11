@@ -936,7 +936,7 @@ frappe.provide("whatsapp_next.home");
 								</div>
 								<div class="whatsapp-home__card-aside">
 									<span class="whatsapp-home__card-total whatsapp-kit-tabular"></span>
-									<button type="button" class="whatsapp-ops__link whatsapp-home__volume-all">${esc(__("See all"))}</button>
+									<button type="button" class="whatsapp-operations-console__link whatsapp-home__volume-all">${esc(__("See all"))}</button>
 								</div>
 							</header>
 							<div class="whatsapp-home__card-body"></div>
@@ -948,7 +948,7 @@ frappe.provide("whatsapp_next.home");
 									<p class="whatsapp-home__card-note">${esc(__("Largest first — open a row for just those messages."))}</p>
 								</div>
 								<div class="whatsapp-home__card-aside">
-									<button type="button" class="whatsapp-ops__link whatsapp-home__failures-all">${esc(__("See all"))}</button>
+									<button type="button" class="whatsapp-operations-console__link whatsapp-home__failures-all">${esc(__("See all"))}</button>
 								</div>
 							</header>
 							<div class="whatsapp-home__card-body"></div>
@@ -1145,7 +1145,7 @@ frappe.provide("whatsapp_next.home");
 				$p.find(".whatsapp-home__card-note").text(note || "");
 				const $cta = $p.find(".whatsapp-home__card-aside").empty();
 				if (!cta) return;
-				$(`<button type="button" class="whatsapp-ops__link whatsapp-home__card-link">${esc(cta.label)}</button>`)
+				$(`<button type="button" class="whatsapp-operations-console__link whatsapp-home__card-link">${esc(cta.label)}</button>`)
 					.on("click", cta.handler)
 					.appendTo($cta);
 			};

@@ -88,7 +88,7 @@ frappe.ui.form.on("WhatsApp Campaign", {
 
 ## CSS hooks
 
-- Root `.whatsapp-kit.whatsapp-kit-mc[data-fieldname]`; the field wrapper gets `.whatsapp-kit-mc-host`, which hides
+- Root `.whatsapp-kit.whatsapp-kit-message-composer[data-fieldname]`; the field wrapper gets `.whatsapp-kit-message-composer-host`, which hides
   the native grid, its label, buttons and help.
 - Head: `__head`, `__title`, `__count`, `__head-actions`, `__add`, `__addwrap`.
 - Rail: `__split`, `__rail`, `__raillist`, `__railitem` (`--on`, `--problem`), `__railtop`,

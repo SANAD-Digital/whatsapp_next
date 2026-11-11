@@ -287,13 +287,13 @@
 
 	// The caret and the tick are inline SVGs drawn by this component, not icon-font glyphs:
 	// Frappe's own icon rule carries `margin: 0 auto`, which inside a flex row hands the icon the
-	// free space and parks it in the middle of its line. The shared `.whatsapp-ico` wrapper already
+	// free space and parks it in the middle of its line. The shared `.whatsapp-icon` wrapper already
 	// pins its own margin, so the search glyph needs nothing here beyond its size.
 	&__svg {
 		flex: none;
 		margin-inline: 0;
 	}
-	&__search .whatsapp-ico {
+	&__search .whatsapp-icon {
 		inline-size: 13px;
 		block-size: 13px;
 	}

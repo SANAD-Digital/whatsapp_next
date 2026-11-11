@@ -13,7 +13,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 	max-inline-size: none;
 }
 
-.whatsapp-sim {
+.whatsapp-simulator {
 	display: grid;
 	grid-template-columns: minmax(0, 330px) minmax(0, 1fr);
 	block-size: calc(100dvh - var(--whatsapp-viewport-offset, 8px));
@@ -417,32 +417,32 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 	}
 
 	button:focus-visible, select:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 2px; }
-	.whatsapp-sim__head button:focus-visible, .whatsapp-sim__head select:focus-visible { outline-color: var(--whatsapp-on-pri); }
+	.whatsapp-simulator__head button:focus-visible, .whatsapp-simulator__head select:focus-visible { outline-color: var(--whatsapp-on-pri); }
 
 	// ---- one pane at a time under 900 px -------------------------------------------------------
 
 	@media (max-width: 899px) {
 		grid-template-columns: minmax(0, 1fr);
 
-		.whatsapp-sim__main { display: none; }
-		&.whatsapp-sim--open .whatsapp-sim__list-pane { display: none; }
-		&.whatsapp-sim--open .whatsapp-sim__main { display: flex; }
-		.whatsapp-sim__back { display: flex; }
+		.whatsapp-simulator__main { display: none; }
+		&.whatsapp-simulator--open .whatsapp-simulator__list-pane { display: none; }
+		&.whatsapp-simulator--open .whatsapp-simulator__main { display: flex; }
+		.whatsapp-simulator__back { display: flex; }
 	}
 }
 
 // The send button's spinner while a message is handed over (`wa_simulator.js`).
-@keyframes whatsapp-sim-spin {
+@keyframes whatsapp-simulator-spin {
 	to { transform: rotate(360deg); }
 }
-.whatsapp-sim__spinner {
+.whatsapp-simulator__spinner {
 	inline-size: 16px;
 	block-size: 16px;
 	border: 2px solid currentColor;
 	border-inline-end-color: transparent;
 	border-radius: 50%;
-	animation: whatsapp-sim-spin 0.7s linear infinite;
+	animation: whatsapp-simulator-spin 0.7s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-	.whatsapp-sim__spinner { animation-duration: 2s; }
+	.whatsapp-simulator__spinner { animation-duration: 2s; }
 }

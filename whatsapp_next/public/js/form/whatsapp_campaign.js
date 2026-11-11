@@ -27,10 +27,10 @@ frappe.listview_settings["WhatsApp Campaign Recipient"] = {
 /** Our screen's own container, in front of the layout that saves. */
 function mount(frm) {
 	const $layout = frm.$wrapper.find(".form-layout").first();
-	$layout.addClass("whatsapp-cb-native");
+	$layout.addClass("whatsapp-campaign-builder-native");
 	if (!frm.wa_root || !frm.wa_root.closest("body").length) {
-		frm.$wrapper.find("> .whatsapp-cb").remove();
-		frm.wa_root = $('<div class="whatsapp-kit whatsapp-cb"></div>').insertBefore($layout);
+		frm.$wrapper.find("> .whatsapp-campaign-builder").remove();
+		frm.wa_root = $('<div class="whatsapp-kit whatsapp-campaign-builder"></div>').insertBefore($layout);
 	}
 	// Desk keeps one form per DocType and hands it the next document: a builder left over from the
 	// campaign opened before this one would carry that campaign's step and tab.

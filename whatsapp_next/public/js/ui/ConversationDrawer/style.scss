@@ -1,6 +1,6 @@
 // The shell (position, width, backdrop, mobile sheet, header / actions / body) is `.whatsapp-kit-panel`
 // from _core; only the conversation-specific parts live here.
-.whatsapp-kit-convo {
+.whatsapp-kit-conversation {
 	&__avatar {
 		flex: none;
 		width: 28px;

@@ -77,36 +77,36 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 		const preview_id = `${this.id}-preview`;
 		const vars_id = `${this.id}-vars`;
 		this.$root = $(`
-			<div class="whatsapp-kit whatsapp-kit-tpl" id="${this.id}">
-				<div class="whatsapp-kit-tpl__toolbar">
-					<div class="whatsapp-kit-tpl__sample"></div>
-					<button type="button" class="btn btn-sm btn-default whatsapp-kit-tpl__latest">${ui.icon("es-line-reload", "xs")} ${ui.escape(__("Use latest"))}</button>
-					<span class="whatsapp-kit-tpl__sample-note"></span>
+			<div class="whatsapp-kit whatsapp-kit-template-editor" id="${this.id}">
+				<div class="whatsapp-kit-template-editor__toolbar">
+					<div class="whatsapp-kit-template-editor__sample"></div>
+					<button type="button" class="btn btn-sm btn-default whatsapp-kit-template-editor__latest">${ui.icon("es-line-reload", "xs")} ${ui.escape(__("Use latest"))}</button>
+					<span class="whatsapp-kit-template-editor__sample-note"></span>
 				</div>
-				<div class="whatsapp-kit-tpl__grid">
-					<section class="whatsapp-kit-tpl__preview" aria-labelledby="${preview_id}">
-						<h3 class="whatsapp-kit-tpl__h" id="${preview_id}">${ui.escape(__("Preview"))}</h3>
-						<div class="whatsapp-kit-tpl__state"></div>
-						<div class="whatsapp-kit-tpl__bubble"></div>
-						<ul class="whatsapp-kit-tpl__errors" role="alert" hidden></ul>
+				<div class="whatsapp-kit-template-editor__grid">
+					<section class="whatsapp-kit-template-editor__preview" aria-labelledby="${preview_id}">
+						<h3 class="whatsapp-kit-template-editor__h" id="${preview_id}">${ui.escape(__("Preview"))}</h3>
+						<div class="whatsapp-kit-template-editor__state"></div>
+						<div class="whatsapp-kit-template-editor__bubble"></div>
+						<ul class="whatsapp-kit-template-editor__errors" role="alert" hidden></ul>
 					</section>
-					<aside class="whatsapp-kit-tpl__vars" aria-labelledby="${vars_id}">
-						<h3 class="whatsapp-kit-tpl__h" id="${vars_id}">${ui.escape(__("Variables"))}</h3>
-						<input type="search" class="form-control input-sm whatsapp-kit-tpl__search" placeholder="${ui.escape(__("Filter variables"))}" aria-label="${ui.escape(__("Filter variables"))}">
-						<div class="whatsapp-kit-tpl__vars-state"></div>
-						<ul class="whatsapp-kit-tpl__list" role="list"></ul>
+					<aside class="whatsapp-kit-template-editor__vars" aria-labelledby="${vars_id}">
+						<h3 class="whatsapp-kit-template-editor__h" id="${vars_id}">${ui.escape(__("Variables"))}</h3>
+						<input type="search" class="form-control input-sm whatsapp-kit-template-editor__search" placeholder="${ui.escape(__("Filter variables"))}" aria-label="${ui.escape(__("Filter variables"))}">
+						<div class="whatsapp-kit-template-editor__vars-state"></div>
+						<ul class="whatsapp-kit-template-editor__list" role="list"></ul>
 					</aside>
 				</div>
 			</div>`);
-		this.$sample = this.$root.find(".whatsapp-kit-tpl__sample");
-		this.$latest = this.$root.find(".whatsapp-kit-tpl__latest");
-		this.$sample_note = this.$root.find(".whatsapp-kit-tpl__sample-note");
-		this.$bubble = this.$root.find(".whatsapp-kit-tpl__bubble");
-		this.$errors = this.$root.find(".whatsapp-kit-tpl__errors");
-		this.$list = this.$root.find(".whatsapp-kit-tpl__list");
-		this.$search = this.$root.find(".whatsapp-kit-tpl__search");
-		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-tpl__state"), state: "loading", rows: 2, size: "sm" });
-		this.vars_state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-tpl__vars-state"), state: "loading", rows: 3, size: "sm" });
+		this.$sample = this.$root.find(".whatsapp-kit-template-editor__sample");
+		this.$latest = this.$root.find(".whatsapp-kit-template-editor__latest");
+		this.$sample_note = this.$root.find(".whatsapp-kit-template-editor__sample-note");
+		this.$bubble = this.$root.find(".whatsapp-kit-template-editor__bubble");
+		this.$errors = this.$root.find(".whatsapp-kit-template-editor__errors");
+		this.$list = this.$root.find(".whatsapp-kit-template-editor__list");
+		this.$search = this.$root.find(".whatsapp-kit-template-editor__search");
+		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-template-editor__state"), state: "loading", rows: 2, size: "sm" });
+		this.vars_state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-template-editor__vars-state"), state: "loading", rows: 3, size: "sm" });
 
 		const mount = this.get_field(this.opts.preview_field);
 		if (mount && mount.$wrapper) {
@@ -119,7 +119,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 
 		this.$latest.on("click", () => this.use_latest());
 		this.$search.on("input", ui.debounce(() => this.render_variables(), 120));
-		this.$list.on("click", ".whatsapp-kit-tpl__var", (e) => this.insert_variable($(e.currentTarget).data("name")));
+		this.$list.on("click", ".whatsapp-kit-template-editor__var", (e) => this.insert_variable($(e.currentTarget).data("name")));
 	}
 
 	// ---- state from the form --------------------------------------------------------------
@@ -187,7 +187,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 			},
 			render_input: true,
 		});
-		this.sample_control.$wrapper.addClass("whatsapp-kit-tpl__sample-control");
+		this.sample_control.$wrapper.addClass("whatsapp-kit-template-editor__sample-control");
 	}
 
 	use_latest() {
@@ -236,7 +236,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 		rows.forEach((v) => {
 			const token = `{{ ${v.name} }}`;
 			const label = v.label && v.label !== v.name ? v.label : "";
-			$(`<li><button type="button" class="whatsapp-kit-tpl__var" data-name="${ui.escape(v.name)}" aria-label="${ui.escape(__("Insert {0}", [token]))}" title="${ui.escape(__("Insert at the cursor"))}"><code>${ui.escape(token)}</code>${label ? `<span class="whatsapp-kit-tpl__var-label">${ui.escape(__(label))}${v.fieldtype ? ` · ${ui.escape(__(v.fieldtype))}` : ""}</span>` : ""}</button></li>`).appendTo(this.$list);
+			$(`<li><button type="button" class="whatsapp-kit-template-editor__var" data-name="${ui.escape(v.name)}" aria-label="${ui.escape(__("Insert {0}", [token]))}" title="${ui.escape(__("Insert at the cursor"))}"><code>${ui.escape(token)}</code>${label ? `<span class="whatsapp-kit-template-editor__var-label">${ui.escape(__(label))}${v.fieldtype ? ` · ${ui.escape(__(v.fieldtype))}` : ""}</span>` : ""}</button></li>`).appendTo(this.$list);
 		});
 	}
 
@@ -294,7 +294,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 				this.state.hide();
 				const rendered = cstr((r && r.body) || "");
 				const format = whatsapp.ui.ChatThread && whatsapp.ui.ChatThread.format ? whatsapp.ui.ChatThread.format : (t) => ui.escape(t).replace(/\r?\n/g, "<br>");
-				this.$bubble.html(rendered ? format(rendered) : `<span class="whatsapp-kit-tpl__muted">${ui.escape(__("The template renders to an empty message."))}</span>`).show();
+				this.$bubble.html(rendered ? format(rendered) : `<span class="whatsapp-kit-template-editor__muted">${ui.escape(__("The template renders to an empty message."))}</span>`).show();
 				this.render_errors([].concat(sample.error ? [sample.error] : [], (r && r.errors) || []));
 			})
 			.catch((err) => {

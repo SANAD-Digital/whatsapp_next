@@ -17,17 +17,17 @@ frappe.provide("whatsapp_next.backup");
 		if (!$btn || !$btn.length) return promise;
 		const $label = $btn.find("span").last().length ? $btn.find("span").last() : $btn;
 		const before = $label.text();
-		$btn.prop("disabled", true).attr("aria-busy", "true").addClass("whatsapp-backup-btn--busy");
+		$btn.prop("disabled", true).attr("aria-busy", "true").addClass("whatsapp-backup-button--busy");
 		if (busy_label) $label.text(busy_label);
 		const restore = () => {
-			$btn.prop("disabled", false).removeAttr("aria-busy").removeClass("whatsapp-backup-btn--busy whatsapp-backup-btn--done");
+			$btn.prop("disabled", false).removeAttr("aria-busy").removeClass("whatsapp-backup-button--busy whatsapp-backup-button--done");
 			$label.text(before);
 		};
 		return promise.then(
 			(r) => {
-				$btn.removeClass("whatsapp-backup-btn--busy").removeAttr("aria-busy");
+				$btn.removeClass("whatsapp-backup-button--busy").removeAttr("aria-busy");
 				if (done_label) {
-					$btn.addClass("whatsapp-backup-btn--done");
+					$btn.addClass("whatsapp-backup-button--done");
 					$label.text(done_label);
 					window.setTimeout(restore, 2500);
 				} else restore();

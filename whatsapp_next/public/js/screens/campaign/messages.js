@@ -36,11 +36,11 @@ frappe.provide("whatsapp_next.campaign");
 				if (!c) return;
 				// opening a menu focuses its first item, and the browser may scroll to show it:
 				// that scroll is the menu's own, not the reader leaving
-				const $menu = this.$wrapper.find(".whatsapp-kit-mc__typemenu, .whatsapp-kit-mc__varmenu");
+				const $menu = this.$wrapper.find(".whatsapp-kit-message-composer__typemenu, .whatsapp-kit-message-composer__varmenu");
 				if ($menu.length && Date.now() - ($menu[0].__opened_at || 0) < 250) return;
 				if (c.close_type_menu) c.close_type_menu();
-				this.$wrapper.find(".whatsapp-kit-mc__varmenu").remove();
-				this.$wrapper.find(".whatsapp-kit-mc__varbtn").attr("aria-expanded", "false");
+				this.$wrapper.find(".whatsapp-kit-message-composer__varmenu").remove();
+				this.$wrapper.find(".whatsapp-kit-message-composer__varbtn").attr("aria-expanded", "false");
 			};
 			document.addEventListener("scroll", this._on_scroll, true);
 		}
@@ -71,7 +71,7 @@ frappe.provide("whatsapp_next.campaign");
 			this._menus = new MutationObserver((records) => {
 				records.forEach((rec) =>
 					rec.addedNodes.forEach((n) => {
-						if (n.nodeType === 1 && (n.classList.contains("whatsapp-kit-mc__typemenu") || n.classList.contains("whatsapp-kit-mc__varmenu"))) fit(n);
+						if (n.nodeType === 1 && (n.classList.contains("whatsapp-kit-message-composer__typemenu") || n.classList.contains("whatsapp-kit-message-composer__varmenu"))) fit(n);
 					})
 				);
 			});
@@ -97,17 +97,17 @@ frappe.provide("whatsapp_next.campaign");
 		render() {
 			const blocked = this.test_blocked();
 			this.$wrapper.html(`
-				<div class="whatsapp-cb__stack whatsapp-cb__messages">
-					<p class="whatsapp-cb__mstep-note">${esc(__("Every recipient receives all of these, in this order. The gap between two cards is the wait between them."))}</p>
-					<div class="whatsapp-cb__mstep-host"></div>
+				<div class="whatsapp-campaign-builder__stack whatsapp-campaign-builder__messages">
+					<p class="whatsapp-campaign-builder__mstep-note">${esc(__("Every recipient receives all of these, in this order. The gap between two cards is the wait between them."))}</p>
+					<div class="whatsapp-campaign-builder__mstep-host"></div>
 				</div>`);
 			this.mount_composer();
 			this.watch_scroll();
 			this.watch_menus();
 			// the composer draws the head of this step (its title, its count, "add message"), so the
 			// one verb it has no opinion about joins that head rather than opening a second one
-			const $test = $(`<button type="button" class="whatsapp-btn whatsapp-btn--secondary whatsapp-btn--sm" data-test${blocked ? " disabled" : ""}${blocked ? ` title="${esc(blocked)}"` : ""}>${ui.ico("send", "sm")}<span>${esc(__("Send a test message"))}</span></button>`);
-			$test.on("click", () => this.test_send()).prependTo(this.$wrapper.find(".whatsapp-kit-mc__head-actions"));
+			const $test = $(`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm" data-test${blocked ? " disabled" : ""}${blocked ? ` title="${esc(blocked)}"` : ""}>${ui.ico("send", "sm")}<span>${esc(__("Send a test message"))}</span></button>`);
+			$test.on("click", () => this.test_send()).prependTo(this.$wrapper.find(".whatsapp-kit-message-composer__head-actions"));
 			return this;
 		}
 
@@ -172,7 +172,7 @@ frappe.provide("whatsapp_next.campaign");
 				],
 				empty_text: __("No message yet"),
 			});
-			this.composer.$el.appendTo(this.$wrapper.find(".whatsapp-cb__mstep-host"));
+			this.composer.$el.appendTo(this.$wrapper.find(".whatsapp-campaign-builder__mstep-host"));
 		}
 
 		// ---- the test send -----------------------------------------------------------------------
@@ -207,7 +207,7 @@ frappe.provide("whatsapp_next.campaign");
 				hint: __("Only this number receives it. Nothing is written to the campaign."),
 			});
 			const $preview = dialog.get_field("preview").$wrapper;
-			$preview.html(`<div class="whatsapp-cb__test-preview" data-preview></div>${skipped ? `<p class="whatsapp-field__hint">${esc(__("{0} of the messages carry a file or a poll. The test send carries text, so they are not offered here.", [C.fmt_int(skipped)]))}</p>` : ""}`);
+			$preview.html(`<div class="whatsapp-campaign-builder__test-preview" data-preview></div>${skipped ? `<p class="whatsapp-field__hint">${esc(__("{0} of the messages carry a file or a poll. The test send carries text, so they are not offered here.", [C.fmt_int(skipped)]))}</p>` : ""}`);
 			const load = () => this.load_preview(dialog, $preview.find("[data-preview]"));
 			dialog.get_field("idx").$input.on("change", load);
 			load();
@@ -223,12 +223,12 @@ frappe.provide("whatsapp_next.campaign");
 					this.test_body = p.body || "";
 					const errors = (p.errors || []).map((e) => `<li>${esc(e)}</li>`).join("");
 					$box.html(`
-						<span class="whatsapp-cb__test-label">${esc(__("What arrives"))}</span>
-						<div class="whatsapp-cb__bubble" dir="auto">${esc(p.body || __("(empty)"))}</div>
+						<span class="whatsapp-campaign-builder__test-label">${esc(__("What arrives"))}</span>
+						<div class="whatsapp-campaign-builder__bubble" dir="auto">${esc(p.body || __("(empty)"))}</div>
 						${p.attachment_name ? `<p class="whatsapp-field__hint">${esc(__("The campaign also sends {0}; the test sends the text only.", [p.attachment_name]))}</p>` : ""}
-						${errors ? `<ul class="whatsapp-cb__test-errors" role="alert">${errors}</ul>` : ""}`);
+						${errors ? `<ul class="whatsapp-campaign-builder__test-errors" role="alert">${errors}</ul>` : ""}`);
 				})
-				.catch((err) => $box.html(`<p class="whatsapp-cb__test-errors" role="alert">${esc(err.message)}</p>`));
+				.catch((err) => $box.html(`<p class="whatsapp-campaign-builder__test-errors" role="alert">${esc(err.message)}</p>`));
 		}
 
 		do_test(dialog) {

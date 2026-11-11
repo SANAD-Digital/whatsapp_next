@@ -105,7 +105,7 @@
 				render: ($el) =>
 					$el.html(
 						lines
-							.map((l) => `<div class="whatsapp-fn-diff__line"><span class="whatsapp-fn-diff__what">${esc(l[0])}</span><span class="whatsapp-fn-diff__keys">${l[1]}</span></div>`)
+							.map((l) => `<div class="whatsapp-function-diff__line"><span class="whatsapp-function-diff__what">${esc(l[0])}</span><span class="whatsapp-function-diff__keys">${l[1]}</span></div>`)
 							.join("")
 					),
 			};
@@ -353,8 +353,8 @@
 									? r.messages
 											.map((m) =>
 												m.type === "text"
-													? `<div class="whatsapp-fn-try__msg"><span class="whatsapp-fn-try__key">${esc(m.reply)}</span><pre class="whatsapp-fn-try__text">${esc(m.text)}</pre></div>`
-													: `<div class="whatsapp-fn-try__msg"><span class="whatsapp-fn-try__key">${esc(m.reply)}</span><span>${esc(__("File {0} from report {1}", [m.file_name || "", m.report_name]))}</span></div>`
+													? `<div class="whatsapp-function-try__msg"><span class="whatsapp-function-try__key">${esc(m.reply)}</span><pre class="whatsapp-function-try__text">${esc(m.text)}</pre></div>`
+													: `<div class="whatsapp-function-try__msg"><span class="whatsapp-function-try__key">${esc(m.reply)}</span><span>${esc(__("File {0} from report {1}", [m.file_name || "", m.report_name]))}</span></div>`
 											)
 											.join("")
 									: `<span class="text-muted">${esc(r.error || __("No message."))}</span>`

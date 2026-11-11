@@ -107,7 +107,7 @@ frappe.provide("whatsapp_next.campaign");
 					key: "readiness",
 					icon: "gear",
 					title: this.title,
-					body: `<div class="whatsapp-cb__checks${this.compact ? " whatsapp-cb__checks--row" : ""}">${checks.map((c) => this.line(c)).join("")}</div>`,
+					body: `<div class="whatsapp-campaign-builder__checks${this.compact ? " whatsapp-campaign-builder__checks--row" : ""}">${checks.map((c) => this.line(c)).join("")}</div>`,
 				})
 			);
 			return this;

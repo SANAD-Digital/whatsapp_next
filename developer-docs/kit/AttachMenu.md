@@ -43,7 +43,7 @@ live outside the kit.
 
 - `on_pick(value)`, `on_close()`.
 - Listens to `mousedown` on `document` (capture) to close on an outside click, `keydown` Escape
-  on the popover, and `resize.whatsapp-kit-am` on `window`; all removed on close. No realtime.
+  on the popover, and `resize.whatsapp-kit-attach-menu` on `window`; all removed on close. No realtime.
 
 ## Server calls
 
@@ -68,12 +68,12 @@ $slot.find("[data-attach-clear]").on("click", () => { draft.attach = null; redra
 
 ## CSS hooks
 
-- Root `.whatsapp-kit.whatsapp-kit-am[role=dialog]`, appended to `body` and positioned with inline
+- Root `.whatsapp-kit.whatsapp-kit-attach-menu[role=dialog]`, appended to `body` and positioned with inline
   `left`/`top`.
 - Menu: `__grid`, `__item[data-kind]`, `__icon--{pri|nf|wn|ok|dg|muted}`, `__label`.
 - Steps: `__form`, `__title`, `__row`, `__fld`, `__link[data-here]`, `__error`, `__actions`,
   `__btn` (`--pri`), `__search`, `__results`, `__opt[data-name]`, `__none`.
-- Chip (outside the popover): `.whatsapp-kit-am__chip--{tone}`, `__chip-icon`, `__chip-text`,
+- Chip (outside the popover): `.whatsapp-kit-attach-menu__chip--{tone}`, `__chip-icon`, `__chip-text`,
   `__chip-x[data-attach-clear]`.
 
 ## Notes

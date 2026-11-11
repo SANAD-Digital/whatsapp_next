@@ -3,16 +3,16 @@
 // that scrolls by itself with the close button at its corner. Under 720 px it is the whole screen
 // and shows the list or one section. Product tokens only; logical properties throughout.
 
-.whatsapp-kit-sw-backdrop {
+.whatsapp-kit-settings-window-backdrop {
 	position: fixed;
 	inset: 0;
 	z-index: 1034; // under Frappe's dialogs (1040/1050), which sections open on top of it
 	background: color-mix(in srgb, var(--whatsapp-ink) 38%, transparent);
 }
 
-body.whatsapp-kit-sw-open { overflow: hidden; }
+body.whatsapp-kit-settings-window-open { overflow: hidden; }
 
-.whatsapp-kit-sw {
+.whatsapp-kit-settings-window {
 	// centred by `inset: 0` + `margin: auto` on a sized box — the same in both directions
 	position: fixed;
 	inset: 0;
@@ -32,7 +32,7 @@ body.whatsapp-kit-sw-open { overflow: hidden; }
 	opacity: 0;
 	transition: opacity 140ms ease, transform 140ms ease;
 
-	&.whatsapp-kit-sw--in { opacity: 1; transform: none; }
+	&.whatsapp-kit-settings-window--in { opacity: 1; transform: none; }
 
 	[hidden] { display: none !important; }
 
@@ -159,7 +159,7 @@ body.whatsapp-kit-sw-open { overflow: hidden; }
 		color: var(--whatsapp-ink);
 
 		// the caret points at the start side: the way back
-		.whatsapp-ico { transform: rotate(90deg); }
+		.whatsapp-icon { transform: rotate(90deg); }
 	}
 
 	&__pane {

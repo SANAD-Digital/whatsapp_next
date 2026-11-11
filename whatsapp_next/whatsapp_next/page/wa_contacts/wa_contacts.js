@@ -736,9 +736,9 @@ class ContactsPage {
 			highlight: alert
 				? ($el) =>
 						$el.html(
-							`<div class="whatsapp-kit-op__alert whatsapp-kit-op__alert--${alert.tone}" role="${alert.tone === "danger" ? "alert" : "status"}">
-								<span class="whatsapp-kit-op__alert-title">${frappe.utils.escape_html(alert.title)}</span>
-								${alert.lines.map((l) => `<span class="whatsapp-kit-op__alert-line">${frappe.utils.escape_html(l)}</span>`).join("")}
+							`<div class="whatsapp-kit-overlay-panel__alert whatsapp-kit-overlay-panel__alert--${alert.tone}" role="${alert.tone === "danger" ? "alert" : "status"}">
+								<span class="whatsapp-kit-overlay-panel__alert-title">${frappe.utils.escape_html(alert.title)}</span>
+								${alert.lines.map((l) => `<span class="whatsapp-kit-overlay-panel__alert-line">${frappe.utils.escape_html(l)}</span>`).join("")}
 							</div>`
 						)
 				: null,
@@ -814,12 +814,12 @@ class ContactsPage {
 			});
 			return;
 		}
-		const $list = $('<div class="whatsapp-kit-ent-list whatsapp-kit-ent-list--row"></div>').appendTo($el);
+		const $list = $('<div class="whatsapp-kit-entity-list whatsapp-kit-entity-list--row"></div>').appendTo($el);
 		Promise.all(links.map((l) => whatsapp.ui.meta.with_doctype(l.link_doctype).catch(() => null))).then(() => {
 			links.forEach((l) => {
 				const title_field = ContactsPage.PARTY_TITLE[l.link_doctype] || "title";
 				const doc = { doctype: l.link_doctype, name: l.link_name, [title_field]: l.link_title || l.link_name };
-				const $item = $('<div class="whatsapp-kit-ent-list__item whatsapp-contacts__link"></div>').appendTo($list);
+				const $item = $('<div class="whatsapp-kit-entity-list__item whatsapp-contacts__link"></div>').appendTo($list);
 				const $card = $('<div class="whatsapp-contacts__link-card"></div>').appendTo($item);
 				whatsapp.ui.Render.mount($card, doc, {
 					doctype: l.link_doctype,
@@ -852,7 +852,7 @@ class ContactsPage {
 				if (!rows.length) return state.empty({ title: __("No message yet"), description: __("Nothing has been sent to or received from this number.") });
 				state.hide();
 				$el.empty();
-				const $list = $('<div class="whatsapp-kit-ent-list whatsapp-kit-ent-list--compact"></div>').appendTo($el);
+				const $list = $('<div class="whatsapp-kit-entity-list whatsapp-kit-entity-list--compact"></div>').appendTo($el);
 				rows.slice(0, RECENT_MESSAGES).forEach((m) => {
 					const inbound = m.direction === "Inbound";
 					const doctype = inbound ? "WhatsApp Inbound Message" : "WhatsApp Log";
@@ -861,7 +861,7 @@ class ContactsPage {
 						text: (m.body || m.caption || "").trim().slice(0, 140) || __(m.message_type || "No text"),
 						when: `${inbound ? __("Received") : __("Sent")} · ${frappe.datetime.prettyDate(m.ts || m.creation, true)}`,
 					});
-					const $item = $('<div class="whatsapp-kit-ent-list__item"></div>').appendTo($list);
+					const $item = $('<div class="whatsapp-kit-entity-list__item"></div>').appendTo($list);
 					whatsapp.ui.Render.mount($item, doc, {
 						doctype,
 						kind: "document",

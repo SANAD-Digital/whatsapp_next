@@ -91,17 +91,17 @@ whatsapp.ui.Collection = class Collection {
 		const $views = this.$root.find(".whatsapp-kit-collection__views").empty();
 		if (this.views.length < 2) return;
 		this.$root.find(".whatsapp-kit-collection__head").prop("hidden", false);
-		const $group = $(`<div class="whatsapp-kit-seg" role="tablist" aria-label="${ui.escape(__("Display"))}"></div>`).appendTo($views);
+		const $group = $(`<div class="whatsapp-kit-segmented" role="tablist" aria-label="${ui.escape(__("Display"))}"></div>`).appendTo($views);
 		this.views.forEach((view) => {
 			const meta = VIEW_META[view];
 			if (!meta) return;
 			const active = view === this.view;
-			$(`<button type="button" class="whatsapp-kit-seg__btn" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-view="${view}">${ui.icon(meta.icon, "xs")}<span>${ui.escape(meta.label())}</span></button>`)
+			$(`<button type="button" class="whatsapp-kit-segmented__btn" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-view="${view}">${ui.icon(meta.icon, "xs")}<span>${ui.escape(meta.label())}</span></button>`)
 				.on("click", () => this.set_view(view))
 				.appendTo($group);
 		});
 		$group.on("keydown", (e) => {
-			const items = $group.find(".whatsapp-kit-seg__btn").toArray();
+			const items = $group.find(".whatsapp-kit-segmented__btn").toArray();
 			const idx = ui.roving_index(e, items, items.indexOf(document.activeElement));
 			if (idx < 0) return;
 			e.preventDefault();

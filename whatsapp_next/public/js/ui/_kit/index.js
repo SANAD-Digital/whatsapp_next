@@ -36,11 +36,11 @@ export function btn(o = {}) {
 	const label = o.label ? `<span>${esc(o.label)}</span>` : "";
 	const only = !o.label && o.icon;
 	const cls = [
-		"whatsapp-btn",
-		`whatsapp-btn--${VARIANTS.includes(o.variant) ? o.variant : "secondary"}`,
-		o.size && o.size !== "md" ? `whatsapp-btn--${o.size}` : "",
-		only ? "whatsapp-btn--icon" : "",
-		o.block ? "whatsapp-btn--block" : "",
+		"whatsapp-button",
+		`whatsapp-button--${VARIANTS.includes(o.variant) ? o.variant : "secondary"}`,
+		o.size && o.size !== "md" ? `whatsapp-button--${o.size}` : "",
+		only ? "whatsapp-button--icon" : "",
+		o.block ? "whatsapp-button--block" : "",
 		o.cls || "",
 	]
 		.filter(Boolean)
@@ -74,10 +74,10 @@ export function segmented(options, value, o = {}) {
 	const opts = (options || [])
 		.map(
 			(opt) =>
-				`<button type="button" class="whatsapp-seg__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${esc(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? ico(opt.icon, "xs") : ""}<span>${esc(opt.label)}</span></button>`
+				`<button type="button" class="whatsapp-segmented__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${esc(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? ico(opt.icon, "xs") : ""}<span>${esc(opt.label)}</span></button>`
 		)
 		.join("");
-	return `<div class="whatsapp-seg" role="radiogroup"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${opts}</div>`;
+	return `<div class="whatsapp-segmented" role="radiogroup"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${opts}</div>`;
 }
 
 /** The rule that titles a form section: its name at the start, what it costs at the end. */
@@ -102,20 +102,20 @@ export function avatar(o = {}) {
 
 /**
  * Bind a segmented control: arrow keys move and choose, as a radio group must (WCAG 2.1.1).
- * @param {jQuery|HTMLElement} el — the `.whatsapp-seg`
+ * @param {jQuery|HTMLElement} el — the `.whatsapp-segmented`
  * @param {(value: string) => void} on_pick
  */
 export function bind_segmented(el, on_pick) {
 	const $el = $(el);
 	const pick = ($opt) => {
 		const value = $opt.attr("data-value");
-		$el.find(".whatsapp-seg__opt").attr("aria-checked", "false").attr("tabindex", "-1");
+		$el.find(".whatsapp-segmented__opt").attr("aria-checked", "false").attr("tabindex", "-1");
 		$opt.attr("aria-checked", "true").attr("tabindex", "0");
 		on_pick && on_pick(value);
 	};
-	$el.on("click", ".whatsapp-seg__opt", (e) => pick($(e.currentTarget)));
-	$el.on("keydown", ".whatsapp-seg__opt", (e) => {
-		const items = $el.find(".whatsapp-seg__opt:not([disabled])").toArray();
+	$el.on("click", ".whatsapp-segmented__opt", (e) => pick($(e.currentTarget)));
+	$el.on("keydown", ".whatsapp-segmented__opt", (e) => {
+		const items = $el.find(".whatsapp-segmented__opt:not([disabled])").toArray();
 		const i = ui.roving_index(e, items, items.indexOf(e.currentTarget));
 		if (i < 0) return;
 		e.preventDefault();

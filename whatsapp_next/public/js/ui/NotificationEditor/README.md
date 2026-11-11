@@ -1,7 +1,7 @@
 # NotificationEditor
 
 One window to create, edit and try a document notification — a WhatsApp message that goes out
-when something happens to a record. The AlertEditor's anatomy and styling (`whatsapp-kit-ae`), with
+when something happens to a record. The AlertEditor's anatomy and styling (`whatsapp-kit-alert-editor`), with
 four cards that tick themselves green once complete:
 
 1. **When** — the document type (searched), the event as chips (created, saved, submitted,

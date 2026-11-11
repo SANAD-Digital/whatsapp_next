@@ -13,7 +13,7 @@
 import ui from "../_core/index.js";
 import { avatar, thumb, chip, chips, fact, progress, actions as action_buttons } from "./parts.js";
 
-const chevron = () => `<span class="whatsapp-kit-ent__go" aria-hidden="true">${ui.icon("es-line-right-chevron", "sm")}</span>`;
+const chevron = () => `<span class="whatsapp-kit-entity__go" aria-hidden="true">${ui.icon("es-line-right-chevron", "sm")}</span>`;
 
 /** The badge of a view model, or nothing. */
 function badge(vm, { size = "sm" } = {}) {
@@ -25,7 +25,7 @@ function badge(vm, { size = "sm" } = {}) {
 function value_html(vm, { density } = {}) {
 	if (vm.progress != null && vm.emphasis === "progress") return progress(vm.progress);
 	if (!vm.value || !vm.value.html) return "";
-	return `<span class="whatsapp-kit-ent__value${density === "hero" ? " whatsapp-kit-ent__value--hero" : ""}">${vm.value.html}</span>`;
+	return `<span class="whatsapp-kit-entity__value${density === "hero" ? " whatsapp-kit-entity__value--hero" : ""}">${vm.value.html}</span>`;
 }
 
 /** Media: the record's picture at the size this density calls for. */
@@ -36,7 +36,7 @@ function media(vm, size) {
 
 /** Wrap a rendered entity in a link or a button when it leads somewhere. */
 function shell(vm, density, inner, { tag } = {}) {
-	const cls = `whatsapp-kit-ent whatsapp-kit-ent--${density} whatsapp-kit-ent--${vm.kind}${vm.href || vm.clickable ? " whatsapp-kit-ent--go" : ""}`;
+	const cls = `whatsapp-kit-entity whatsapp-kit-entity--${density} whatsapp-kit-entity--${vm.kind}${vm.href || vm.clickable ? " whatsapp-kit-entity--go" : ""}`;
 	const label = vm.aria_label || vm.title || "";
 	if (vm.href) return `<a class="${cls}" href="${ui.escape(vm.href)}" data-name="${ui.escape(vm.name || "")}" title="${ui.escape(label)}">${inner}</a>`;
 	if (vm.clickable) return `<button type="button" class="${cls}" data-name="${ui.escape(vm.name || "")}">${inner}</button>`;
@@ -46,10 +46,10 @@ function shell(vm, density, inner, { tag } = {}) {
 /** Title + one supporting line; the supporting line is whatever the kind ranked first. */
 function titles(vm, { density, lines = 1 } = {}) {
 	const subs = (vm.lines || []).filter(Boolean).slice(0, lines);
-	return `<span class="whatsapp-kit-ent__text">
-		<span class="whatsapp-kit-ent__title"${vm.title_ltr ? ' dir="ltr"' : ' dir="auto"'}>${ui.escape(vm.title || vm.name || "")}</span>
-		${subs.map((s) => `<span class="whatsapp-kit-ent__sub"${s.ltr ? ' dir="ltr"' : ' dir="auto"'}>${s.html || ui.escape(s.text || "")}</span>`).join("")}
-		${density === "compact" && vm.status && vm.status.label ? `<span class="whatsapp-kit-ent__dot whatsapp-kit-tone--${ui.tone(vm.status.colour)}" title="${ui.escape(vm.status.label)}" aria-hidden="true"></span>` : ""}
+	return `<span class="whatsapp-kit-entity__text">
+		<span class="whatsapp-kit-entity__title"${vm.title_ltr ? ' dir="ltr"' : ' dir="auto"'}>${ui.escape(vm.title || vm.name || "")}</span>
+		${subs.map((s) => `<span class="whatsapp-kit-entity__sub"${s.ltr ? ' dir="ltr"' : ' dir="auto"'}>${s.html || ui.escape(s.text || "")}</span>`).join("")}
+		${density === "compact" && vm.status && vm.status.label ? `<span class="whatsapp-kit-entity__dot whatsapp-kit-tone--${ui.tone(vm.status.colour)}" title="${ui.escape(vm.status.label)}" aria-hidden="true"></span>` : ""}
 	</span>`;
 }
 
@@ -57,7 +57,7 @@ function titles(vm, { density, lines = 1 } = {}) {
 export const BASE = {
 	inline(vm) {
 		const first = (vm.lines || [])[0];
-		return shell(vm, "inline", `${media(vm, "xs")}<span class="whatsapp-kit-ent__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</span>${first ? `<span class="whatsapp-kit-ent__sub" ${first.ltr ? 'dir="ltr"' : 'dir="auto"'}>${first.html || ui.escape(first.text || "")}</span>` : ""}`);
+		return shell(vm, "inline", `${media(vm, "xs")}<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</span>${first ? `<span class="whatsapp-kit-entity__sub" ${first.ltr ? 'dir="ltr"' : 'dir="auto"'}>${first.html || ui.escape(first.text || "")}</span>` : ""}`);
 	},
 
 	compact(vm) {
@@ -66,7 +66,7 @@ export const BASE = {
 
 	row(vm) {
 		const trailing = `${value_html(vm, { density: "row" })}${badge(vm)}${action_buttons(vm.actions)}${vm.href || vm.clickable ? chevron() : ""}`;
-		return shell(vm, "row", `${media(vm, "md")}${titles(vm, { density: "row", lines: 2 })}<span class="whatsapp-kit-ent__trail">${trailing}</span>`);
+		return shell(vm, "row", `${media(vm, "md")}${titles(vm, { density: "row", lines: 2 })}<span class="whatsapp-kit-entity__trail">${trailing}</span>`);
 	},
 
 	card(vm) {
@@ -74,25 +74,25 @@ export const BASE = {
 		return shell(
 			vm,
 			"card",
-			`<span class="whatsapp-kit-ent__head">${media(vm, "lg")}${titles(vm, { density: "card", lines: 2 })}${badge(vm)}</span>
-			${vm.description ? `<span class="whatsapp-kit-ent__desc" dir="auto">${ui.escape(vm.description)}</span>` : ""}
-			${facts ? `<span class="whatsapp-kit-ent__facts">${facts}</span>` : ""}
-			<span class="whatsapp-kit-ent__foot">${value_html(vm, { density: "card" })}${action_buttons(vm.actions)}</span>`,
+			`<span class="whatsapp-kit-entity__head">${media(vm, "lg")}${titles(vm, { density: "card", lines: 2 })}${badge(vm)}</span>
+			${vm.description ? `<span class="whatsapp-kit-entity__desc" dir="auto">${ui.escape(vm.description)}</span>` : ""}
+			${facts ? `<span class="whatsapp-kit-entity__facts">${facts}</span>` : ""}
+			<span class="whatsapp-kit-entity__foot">${value_html(vm, { density: "card" })}${action_buttons(vm.actions)}</span>`,
 			{ tag: "div" }
 		);
 	},
 
 	hero(vm) {
 		const facts = (vm.facts || []).map((f) => fact(f)).filter(Boolean).join("");
-		return `<div class="whatsapp-kit-ent whatsapp-kit-ent--hero whatsapp-kit-ent--${vm.kind}" data-name="${ui.escape(vm.name || "")}">
-			<div class="whatsapp-kit-ent__hero-media">${media(vm, "xl")}</div>
-			<div class="whatsapp-kit-ent__hero-body">
-				<div class="whatsapp-kit-ent__hero-head">
-					<h3 class="whatsapp-kit-ent__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</h3>
+		return `<div class="whatsapp-kit-entity whatsapp-kit-entity--hero whatsapp-kit-entity--${vm.kind}" data-name="${ui.escape(vm.name || "")}">
+			<div class="whatsapp-kit-entity__hero-media">${media(vm, "xl")}</div>
+			<div class="whatsapp-kit-entity__hero-body">
+				<div class="whatsapp-kit-entity__hero-head">
+					<h3 class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</h3>
 					${badge(vm, { size: "md" })}
 				</div>
-				${(vm.lines || []).filter(Boolean).map((s) => `<div class="whatsapp-kit-ent__sub"${s.ltr ? ' dir="ltr"' : ' dir="auto"'}>${s.html || ui.escape(s.text || "")}</div>`).join("")}
-				${vm.description ? `<p class="whatsapp-kit-ent__desc" dir="auto">${ui.escape(vm.description)}</p>` : ""}
+				${(vm.lines || []).filter(Boolean).map((s) => `<div class="whatsapp-kit-entity__sub"${s.ltr ? ' dir="ltr"' : ' dir="auto"'}>${s.html || ui.escape(s.text || "")}</div>`).join("")}
+				${vm.description ? `<p class="whatsapp-kit-entity__desc" dir="auto">${ui.escape(vm.description)}</p>` : ""}
 				${value_html(vm, { density: "hero" })}
 				${facts ? `<div class="whatsapp-kit-fact-grid">${facts}</div>` : ""}
 				${action_buttons(vm.actions, { size: "md" })}
@@ -105,26 +105,26 @@ export const BASE = {
 const person = {
 	row(vm) {
 		const trailing = `${badge(vm)}${action_buttons(vm.actions)}${vm.href || vm.clickable ? chevron() : ""}`;
-		return shell(vm, "row", `${media(vm, "md")}${titles(vm, { density: "row", lines: 2 })}<span class="whatsapp-kit-ent__trail">${trailing}</span>`);
+		return shell(vm, "row", `${media(vm, "md")}${titles(vm, { density: "row", lines: 2 })}<span class="whatsapp-kit-entity__trail">${trailing}</span>`);
 	},
 };
 
 /** Items and products — the picture carries more weight, price and stock are prominent (image 03). */
 const item = {
 	compact(vm) {
-		return shell(vm, "compact", `${media(vm, "sm")}${titles(vm, { density: "compact", lines: 1 })}<span class="whatsapp-kit-ent__trail">${value_html(vm, { density: "compact" })}${badge(vm)}</span>`);
+		return shell(vm, "compact", `${media(vm, "sm")}${titles(vm, { density: "compact", lines: 1 })}<span class="whatsapp-kit-entity__trail">${value_html(vm, { density: "compact" })}${badge(vm)}</span>`);
 	},
 	card(vm) {
 		const facts = (vm.facts || []).map((f) => chip(f)).filter(Boolean).join("");
 		return shell(
 			vm,
 			"card",
-			`<span class="whatsapp-kit-ent__cover">${thumb({ src: vm.image, alt: vm.title, size: "cover", icon: vm.icon })}${vm.flag ? `<span class="whatsapp-kit-ent__flag">${whatsapp.ui.StatusBadge.html({ label: vm.flag.label, colour: vm.flag.colour, icon: false })}</span>` : ""}</span>
-			<span class="whatsapp-kit-ent__body">
-				<span class="whatsapp-kit-ent__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</span>
-				${(vm.lines || []).slice(0, 1).map((s) => `<span class="whatsapp-kit-ent__sub" dir="ltr">${s.html || ui.escape(s.text || "")}</span>`).join("")}
+			`<span class="whatsapp-kit-entity__cover">${thumb({ src: vm.image, alt: vm.title, size: "cover", icon: vm.icon })}${vm.flag ? `<span class="whatsapp-kit-entity__flag">${whatsapp.ui.StatusBadge.html({ label: vm.flag.label, colour: vm.flag.colour, icon: false })}</span>` : ""}</span>
+			<span class="whatsapp-kit-entity__body">
+				<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</span>
+				${(vm.lines || []).slice(0, 1).map((s) => `<span class="whatsapp-kit-entity__sub" dir="ltr">${s.html || ui.escape(s.text || "")}</span>`).join("")}
 				${value_html(vm, { density: "card" })}
-				${facts ? `<span class="whatsapp-kit-ent__facts">${facts}</span>` : ""}
+				${facts ? `<span class="whatsapp-kit-entity__facts">${facts}</span>` : ""}
 				${badge(vm)}
 			</span>`,
 			{ tag: "div" }
@@ -138,7 +138,7 @@ const document_kind = {
 		return shell(
 			vm,
 			"compact",
-			`${media(vm, "sm")}<span class="whatsapp-kit-ent__text"><span class="whatsapp-kit-ent__title" dir="ltr">${ui.escape(vm.title || vm.name || "")}</span><span class="whatsapp-kit-ent__sub" dir="auto">${ui.escape((vm.lines[0] || {}).text || "")}</span></span><span class="whatsapp-kit-ent__trail">${value_html(vm, { density: "compact" })}${badge(vm)}</span>`
+			`${media(vm, "sm")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="ltr">${ui.escape(vm.title || vm.name || "")}</span><span class="whatsapp-kit-entity__sub" dir="auto">${ui.escape((vm.lines[0] || {}).text || "")}</span></span><span class="whatsapp-kit-entity__trail">${value_html(vm, { density: "compact" })}${badge(vm)}</span>`
 		);
 	},
 	card(vm) {
@@ -146,11 +146,11 @@ const document_kind = {
 		return shell(
 			vm,
 			"card",
-			`<span class="whatsapp-kit-ent__head">${media(vm, "md")}<span class="whatsapp-kit-ent__text"><span class="whatsapp-kit-ent__sub" dir="auto">${ui.escape(vm.doctype_label || "")}</span><span class="whatsapp-kit-ent__title" dir="ltr">${ui.escape(vm.title || vm.name || "")}</span></span>${action_buttons(vm.actions)}</span>
+			`<span class="whatsapp-kit-entity__head">${media(vm, "md")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__sub" dir="auto">${ui.escape(vm.doctype_label || "")}</span><span class="whatsapp-kit-entity__title" dir="ltr">${ui.escape(vm.title || vm.name || "")}</span></span>${action_buttons(vm.actions)}</span>
 			${badge(vm)}
 			${vm.emphasis === "progress" && vm.progress != null ? progress(vm.progress) : value_html(vm, { density: "card" })}
-			${(vm.lines || []).slice(1, 2).map((s) => `<span class="whatsapp-kit-ent__sub" dir="auto">${s.html || ui.escape(s.text || "")}</span>`).join("")}
-			${facts ? `<span class="whatsapp-kit-ent__facts">${facts}</span>` : ""}`,
+			${(vm.lines || []).slice(1, 2).map((s) => `<span class="whatsapp-kit-entity__sub" dir="auto">${s.html || ui.escape(s.text || "")}</span>`).join("")}
+			${facts ? `<span class="whatsapp-kit-entity__facts">${facts}</span>` : ""}`,
 			{ tag: "div" }
 		);
 	},
@@ -159,22 +159,22 @@ const document_kind = {
 /** Files and images — type, name, size and the actions, without ever showing a path (image 05). */
 const file = {
 	inline(vm) {
-		return shell(vm, "inline", `${media(vm, "xs")}<span class="whatsapp-kit-ent__title" dir="auto">${ui.escape(vm.title)}</span>`);
+		return shell(vm, "inline", `${media(vm, "xs")}<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span>`);
 	},
 	compact(vm) {
-		return shell(vm, "compact", `${media(vm, "sm")}<span class="whatsapp-kit-ent__text"><span class="whatsapp-kit-ent__title" dir="auto">${ui.escape(vm.title)}</span><span class="whatsapp-kit-ent__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span></span>`);
+		return shell(vm, "compact", `${media(vm, "sm")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span><span class="whatsapp-kit-entity__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span></span>`);
 	},
 	row(vm) {
-		return shell(vm, "row", `${media(vm, "md")}<span class="whatsapp-kit-ent__text"><span class="whatsapp-kit-ent__title" dir="auto">${ui.escape(vm.title)}</span><span class="whatsapp-kit-ent__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span></span><span class="whatsapp-kit-ent__trail">${action_buttons(vm.actions)}</span>`);
+		return shell(vm, "row", `${media(vm, "md")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span><span class="whatsapp-kit-entity__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span></span><span class="whatsapp-kit-entity__trail">${action_buttons(vm.actions)}</span>`);
 	},
 	card(vm) {
 		return shell(
 			vm,
 			"card",
-			`<span class="whatsapp-kit-ent__cover">${vm.is_image ? thumb({ src: vm.image, alt: vm.title, size: "cover" }) : `<span class="whatsapp-kit-filetype whatsapp-kit-filetype--lg whatsapp-kit-tone--${ui.tone(vm.tone)}"><span class="whatsapp-kit-filetype__ext">${ui.escape(vm.ext || "")}</span></span>`}</span>
-			<span class="whatsapp-kit-ent__body">
-				<span class="whatsapp-kit-ent__title" dir="auto">${ui.escape(vm.title)}</span>
-				<span class="whatsapp-kit-ent__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span>
+			`<span class="whatsapp-kit-entity__cover">${vm.is_image ? thumb({ src: vm.image, alt: vm.title, size: "cover" }) : `<span class="whatsapp-kit-filetype whatsapp-kit-filetype--lg whatsapp-kit-tone--${ui.tone(vm.tone)}"><span class="whatsapp-kit-filetype__ext">${ui.escape(vm.ext || "")}</span></span>`}</span>
+			<span class="whatsapp-kit-entity__body">
+				<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span>
+				<span class="whatsapp-kit-entity__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span>
 				${action_buttons(vm.actions, { size: "sm" })}
 			</span>`,
 			{ tag: "div" }

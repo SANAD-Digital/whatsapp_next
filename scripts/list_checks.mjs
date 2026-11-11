@@ -372,7 +372,7 @@ check("the sheet has one field per filter", sheet_rows > 0, `${sheet_rows} field
 await page.click(".whatsapp-kit-filter-sheet__trigger >> nth=0");
 await page.waitForTimeout(800);
 const drawer = await page
-	.$eval(".whatsapp-kit-optsheet__panel", (e) => {
+	.$eval(".whatsapp-kit-options-sheet__panel", (e) => {
 		const r = e.getBoundingClientRect();
 		return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height) };
 	})
@@ -382,17 +382,17 @@ check(
 	!!drawer && Math.abs(drawer.bottom - 760) < 2 && drawer.h >= 760 * 0.4 && drawer.h <= 760 * 0.9,
 	drawer ? JSON.stringify(drawer) : "no drawer"
 );
-const row_h = await page.$eval(".whatsapp-kit-optsheet__list .whatsapp-kit-filterbar__opt", (e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
+const row_h = await page.$eval(".whatsapp-kit-options-sheet__list .whatsapp-kit-filterbar__opt", (e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
 check("its rows are a thumb's size", row_h >= 44, `${row_h}px`);
-const scrolls = await page.$eval(".whatsapp-kit-optsheet__list", (e) => getComputedStyle(e).overflowY === "auto").catch(() => false);
+const scrolls = await page.$eval(".whatsapp-kit-options-sheet__list", (e) => getComputedStyle(e).overflowY === "auto").catch(() => false);
 check("the list scrolls inside the drawer", scrolls);
-await page.click(".whatsapp-kit-optsheet__list .whatsapp-kit-filterbar__opt >> nth=0");
+await page.click(".whatsapp-kit-options-sheet__list .whatsapp-kit-filterbar__opt >> nth=0");
 await page.waitForTimeout(1000);
 const picked = await page.$eval(".whatsapp-kit-filter-sheet__row:first-child .whatsapp-kit-filter-sheet__chosen", (e) => e.textContent.trim()).catch(() => "");
 check("choosing in the drawer sets the filter", !!picked && picked !== "All", picked);
-await page.click(".whatsapp-kit-optsheet__done");
+await page.click(".whatsapp-kit-options-sheet__done");
 await page.waitForTimeout(600);
-check("Done dismisses the drawer", (await page.$$(".whatsapp-kit-optsheet")).length === 0);
+check("Done dismisses the drawer", (await page.$$(".whatsapp-kit-options-sheet")).length === 0);
 
 // the Filters sheet is still up over the toolbar; Done only dismissed the drawer
 await page.keyboard.press("Escape");

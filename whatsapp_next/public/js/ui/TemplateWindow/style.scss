@@ -6,7 +6,7 @@
 //
 // Product tokens only (`--whatsapp-*`), logical properties only — Arabic mirrors without a rule.
 
-.whatsapp-kit-tw-layer {
+.whatsapp-kit-template-window-layer {
 	position: fixed;
 	inset: 0;
 	z-index: 1036; // under Frappe's dialogs (confirmations and the file uploader open on top)
@@ -16,14 +16,14 @@
 
 	@media (max-width: 719px) { padding: 0; }
 }
-.whatsapp-kit-tw-backdrop {
+.whatsapp-kit-template-window-backdrop {
 	position: absolute;
 	inset: 0;
 	background: color-mix(in srgb, var(--whatsapp-ink) 45%, transparent);
 }
-body.whatsapp-kit-tw-open { overflow: hidden; }
+body.whatsapp-kit-template-window-open { overflow: hidden; }
 
-.whatsapp-kit-tw {
+.whatsapp-kit-template-window {
 	position: relative;
 	display: flex;
 	flex-direction: column;
@@ -36,7 +36,7 @@ body.whatsapp-kit-tw-open { overflow: hidden; }
 	box-shadow: var(--whatsapp-shadow-lg);
 	overflow: hidden;
 	font-size: 13px;
-	animation: whatsapp-kit-tw-in 0.18s ease-out;
+	animation: whatsapp-kit-template-window-in 0.18s ease-out;
 
 	@media (max-width: 719px) {
 		block-size: 100%;
@@ -502,19 +502,19 @@ body.whatsapp-kit-tw-open { overflow: hidden; }
 		align-items: center;
 		gap: 8px;
 		flex-wrap: wrap;
-		.whatsapp-btn { min-block-size: 28px; }
-		.whatsapp-btn--busy { opacity: 0.6; cursor: progress; }
+		.whatsapp-button { min-block-size: 28px; }
+		.whatsapp-button--busy { opacity: 0.6; cursor: progress; }
 	}
 	&__delete { margin-inline-start: auto; }
 
-	.whatsapp-btn svg { flex: none; margin: 0; }
+	.whatsapp-button svg { flex: none; margin: 0; }
 }
 
-@keyframes whatsapp-kit-tw-in {
+@keyframes whatsapp-kit-template-window-in {
 	from { opacity: 0; transform: translateY(6px); }
 	to { opacity: 1; transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.whatsapp-kit-tw { animation: none; }
+	.whatsapp-kit-template-window { animation: none; }
 }

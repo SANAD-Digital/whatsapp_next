@@ -328,7 +328,7 @@ const Render = {
 		parts.bind_actions($el, vm.actions, doc);
 		parts.bind_copy();
 		if (typeof opts.on_click === "function") {
-			$el.find(".whatsapp-kit-ent").on("click", (e) => {
+			$el.find(".whatsapp-kit-entity").on("click", (e) => {
 				if ($(e.target).closest("[data-action-index]").length) return;
 				opts.on_click(doc, e);
 			});
@@ -340,9 +340,9 @@ const Render = {
 	list(wrapper, docs = [], opts = {}) {
 		const $el = $(wrapper).empty();
 		const density = opts.density || "row";
-		$el.addClass(`whatsapp-kit-ent-list whatsapp-kit-ent-list--${density}`);
+		$el.addClass(`whatsapp-kit-entity-list whatsapp-kit-entity-list--${density}`);
 		docs.forEach((doc) => {
-			const $item = $('<div class="whatsapp-kit-ent-list__item"></div>').appendTo($el);
+			const $item = $('<div class="whatsapp-kit-entity-list__item"></div>').appendTo($el);
 			Render.mount($item, doc, opts);
 		});
 		if (!docs.length && opts.empty !== false) {

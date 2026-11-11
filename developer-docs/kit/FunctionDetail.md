@@ -9,7 +9,7 @@ takes and its outputs (text / file-name templates with copy buttons, fields that
 **Version log** lists versions newest first with changelog bullets. **Preview** dry-runs the
 function through the host's `preview` with preview-only settings / texts. The footer offers Update,
 Install / Uninstall, Linked commands, a More menu and Close — all delegated to host callbacks. It
-reuses `CommandEditor`'s shell classes (`whatsapp-kit-ce*`), so both stylesheets must be loaded.
+reuses `CommandEditor`'s shell classes (`whatsapp-kit-command-editor*`), so both stylesheets must be loaded.
 
 **Portability:** no app imports, but the `entry` / `manifest` shapes are this app's Functions
 catalog (`functions.get_manifest`), the preview result is this app's `commands.preview_command`
@@ -79,9 +79,9 @@ view.hide();
 
 ## CSS hooks
 
-- Layer: `.whatsapp-kit.whatsapp-kit-ce-layer.whatsapp-kit-fd-layer` > `.whatsapp-kit-ce-backdrop` + `.whatsapp-kit-ce.whatsapp-kit-fd` (dialog). Sets `body.whatsapp-kit-ce-open` (removed only when no `.whatsapp-kit-ce-layer` remains).
-- Own classes: `whatsapp-kit-fd__identity`, `__name`, `__badge--ok|--muted|--line|--pri|--wn`, `__ver--pri|--wn`, `__grid`, `__body(--outs)`, `__lede`, `__box`, `__stats` / `__stat`, `__word`, `__cmd.is-on`, `__value`, `__choices`, `__copybox(--sm)`, `__copy`, `__field`, `__log.is-current`, `__log-head`, `__changes`, `__grid--preview`, `__more`, `__menu`, `__danger`, `__btn-pri-soft`, `__close`.
-- Shared `whatsapp-kit-ce__*` shell: tabs, columns, cards, pills, callouts, `__thread.is-running`, `__btn--pri`.
+- Layer: `.whatsapp-kit.whatsapp-kit-command-editor-layer.whatsapp-kit-function-detail-layer` > `.whatsapp-kit-command-editor-backdrop` + `.whatsapp-kit-command-editor.whatsapp-kit-function-detail` (dialog). Sets `body.whatsapp-kit-command-editor-open` (removed only when no `.whatsapp-kit-command-editor-layer` remains).
+- Own classes: `whatsapp-kit-function-detail__identity`, `__name`, `__badge--ok|--muted|--line|--pri|--wn`, `__ver--pri|--wn`, `__grid`, `__body(--outs)`, `__lede`, `__box`, `__stats` / `__stat`, `__word`, `__cmd.is-on`, `__value`, `__choices`, `__copybox(--sm)`, `__copy`, `__field`, `__log.is-current`, `__log-head`, `__changes`, `__grid--preview`, `__more`, `__menu`, `__danger`, `__btn-pri-soft`, `__close`.
+- Shared `whatsapp-kit-command-editor__*` shell: tabs, columns, cards, pills, callouts, `__thread.is-running`, `__btn--pri`.
 - Breakpoints: Preview grid 320 | 1fr | 400 → two columns under 1080 px → one under 760 px.
 
 ## Notes

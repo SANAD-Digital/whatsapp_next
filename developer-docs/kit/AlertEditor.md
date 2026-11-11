@@ -102,10 +102,10 @@ new whatsapp.ui.AlertEditor({
 
 ## CSS hooks
 
-- Layer: `.whatsapp-kit.whatsapp-kit-ae-layer` > `.whatsapp-kit-ae-backdrop` + `.whatsapp-kit-ae` (the dialog). `body.whatsapp-kit-ae-open` locks page scroll.
+- Layer: `.whatsapp-kit.whatsapp-kit-alert-editor-layer` > `.whatsapp-kit-alert-editor-backdrop` + `.whatsapp-kit-alert-editor` (the dialog). `body.whatsapp-kit-alert-editor-open` locks page scroll.
 - Frame: `__head` (`__mark`, `__name`, `__sentence`, `__dirty`, `__enabled`), `__main` > `__build` + `__side`, `__foot` (`__foot-hint.is-warn`), `__loading`.
 - Steps: `__step[data-step=when|what|who|from]`, `__step-head`, `__num.is-done`, `__step-body`.
-- Controls: `__chip.is-on`, `__seg` (on `.whatsapp-seg`), `__pick`, `__results`, `__opt`, `__picked`, `__vars` / `__var`, `__msg`, `__filter`, `__rf.is-moving`, `__token`, `__n`, `__more`.
+- Controls: `__chip.is-on`, `__seg` (on `.whatsapp-segmented`), `__pick`, `__results`, `__opt`, `__picked`, `__vars` / `__var`, `__msg`, `__filter`, `__rf.is-moving`, `__token`, `__n`, `__more`.
 - Recipients: `__whos` > `__who--user|--role|--phone|--report_column` (`frappe.scrub` of the type), `__colpick`.
 - Side: `__phone`, `__bubble` (`.is-ghost`), `__file`, `__facts`, `__note--warn|--danger`, `__status.is-busy`, `__test`, `__hist`, `__recent`, `__next` / `__runs` (`li.is-first`).
 - Buttons: `__btn`, `__btn--pri`, `__btn--danger`, `__icon`, `__icon--sm`, `__link`, `__add`.

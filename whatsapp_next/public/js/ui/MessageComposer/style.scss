@@ -1,7 +1,7 @@
 // MessageComposer — an editor, not a viewer: a rail of messages beside one writing surface, with
 // the preview as a panel the writer may fold away. Espresso tokens only; logical properties only.
 
-.whatsapp-kit-mc-host {
+.whatsapp-kit-message-composer-host {
 	> .grid-custom-buttons,
 	> .form-grid-container,
 	> .grid-footer,
@@ -12,7 +12,7 @@
 	> .small.text-muted { display: none; }
 }
 
-.whatsapp-kit-mc {
+.whatsapp-kit-message-composer {
 	display: flex;
 	flex-direction: column;
 	gap: var(--whatsapp-kit-gap-md);
@@ -126,7 +126,7 @@
 			border-color: var(--whatsapp-kit-accent-outline);
 			background: var(--whatsapp-kit-accent-soft);
 		}
-		&--problem .whatsapp-kit-mc__raildot { background: var(--ink-amber-7); }
+		&--problem .whatsapp-kit-message-composer__raildot { background: var(--ink-amber-7); }
 	}
 	&__railtop {
 		display: flex;
@@ -500,7 +500,7 @@
 
 		> .clearfix { order: 0; }
 		> .control-input-wrapper { order: 1; }
-		> .whatsapp-kit-mc__toolbar { order: 2; }
+		> .whatsapp-kit-message-composer__toolbar { order: 2; }
 		.help-box,
 		.description { order: 3; margin-block-start: 6px; }
 

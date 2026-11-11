@@ -61,23 +61,23 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		const field = this.frm.get_field(this.fieldname);
 		const id = ui.uid("pct");
 		this.$el = $(`
-			<div class="whatsapp-kit whatsapp-kit-pct" data-fieldname="${ui.escape(this.fieldname)}" id="${id}">
-				<div class="whatsapp-kit-pct__head">
-					<h4 class="whatsapp-kit-pct__title">${ui.escape(this.label)}</h4>
-					<span class="whatsapp-kit-pct__count whatsapp-kit-tabular" aria-live="polite"></span>
-					<div class="whatsapp-kit-pct__actions"></div>
+			<div class="whatsapp-kit whatsapp-kit-paged-child-table" data-fieldname="${ui.escape(this.fieldname)}" id="${id}">
+				<div class="whatsapp-kit-paged-child-table__head">
+					<h4 class="whatsapp-kit-paged-child-table__title">${ui.escape(this.label)}</h4>
+					<span class="whatsapp-kit-paged-child-table__count whatsapp-kit-tabular" aria-live="polite"></span>
+					<div class="whatsapp-kit-paged-child-table__actions"></div>
 				</div>
-				<div class="whatsapp-kit-pct__toolbar">
-					<div class="whatsapp-kit-pct__filters"></div>
+				<div class="whatsapp-kit-paged-child-table__toolbar">
+					<div class="whatsapp-kit-paged-child-table__filters"></div>
 				</div>
-				<div class="whatsapp-kit-pct__note" hidden></div>
-				<div class="whatsapp-kit-pct__state"></div>
-				<div class="whatsapp-kit-pct__scroll whatsapp-kit-table-wrap" tabindex="0"><table class="whatsapp-kit-table whatsapp-kit-pct__table" aria-label="${ui.escape(this.label)}"></table></div>
-				<div class="whatsapp-kit-pct__pager">
-					<span class="whatsapp-kit-pct__range whatsapp-kit-tabular" aria-live="polite" aria-atomic="true"></span>
-					<div class="whatsapp-kit-pct__pager-btns">
-						<button type="button" class="btn btn-default btn-sm whatsapp-kit-pct__prev" aria-label="${ui.escape(__("Previous page"))}">${ui.icon("es-line-left-chevron", "xs")}<span>${ui.escape(__("Previous"))}</span></button>
-						<button type="button" class="btn btn-default btn-sm whatsapp-kit-pct__next" aria-label="${ui.escape(__("Next page"))}"><span>${ui.escape(__("Next"))}</span>${ui.icon("es-line-right-chevron", "xs")}</button>
+				<div class="whatsapp-kit-paged-child-table__note" hidden></div>
+				<div class="whatsapp-kit-paged-child-table__state"></div>
+				<div class="whatsapp-kit-paged-child-table__scroll whatsapp-kit-table-wrap" tabindex="0"><table class="whatsapp-kit-table whatsapp-kit-paged-child-table__table" aria-label="${ui.escape(this.label)}"></table></div>
+				<div class="whatsapp-kit-paged-child-table__pager">
+					<span class="whatsapp-kit-paged-child-table__range whatsapp-kit-tabular" aria-live="polite" aria-atomic="true"></span>
+					<div class="whatsapp-kit-paged-child-table__pager-btns">
+						<button type="button" class="btn btn-default btn-sm whatsapp-kit-paged-child-table__prev" aria-label="${ui.escape(__("Previous page"))}">${ui.icon("es-line-left-chevron", "xs")}<span>${ui.escape(__("Previous"))}</span></button>
+						<button type="button" class="btn btn-default btn-sm whatsapp-kit-paged-child-table__next" aria-label="${ui.escape(__("Next page"))}"><span>${ui.escape(__("Next"))}</span>${ui.icon("es-line-right-chevron", "xs")}</button>
 					</div>
 				</div>
 			</div>`);
@@ -86,22 +86,22 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		// grid parts are hidden through the host class (see style.scss). Idempotent: a previous
 		// instance of the same field is replaced; the host class survives grid re-renders.
 		this.$host = field && field.grid && field.grid.wrapper ? field.grid.wrapper : field && field.$wrapper;
-		const $existing = this.frm.$wrapper.find(`.whatsapp-kit-pct[data-fieldname="${this.fieldname}"]`);
+		const $existing = this.frm.$wrapper.find(`.whatsapp-kit-paged-child-table[data-fieldname="${this.fieldname}"]`);
 		if ($existing.length) $existing.replaceWith(this.$el);
 		else if (this.$host && this.$host.length) this.$host.append(this.$el);
 		else this.frm.$wrapper.find(".form-page").first().append(this.$el);
-		if (this.$host && this.opts.hide_grid) this.$host.addClass("whatsapp-kit-pct-host");
-		this.$filters = this.$el.find(".whatsapp-kit-pct__filters");
-		this.$count = this.$el.find(".whatsapp-kit-pct__count");
-		this.$actions = this.$el.find(".whatsapp-kit-pct__actions");
-		this.$state = this.$el.find(".whatsapp-kit-pct__state");
-		this.$note = this.$el.find(".whatsapp-kit-pct__note");
-		this.$scroll = this.$el.find(".whatsapp-kit-pct__scroll");
-		this.$table = this.$el.find(".whatsapp-kit-pct__table");
-		this.$range = this.$el.find(".whatsapp-kit-pct__range");
+		if (this.$host && this.opts.hide_grid) this.$host.addClass("whatsapp-kit-paged-child-table-host");
+		this.$filters = this.$el.find(".whatsapp-kit-paged-child-table__filters");
+		this.$count = this.$el.find(".whatsapp-kit-paged-child-table__count");
+		this.$actions = this.$el.find(".whatsapp-kit-paged-child-table__actions");
+		this.$state = this.$el.find(".whatsapp-kit-paged-child-table__state");
+		this.$note = this.$el.find(".whatsapp-kit-paged-child-table__note");
+		this.$scroll = this.$el.find(".whatsapp-kit-paged-child-table__scroll");
+		this.$table = this.$el.find(".whatsapp-kit-paged-child-table__table");
+		this.$range = this.$el.find(".whatsapp-kit-paged-child-table__range");
 		this.state_view = new whatsapp.ui.EmptyState({ wrapper: this.$state, state: "loading", size: "sm" });
-		this.$el.find(".whatsapp-kit-pct__prev").on("click", () => this.go(this.state.page - 1));
-		this.$el.find(".whatsapp-kit-pct__next").on("click", () => this.go(this.state.page + 1));
+		this.$el.find(".whatsapp-kit-paged-child-table__prev").on("click", () => this.go(this.state.page - 1));
+		this.$el.find(".whatsapp-kit-paged-child-table__next").on("click", () => this.go(this.state.page + 1));
 		this.render_filters();
 		this.render_toolbar();
 	}
@@ -116,12 +116,12 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 			if (!options && df.fieldtype === "Select") options = (df.options || "").split("\n").filter(Boolean);
 			options = options || [];
 			if (options.length <= CHIP_LIMIT) {
-				const $group = $(`<div class="whatsapp-kit-chip-row whatsapp-kit-pct__chips" role="group" data-field="${ui.escape(f.fieldname)}" aria-label="${ui.escape(label)}"></div>`);
+				const $group = $(`<div class="whatsapp-kit-chip-row whatsapp-kit-paged-child-table__chips" role="group" data-field="${ui.escape(f.fieldname)}" aria-label="${ui.escape(label)}"></div>`);
 				const all = [{ value: "", label: __("All") }].concat(options.map((o) => ({ value: o, label: __(o) })));
 				all.forEach((o) => {
-					const $chip = $(`<button type="button" class="whatsapp-kit-chip whatsapp-kit-pct__chip" data-value="${ui.escape(o.value)}" data-label="${ui.escape(o.label)}" aria-pressed="${o.value === "" ? "true" : "false"}"><span class="whatsapp-kit-pct__chip-label">${ui.escape(o.label)}</span></button>`);
+					const $chip = $(`<button type="button" class="whatsapp-kit-chip whatsapp-kit-paged-child-table__chip" data-value="${ui.escape(o.value)}" data-label="${ui.escape(o.label)}" aria-pressed="${o.value === "" ? "true" : "false"}"><span class="whatsapp-kit-paged-child-table__chip-label">${ui.escape(o.label)}</span></button>`);
 					$chip.on("click", () => {
-						$group.find(".whatsapp-kit-pct__chip").attr("aria-pressed", "false");
+						$group.find(".whatsapp-kit-paged-child-table__chip").attr("aria-pressed", "false");
 						$chip.attr("aria-pressed", "true");
 						this.set_filter(f.fieldname, o.value);
 					});
@@ -129,14 +129,14 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 				});
 				this.$filters.append($group);
 			} else {
-				const $select = $(`<select class="form-control input-xs whatsapp-kit-pct__select" aria-label="${ui.escape(label)}"><option value="">${ui.escape(label)}: ${ui.escape(__("All"))}</option></select>`);
+				const $select = $(`<select class="form-control input-xs whatsapp-kit-paged-child-table__select" aria-label="${ui.escape(label)}"><option value="">${ui.escape(label)}: ${ui.escape(__("All"))}</option></select>`);
 				options.forEach((o) => $select.append(`<option value="${ui.escape(o)}">${ui.escape(__(o))}</option>`));
 				$select.on("change", () => this.set_filter(f.fieldname, $select.val()));
 				this.$filters.append($select);
 			}
 		});
 		if (this.opts.search) {
-			const $search = $(`<input type="search" class="form-control input-xs whatsapp-kit-pct__search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [this.label]))}">`);
+			const $search = $(`<input type="search" class="form-control input-xs whatsapp-kit-paged-child-table__search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [this.label]))}">`);
 			$search.on("input", ui.debounce(() => {
 				this.state.search = $search.val().trim();
 				this.go(1);
@@ -238,19 +238,19 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		const any = Object.keys(counts)[0];
 		const total = any && counts[any] && counts[any].All != null ? cint(counts[any].All) : cint(this.state.total);
 		this.$count.text(ui.plural(total, { one: __("{0} row"), other: __("{0} rows") }));
-		this.$el.find(".whatsapp-kit-pct__chips").each((i, group) => {
+		this.$el.find(".whatsapp-kit-paged-child-table__chips").each((i, group) => {
 			const $group = $(group);
 			const field = counts[$group.attr("data-field")];
 			let offered = 0;
-			$group.find(".whatsapp-kit-pct__chip").each((j, el) => {
+			$group.find(".whatsapp-kit-paged-child-table__chip").each((j, el) => {
 				const $chip = $(el);
 				const value = $chip.attr("data-value");
 				const active = $chip.attr("aria-pressed") === "true";
-				$chip.find(".whatsapp-kit-pct__chip-label").text($chip.attr("data-label"));
-				$chip.find(".whatsapp-kit-pct__chip-count").remove();
+				$chip.find(".whatsapp-kit-paged-child-table__chip-label").text($chip.attr("data-label"));
+				$chip.find(".whatsapp-kit-paged-child-table__chip-count").remove();
 				if (!field) return;
 				const n = value === "" ? cint(field.All) : cint(field[value]);
-				$chip.append(`<span class="whatsapp-kit-pct__chip-count whatsapp-kit-tabular">${ui.escape(ui.format_int(n))}</span>`);
+				$chip.append(`<span class="whatsapp-kit-paged-child-table__chip-count whatsapp-kit-tabular">${ui.escape(ui.format_int(n))}</span>`);
 				$chip.attr("hidden", !n && !active && value !== "" ? "hidden" : null);
 				if (value !== "" && (n || active)) offered += 1;
 			});
@@ -273,7 +273,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		const actions = (this.opts.row_actions || []).filter((a) => a.handler);
 		let html = "<thead><tr>";
 		this.columns.forEach((c) => (html += `<th scope="col"${c.width ? ` style="width:${ui.escape(c.width)}"` : ""}>${ui.escape(c.label)}</th>`));
-		if (actions.length) html += `<th scope="col" class="whatsapp-kit-pct__th-actions"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Actions"))}</span></th>`;
+		if (actions.length) html += `<th scope="col" class="whatsapp-kit-paged-child-table__th-actions"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Actions"))}</span></th>`;
 		html += "</tr></thead><tbody>";
 		rows.forEach((row, i) => {
 			html += `<tr data-idx="${i}">`;
@@ -283,7 +283,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 				html += `<td>${inner || ""}</td>`;
 			});
 			if (actions.length) {
-				html += '<td class="whatsapp-kit-pct__row-actions">';
+				html += '<td class="whatsapp-kit-paged-child-table__row-actions">';
 				actions.forEach((a, j) => {
 					if (a.condition && !a.condition(row)) return;
 					html += `<button type="button" class="btn btn-xs btn-default" data-action="${j}" data-idx="${i}" ${a.icon ? `aria-label="${ui.escape(a.label)}" title="${ui.escape(a.label)}"` : ""}>${a.icon ? ui.icon(a.icon, "xs") : ui.escape(a.label)}</button>`;
@@ -305,14 +305,14 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		const start = total ? (page - 1) * page_length + 1 : 0;
 		const end = Math.min(page * page_length, total);
 		this.$range.text(total ? __("{0}–{1} of {2}", [ui.format_int(start), ui.format_int(end), ui.format_int(total)]) : __("No rows"));
-		this.$el.find(".whatsapp-kit-pct__prev").prop("disabled", page <= 1);
-		this.$el.find(".whatsapp-kit-pct__next").prop("disabled", end >= total);
-		this.$el.find(".whatsapp-kit-pct__pager").toggle(total > page_length);
+		this.$el.find(".whatsapp-kit-paged-child-table__prev").prop("disabled", page <= 1);
+		this.$el.find(".whatsapp-kit-paged-child-table__next").prop("disabled", end >= total);
+		this.$el.find(".whatsapp-kit-paged-child-table__pager").toggle(total > page_length);
 	}
 
 	destroy() {
 		this.$el.remove();
-		if (this.$host) this.$host.removeClass("whatsapp-kit-pct-host");
+		if (this.$host) this.$host.removeClass("whatsapp-kit-paged-child-table-host");
 	}
 };
 

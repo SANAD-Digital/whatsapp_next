@@ -52,14 +52,14 @@ frappe.provide("whatsapp_next.campaign");
 				{ tone: "ok", icon: "clock", label: __("Estimated duration"), value: C.dur_text(e.minutes), of: scheduled ? __("from {0}", [this.when_text()]) : __("from the moment it starts"), badge: scheduled ? __("scheduled") : __("on start") },
 			];
 			const tile = (t) => `
-				<div class="whatsapp-cb__tile whatsapp-cb__tile--${esc(t.tone)}">
-					<span class="whatsapp-cb__tile-icon" aria-hidden="true">${ui.ico(t.icon, "sm")}</span>
-					<span class="whatsapp-cb__tile-text">
-						<span class="whatsapp-cb__tile-label">${esc(t.label)}</span>
-						<span class="whatsapp-cb__tile-value whatsapp-kit-tabular">${esc(t.value)}</span>
-						${t.of ? `<span class="whatsapp-cb__tile-of">${esc(t.of)}</span>` : ""}
+				<div class="whatsapp-campaign-builder__tile whatsapp-campaign-builder__tile--${esc(t.tone)}">
+					<span class="whatsapp-campaign-builder__tile-icon" aria-hidden="true">${ui.ico(t.icon, "sm")}</span>
+					<span class="whatsapp-campaign-builder__tile-text">
+						<span class="whatsapp-campaign-builder__tile-label">${esc(t.label)}</span>
+						<span class="whatsapp-campaign-builder__tile-value whatsapp-kit-tabular">${esc(t.value)}</span>
+						${t.of ? `<span class="whatsapp-campaign-builder__tile-of">${esc(t.of)}</span>` : ""}
 					</span>
-					${t.badge ? `<span class="whatsapp-cb__tile-badge">${esc(t.badge)}</span>` : ""}
+					${t.badge ? `<span class="whatsapp-campaign-builder__tile-badge">${esc(t.badge)}</span>` : ""}
 				</div>`;
 			const details = [
 				{ label: __("Campaign name"), value: doc.campaign_name || doc.name },
@@ -76,24 +76,24 @@ frappe.provide("whatsapp_next.campaign");
 			];
 
 			this.$wrapper.html(`
-				<div class="whatsapp-cb__stack whatsapp-cb__review">
+				<div class="whatsapp-campaign-builder__stack whatsapp-campaign-builder__review">
 					<div data-block="verdict"></div>
-					<div class="whatsapp-cb__tiles">${tiles.map(tile).join("")}</div>
-					<div class="whatsapp-cb__review-grid">
-						<section class="whatsapp-cb__rcard" data-block="checks-card">
+					<div class="whatsapp-campaign-builder__tiles">${tiles.map(tile).join("")}</div>
+					<div class="whatsapp-campaign-builder__review-grid">
+						<section class="whatsapp-campaign-builder__rcard" data-block="checks-card">
 							<div data-block="checks"></div>
-							<div class="whatsapp-cb__rcard-foot" data-block="verbs"></div>
+							<div class="whatsapp-campaign-builder__rcard-foot" data-block="verbs"></div>
 						</section>
-						${C.card({ key: "sequence", icon: "chat", title: __("As the recipient will receive it"), note: C.messages_text(per), body: this.thread(), cls: "whatsapp-cb__rcard" })}
-						<section class="whatsapp-cb__rcard">
-							${C.card({ key: "details", icon: "doc", title: __("Campaign details"), body: `<div class="whatsapp-cb__pairs whatsapp-cb__pairs--one">${details.map(C.pair).join("")}</div>` })}
+						${C.card({ key: "sequence", icon: "chat", title: __("As the recipient will receive it"), note: C.messages_text(per), body: this.thread(), cls: "whatsapp-campaign-builder__rcard" })}
+						<section class="whatsapp-campaign-builder__rcard">
+							${C.card({ key: "details", icon: "doc", title: __("Campaign details"), body: `<div class="whatsapp-campaign-builder__pairs whatsapp-campaign-builder__pairs--one">${details.map(C.pair).join("")}</div>` })}
 							${C.card({
 								key: "plan",
 								icon: "calendar",
 								title: __("Timeline"),
-								body: `<ol class="whatsapp-cb__timeline whatsapp-cb__timeline--plan">${plan
+								body: `<ol class="whatsapp-campaign-builder__timeline whatsapp-campaign-builder__timeline--plan">${plan
 									.map(
-										(p) => `<li class="whatsapp-cb__event${p.done ? "" : " whatsapp-cb__event--todo"}"><span class="whatsapp-cb__event-dot" aria-hidden="true"></span><span class="whatsapp-cb__event-text"><span class="whatsapp-cb__event-label">${esc(p.label)}</span>${p.when ? `<span class="whatsapp-cb__event-when whatsapp-kit-tabular">${esc(p.when)}</span>` : ""}</span></li>`
+										(p) => `<li class="whatsapp-campaign-builder__event${p.done ? "" : " whatsapp-campaign-builder__event--todo"}"><span class="whatsapp-campaign-builder__event-dot" aria-hidden="true"></span><span class="whatsapp-campaign-builder__event-text"><span class="whatsapp-campaign-builder__event-label">${esc(p.label)}</span>${p.when ? `<span class="whatsapp-campaign-builder__event-when whatsapp-kit-tabular">${esc(p.when)}</span>` : ""}</span></li>`
 									)
 									.join("")}</ol>`,
 							})}
@@ -187,13 +187,13 @@ frappe.provide("whatsapp_next.campaign");
 			}
 
 			const $band = $(`
-				<div class="whatsapp-cb__verdict whatsapp-cb__verdict--${tone}">
-					<span class="whatsapp-cb__verdict-mark" aria-hidden="true">${ui.ico(icon, "sm")}</span>
-					<span class="whatsapp-cb__verdict-text">
+				<div class="whatsapp-campaign-builder__verdict whatsapp-campaign-builder__verdict--${tone}">
+					<span class="whatsapp-campaign-builder__verdict-mark" aria-hidden="true">${ui.ico(icon, "sm")}</span>
+					<span class="whatsapp-campaign-builder__verdict-text">
 						<b>${esc(title)}</b>
 						<span dir="auto">${esc(line)}</span>
 					</span>
-					${K.is_manager() ? `<span class="whatsapp-cb__verdict-verbs">${verbs.map((v) => ui.btn({ label: v.label, icon: v.icon, variant: v.variant, size: "sm", disabled: !!v.disabled, attrs: { "data-verb": v.key, "data-step": v.step === undefined ? "" : String(v.step) } })).join("")}</span>` : ""}
+					${K.is_manager() ? `<span class="whatsapp-campaign-builder__verdict-verbs">${verbs.map((v) => ui.btn({ label: v.label, icon: v.icon, variant: v.variant, size: "sm", disabled: !!v.disabled, attrs: { "data-verb": v.key, "data-step": v.step === undefined ? "" : String(v.step) } })).join("")}</span>` : ""}
 				</div>`);
 			this.$wrapper.find('[data-block="verdict"]').empty().append($band);
 			this.$wrapper.find('[data-block="verbs"]').empty();
@@ -236,9 +236,9 @@ frappe.provide("whatsapp_next.campaign");
 		/** The sequence as the thread the recipient will see: a bubble per message, the wait between them. */
 		thread() {
 			const rows = (this.ctx.doc.messages || []).slice().sort((a, b) => cint(a.idx) - cint(b.idx));
-			if (!rows.length) return `<p class="whatsapp-cb__readings-foot">${esc(__("No message yet."))}</p>`;
+			if (!rows.length) return `<p class="whatsapp-campaign-builder__readings-foot">${esc(__("No message yet."))}</p>`;
 			const TYPE_ICON = { Text: "chat", Image: "image", Video: "image", Document: "doc", Audio: "chat", Poll: "table", Location: "pin", Contact: "user" };
-			return `<div class="whatsapp-cb__thread">${rows
+			return `<div class="whatsapp-campaign-builder__thread">${rows
 				.map((m) => {
 					const delay = cint(m.delay_seconds);
 					const body = (m.body || m.poll_question || m.caption || "").trim();
@@ -253,12 +253,12 @@ frappe.provide("whatsapp_next.campaign");
 						}
 					}
 					return `
-					${delay ? `<div class="whatsapp-cb__thread-wait"><span>${esc(__("wait {0}", [delay < 60 ? __("{0}s", [C.fmt_int(delay)]) : C.dur_text(Math.round(delay / 60))]))}</span></div>` : ""}
-					<div class="whatsapp-cb__bubble">
-						<span class="whatsapp-cb__bubble-type">${ui.ico(TYPE_ICON[m.message_type] || "chat", "xs")}<span>${esc(__(m.message_type))}</span><span class="whatsapp-cb__bubble-num whatsapp-kit-tabular" dir="ltr">${esc(C.fmt_int(m.idx))}</span></span>
-						${m.attachment ? `<span class="whatsapp-cb__bubble-file">${ui.ico("attach", "xs")}<span dir="ltr">${esc(String(m.attachment).split("/").pop())}</span></span>` : ""}
-						<span class="whatsapp-cb__bubble-body" dir="auto">${esc(body || (m.attachment ? "" : __("(empty)")))}</span>
-						${options.length ? `<span class="whatsapp-cb__bubble-options">${options.map((o) => `<span>${esc(o)}</span>`).join("")}</span>` : ""}
+					${delay ? `<div class="whatsapp-campaign-builder__thread-wait"><span>${esc(__("wait {0}", [delay < 60 ? __("{0}s", [C.fmt_int(delay)]) : C.dur_text(Math.round(delay / 60))]))}</span></div>` : ""}
+					<div class="whatsapp-campaign-builder__bubble">
+						<span class="whatsapp-campaign-builder__bubble-type">${ui.ico(TYPE_ICON[m.message_type] || "chat", "xs")}<span>${esc(__(m.message_type))}</span><span class="whatsapp-campaign-builder__bubble-num whatsapp-kit-tabular" dir="ltr">${esc(C.fmt_int(m.idx))}</span></span>
+						${m.attachment ? `<span class="whatsapp-campaign-builder__bubble-file">${ui.ico("attach", "xs")}<span dir="ltr">${esc(String(m.attachment).split("/").pop())}</span></span>` : ""}
+						<span class="whatsapp-campaign-builder__bubble-body" dir="auto">${esc(body || (m.attachment ? "" : __("(empty)")))}</span>
+						${options.length ? `<span class="whatsapp-campaign-builder__bubble-options">${options.map((o) => `<span>${esc(o)}</span>`).join("")}</span>` : ""}
 					</div>`;
 				})
 				.join("")}</div>`;

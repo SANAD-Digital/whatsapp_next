@@ -134,7 +134,7 @@ ui.safe_url = (value) => {
 
 /** A window's «Open form» button (owner, 2026-10-28): `data-act="open_form"`, handled by `ui.open_form`. */
 ui.form_button_html = (cls = "") =>
-	`<button type="button" class="whatsapp-btn whatsapp-btn--secondary whatsapp-btn--sm whatsapp-kit-open-form ${cls}" data-act="open_form" title="${ui.escape(__("Open the record's full form"))}">${ui.escape(__("Open form"))}</button>`;
+	`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-kit-open-form ${cls}" data-act="open_form" title="${ui.escape(__("Open the record's full form"))}">${ui.escape(__("Open form"))}</button>`;
 
 /**
  * Leave a window for the record's Desk form: the window closes first (asking before it drops
@@ -231,28 +231,28 @@ ui.template_cards = (o) => {
 	const rows = all.filter((t) => !q || `${t.template_name || t.name} ${t.category || ""} ${t.body || ""}`.toLowerCase().includes(q));
 	const card = (t) => {
 		const on = t.name === o.chosen;
-		return `<button type="button" class="whatsapp-kit-ne__tpl${on ? " is-on" : ""}" data-act="template" data-value="${esc(t.name)}" aria-pressed="${on}" title="${esc(o.can_open ? __("Double-click to edit the template") : "")}">
-			<span class="whatsapp-kit-ne__tpl-head">
+		return `<button type="button" class="whatsapp-kit-notification-editor__tpl${on ? " is-on" : ""}" data-act="template" data-value="${esc(t.name)}" aria-pressed="${on}" title="${esc(o.can_open ? __("Double-click to edit the template") : "")}">
+			<span class="whatsapp-kit-notification-editor__tpl-head">
 				<strong>${esc(t.template_name || t.name)}</strong>
-				${on ? `<span class="whatsapp-kit-ne__tpl-tick" aria-hidden="true">${ui.ico("tick", "xs")}</span>` : ""}
+				${on ? `<span class="whatsapp-kit-notification-editor__tpl-tick" aria-hidden="true">${ui.ico("tick", "xs")}</span>` : ""}
 			</span>
-			<span class="whatsapp-kit-ne__tpl-meta">${t.category ? `<span class="whatsapp-badge whatsapp-badge--muted whatsapp-badge--nodot">${esc(t.category)}</span>` : ""}${
+			<span class="whatsapp-kit-notification-editor__tpl-meta">${t.category ? `<span class="whatsapp-badge whatsapp-badge--muted whatsapp-badge--nodot">${esc(t.category)}</span>` : ""}${
 				t.reference_doctype ? `<span>${esc(__("For {0}", [__(t.reference_doctype)]))}</span>` : `<span>${esc(__("Any document"))}</span>`
 			}${t.message_type && t.message_type !== "Text" ? `<span>${esc(__(t.message_type))}</span>` : ""}</span>
-			<span class="whatsapp-kit-ne__tpl-body" dir="auto">${esc(t.body || "")}</span>
+			<span class="whatsapp-kit-notification-editor__tpl-body" dir="auto">${esc(t.body || "")}</span>
 		</button>`;
 	};
 	const chosen = all.find((t) => t.name === o.chosen);
 	return `
-		${all.length > 6 ? `<input type="search" class="whatsapp-input whatsapp-kit-ne__filter" data-in="tpl_q" value="${esc(o.query || "")}" placeholder="${esc(__("Filter templates…"))}" aria-label="${esc(__("Filter templates"))}">` : ""}
-		<div class="whatsapp-kit-ne__tpls" role="group" aria-label="${esc(__("Templates"))}">
-			${o.can_open ? `<button type="button" class="whatsapp-kit-ne__tpl whatsapp-kit-ne__tpl--new" data-act="tpl_new">${ui.ico("plus", "sm")}<strong>${esc(__("New template"))}</strong><span>${esc(o.new_note || __("Opens the template editor"))}</span></button>` : ""}
+		${all.length > 6 ? `<input type="search" class="whatsapp-input whatsapp-kit-notification-editor__filter" data-in="tpl_q" value="${esc(o.query || "")}" placeholder="${esc(__("Filter templates…"))}" aria-label="${esc(__("Filter templates"))}">` : ""}
+		<div class="whatsapp-kit-notification-editor__tpls" role="group" aria-label="${esc(__("Templates"))}">
+			${o.can_open ? `<button type="button" class="whatsapp-kit-notification-editor__tpl whatsapp-kit-notification-editor__tpl--new" data-act="tpl_new">${ui.ico("plus", "sm")}<strong>${esc(__("New template"))}</strong><span>${esc(o.new_note || __("Opens the template editor"))}</span></button>` : ""}
 			${rows.map(card).join("")}
 		</div>
-		${!all.length && o.empty_note ? `<p class="whatsapp-kit-ae__hint">${esc(o.empty_note)}</p>` : ""}
-		${all.length && !rows.length ? `<p class="whatsapp-kit-ae__hint">${esc(__("No template matches."))}</p>` : ""}
-		${o.chosen && !chosen ? `<p class="whatsapp-kit-ae__hint">${esc(__("Uses {0}", [o.chosen]))}</p>` : ""}
-		${o.chosen && o.can_open ? `<div class="whatsapp-kit-ne__tpl-actions"><button type="button" class="whatsapp-kit-ae__link" data-act="tpl_edit">${ui.ico("note", "xs")} ${esc(__("Edit this template"))}</button></div>` : ""}`;
+		${!all.length && o.empty_note ? `<p class="whatsapp-kit-alert-editor__hint">${esc(o.empty_note)}</p>` : ""}
+		${all.length && !rows.length ? `<p class="whatsapp-kit-alert-editor__hint">${esc(__("No template matches."))}</p>` : ""}
+		${o.chosen && !chosen ? `<p class="whatsapp-kit-alert-editor__hint">${esc(__("Uses {0}", [o.chosen]))}</p>` : ""}
+		${o.chosen && o.can_open ? `<div class="whatsapp-kit-notification-editor__tpl-actions"><button type="button" class="whatsapp-kit-alert-editor__link" data-act="tpl_edit">${ui.ico("note", "xs")} ${esc(__("Edit this template"))}</button></div>` : ""}`;
 };
 
 /**
@@ -301,7 +301,7 @@ ui.link_html = (doctype, name, display, doc) => {
 };
 
 /**
- * Pin a page's header band while the page scrolls: `ui.pin_stack($root, [".whatsapp-kit-pagehead__row",
+ * Pin a page's header band while the page scrolls: `ui.pin_stack($root, [".whatsapp-kit-page-header__row",
  * ".my-toolbar"])`. Each element found under `$root` sticks under the ones before it (its offset is
  * their heights, re-measured whenever any of them changes size), on the page's own background so
  * the cards scroll away beneath it. The total height is published on `$root` as `--whatsapp-kit-pin-h`,

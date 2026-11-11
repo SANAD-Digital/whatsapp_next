@@ -1,7 +1,7 @@
 // PageHeader — title row, KPI row (ListStatsCard `kpi` layout), banner, custom blocks; plus the
 // shared progress bar that blocks and DataList cells use.
 
-.whatsapp-kit-pagehead {
+.whatsapp-kit-page-header {
 	display: flex;
 	flex-direction: column;
 	gap: var(--whatsapp-kit-gap-md);
@@ -37,7 +37,7 @@
 	// the header's verbs, wherever the screen put them: a toolbar control's height, the icon apart
 	// from its word. Frappe 16.53 pads every `.btn:not(.btn-md):not(.btn-lg):not(.btn-xs)` 4 × 8 px,
 	// so the same three `:not()`s are needed here to be heard.
-	:is(.whatsapp-kit-pagehead__actions .btn, .whatsapp-kit-pagehead__row > .btn, .whatsapp-kit-pagehead__primary):not(.btn-md):not(.btn-lg):not(.btn-xs) {
+	:is(.whatsapp-kit-page-header__actions .btn, .whatsapp-kit-page-header__row > .btn, .whatsapp-kit-page-header__primary):not(.btn-md):not(.btn-lg):not(.btn-xs) {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
@@ -105,7 +105,7 @@
 }
 
 @media (max-width: 767px) {
-	.whatsapp-kit-pagehead__row { flex-direction: column; }
-	.whatsapp-kit-pagehead__actions { width: 100%; .btn { flex: 1; } }
+	.whatsapp-kit-page-header__row { flex-direction: column; }
+	.whatsapp-kit-page-header__actions { width: 100%; .btn { flex: 1; } }
 	.whatsapp-kit-strip__actions { margin-inline-start: 0; width: 100%; .btn { flex: 1; } }
 }

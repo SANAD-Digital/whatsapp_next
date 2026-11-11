@@ -30,7 +30,7 @@ function mount_members(frm) {
 		{ label: __("Add members"), primary: true, icon: "es-line-add", disabled: !can_change_members(frm), hint, handler: () => open_picker(frm, "add") },
 		{ label: __("Remove members"), icon: "es-line-delete", condition: () => cint(frm.doc.member_count) > 0, disabled: !can_change_members(frm), hint, handler: () => open_picker(frm, "remove") },
 	];
-	if (frm.whatsapp_members && frm.whatsapp_members.frm === frm && frm.$wrapper.find('.whatsapp-kit-pct[data-fieldname="members"]').length) {
+	if (frm.whatsapp_members && frm.whatsapp_members.frm === frm && frm.$wrapper.find('.whatsapp-kit-paged-child-table[data-fieldname="members"]').length) {
 		frm.whatsapp_members.update({ toolbar_actions });
 		return;
 	}

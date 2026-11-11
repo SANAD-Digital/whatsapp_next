@@ -78,12 +78,12 @@ frappe.provide("whatsapp_next.groups");
 					this.can_write ? { key: "save", label: this.editing ? __("Save") : __("Create group"), variant: "primary", requires_dirty: this.editing, handler: (values) => this.save(values) } : null,
 				].filter(Boolean),
 			});
-			this.panel.$root.addClass("whatsapp-ge");
-			this.$blacklist = $(`<div class="whatsapp-kit-op__note whatsapp-kit-op__note--warn" hidden>${esc(__("A blacklist blocks its members from every command, campaign and quick send."))}</div>`).appendTo(
+			this.panel.$root.addClass("whatsapp-group-editor");
+			this.$blacklist = $(`<div class="whatsapp-kit-overlay-panel__note whatsapp-kit-overlay-panel__note--warn" hidden>${esc(__("A blacklist blocks its members from every command, campaign and quick send."))}</div>`).appendTo(
 				this.panel.field("kind").$el
 			);
 			this.$blacklist.prop("hidden", g.kind !== "Blacklist");
-			if (!this.can_write) this.panel.$root.find(".whatsapp-kit-op__body :input").prop("disabled", true);
+			if (!this.can_write) this.panel.$root.find(".whatsapp-kit-overlay-panel__body :input").prop("disabled", true);
 			this.panel.show();
 		}
 
@@ -100,21 +100,21 @@ frappe.provide("whatsapp_next.groups");
 		// ---- members pane ----------------------------------------------------------------------
 
 		make_members($el) {
-			$el.addClass("whatsapp-ge__members").html(`
-				<div class="whatsapp-ge__bar">
-					<span class="whatsapp-ge__bar-label">${esc(__("Add from"))}</span>
-					<div class="whatsapp-ge__sources"></div>
+			$el.addClass("whatsapp-group-editor__members").html(`
+				<div class="whatsapp-group-editor__bar">
+					<span class="whatsapp-group-editor__bar-label">${esc(__("Add from"))}</span>
+					<div class="whatsapp-group-editor__sources"></div>
 				</div>
-				<div class="whatsapp-ge__tools">
-					<input type="search" class="whatsapp-input whatsapp-ge__search" placeholder="${esc(__("Search the members by name or number…"))}" aria-label="${esc(__("Search the members"))}">
+				<div class="whatsapp-group-editor__tools">
+					<input type="search" class="whatsapp-input whatsapp-group-editor__search" placeholder="${esc(__("Search the members by name or number…"))}" aria-label="${esc(__("Search the members"))}">
 				</div>
-				<div class="whatsapp-ge__list" role="list" aria-live="polite"></div>
-				<div class="whatsapp-ge__foot">
-					<span class="whatsapp-ge__foot-label">${esc(__("Members"))} <span class="whatsapp-ge__foot-count whatsapp-kit-tabular"></span></span>
-					<span class="whatsapp-ge__foot-note"></span>
-					<span class="whatsapp-ge__foot-actions"></span>
+				<div class="whatsapp-group-editor__list" role="list" aria-live="polite"></div>
+				<div class="whatsapp-group-editor__foot">
+					<span class="whatsapp-group-editor__foot-label">${esc(__("Members"))} <span class="whatsapp-group-editor__foot-count whatsapp-kit-tabular"></span></span>
+					<span class="whatsapp-group-editor__foot-note"></span>
+					<span class="whatsapp-group-editor__foot-actions"></span>
 				</div>`);
-			const $sources = $el.find(".whatsapp-ge__sources");
+			const $sources = $el.find(".whatsapp-group-editor__sources");
 			SOURCES.forEach((s) => {
 				$(whatsapp.kit.btn({ label: s.label, icon: s.icon, variant: "tonal", size: "sm", disabled: !this.can_write }))
 					.on("click", () => this.pick({ source: s.source }))
@@ -123,11 +123,11 @@ frappe.provide("whatsapp_next.groups");
 			$(whatsapp.kit.btn({ label: __("More sources"), variant: "ghost", size: "sm", disabled: !this.can_write }))
 				.on("click", () => this.pick())
 				.appendTo($sources);
-			this.$list = $el.find(".whatsapp-ge__list");
-			this.$count = $el.find(".whatsapp-ge__foot-count");
-			this.$note = $el.find(".whatsapp-ge__foot-note");
-			this.$foot_actions = $el.find(".whatsapp-ge__foot-actions");
-			$el.find(".whatsapp-ge__search").on(
+			this.$list = $el.find(".whatsapp-group-editor__list");
+			this.$count = $el.find(".whatsapp-group-editor__foot-count");
+			this.$note = $el.find(".whatsapp-group-editor__foot-note");
+			this.$foot_actions = $el.find(".whatsapp-group-editor__foot-actions");
+			$el.find(".whatsapp-group-editor__search").on(
 				"input",
 				frappe.utils.debounce((e) => {
 					this.query = String(e.target.value || "").trim().toLowerCase();
@@ -215,11 +215,11 @@ frappe.provide("whatsapp_next.groups");
 					: state === "removed"
 						? { act: "undo", label: __("Undo"), title: __("Keep this member") }
 						: { act: "remove", icon: "trash", title: __("Remove from the group") };
-			return `<div class="whatsapp-ge__row whatsapp-ge__row--${state}" role="listitem" data-key="${esc(key_of(m))}">
+			return `<div class="whatsapp-group-editor__row whatsapp-group-editor__row--${state}" role="listitem" data-key="${esc(key_of(m))}">
 				${name ? whatsapp.kit.avatar({ name, size: "sm", square: true }) : `<span class="whatsapp-avatar whatsapp-avatar--sm whatsapp-avatar--sq" aria-hidden="true">${whatsapp.kit.ico("user", "sm")}</span>`}
-				<span class="whatsapp-ge__row-main">
-					${name ? `<span class="whatsapp-ge__row-name">${esc(name)}${whatsapp.ui.group_tag(key_of(m))}</span>` : ""}
-					<span class="whatsapp-ge__row-phone${name ? "" : " whatsapp-ge__row-phone--main"} whatsapp-kit-tabular" dir="ltr">${esc(phone)}${name ? "" : whatsapp.ui.group_tag(key_of(m))}</span>
+				<span class="whatsapp-group-editor__row-main">
+					${name ? `<span class="whatsapp-group-editor__row-name">${esc(name)}${whatsapp.ui.group_tag(key_of(m))}</span>` : ""}
+					<span class="whatsapp-group-editor__row-phone${name ? "" : " whatsapp-group-editor__row-phone--main"} whatsapp-kit-tabular" dir="ltr">${esc(phone)}${name ? "" : whatsapp.ui.group_tag(key_of(m))}</span>
 				</span>
 				${tag}
 				${this.can_write ? whatsapp.kit.btn({ label: act.label, icon: act.icon, title: act.title, variant: "ghost", size: "sm", attrs: { "data-act": act.act } }) : ""}
@@ -237,16 +237,16 @@ frappe.provide("whatsapp_next.groups");
 			this.$list.html(html);
 
 			if (this.loading) {
-				this.$list.append(`<div class="whatsapp-ge__more">${whatsapp.ui.skeleton(3)}</div>`);
+				this.$list.append(`<div class="whatsapp-group-editor__more">${whatsapp.ui.skeleton(3)}</div>`);
 			} else if (this.load_error) {
-				new whatsapp.ui.EmptyState({ wrapper: $('<div class="whatsapp-ge__more"></div>').appendTo(this.$list), state: "error", size: "sm", description: this.load_error.message, action: { label: __("Retry"), onclick: () => ((this.load_error = null), this.load_more()) } });
+				new whatsapp.ui.EmptyState({ wrapper: $('<div class="whatsapp-group-editor__more"></div>').appendTo(this.$list), state: "error", size: "sm", description: this.load_error.message, action: { label: __("Retry"), onclick: () => ((this.load_error = null), this.load_more()) } });
 			} else if (this.existing.length < this.total) {
-				$(`<div class="whatsapp-ge__more">${whatsapp.kit.btn({ label: __("Show more members ({0} of {1})", [fmt(this.existing.length), fmt(this.total)]), variant: "secondary", size: "sm" })}</div>`)
+				$(`<div class="whatsapp-group-editor__more">${whatsapp.kit.btn({ label: __("Show more members ({0} of {1})", [fmt(this.existing.length), fmt(this.total)]), variant: "secondary", size: "sm" })}</div>`)
 					.on("click", "button", () => this.load_more())
 					.appendTo(this.$list);
 			} else if (!added.length && !saved.length) {
 				this.$list.html(
-					`<div class="whatsapp-ge__empty">${esc(q ? __("No member matches this search.") : __("No members yet. Add them from contacts, another group, a file or typed numbers."))}</div>`
+					`<div class="whatsapp-group-editor__empty">${esc(q ? __("No member matches this search.") : __("No members yet. Add them from contacts, another group, a file or typed numbers."))}</div>`
 				);
 			}
 			this.render_summary();
@@ -263,19 +263,19 @@ frappe.provide("whatsapp_next.groups");
 			this.$note.text(parts.join(" · "));
 			this.$foot_actions.empty();
 			if (this.can_write && after > 0 && this.existing.length >= this.total) {
-				$(whatsapp.kit.btn({ label: __("Remove all"), variant: "ghost", size: "sm", cls: "whatsapp-ge__clear" }))
+				$(whatsapp.kit.btn({ label: __("Remove all"), variant: "ghost", size: "sm", cls: "whatsapp-group-editor__clear" }))
 					.on("click", () => this.clear_all())
 					.appendTo(this.$foot_actions);
 			}
 			if (!this.$summary) return;
-			const line = (k, v, cls = "") => `<div class="whatsapp-ge__sum-row ${cls}"><dt>${esc(k)}</dt><dd class="whatsapp-kit-tabular" dir="ltr">${esc(v)}</dd></div>`;
-			this.$summary.html(`<section class="whatsapp-ge__sum" aria-label="${esc(__("Members summary"))}">
-				<span class="whatsapp-ge__sum-title">${esc(__("Members summary"))}</span>
+			const line = (k, v, cls = "") => `<div class="whatsapp-group-editor__sum-row ${cls}"><dt>${esc(k)}</dt><dd class="whatsapp-kit-tabular" dir="ltr">${esc(v)}</dd></div>`;
+			this.$summary.html(`<section class="whatsapp-group-editor__sum" aria-label="${esc(__("Members summary"))}">
+				<span class="whatsapp-group-editor__sum-title">${esc(__("Members summary"))}</span>
 				<dl>
 					${this.editing ? line(__("Members now"), fmt(this.total)) : ""}
-					${line(__("To add"), adding ? `+${fmt(adding)}` : "0", adding ? "whatsapp-ge__sum-row--ok" : "")}
-					${this.editing ? line(__("To remove"), removing ? `−${fmt(removing)}` : "0", removing ? "whatsapp-ge__sum-row--dg" : "") : ""}
-					${line(__("After saving"), fmt(after), "whatsapp-ge__sum-row--total")}
+					${line(__("To add"), adding ? `+${fmt(adding)}` : "0", adding ? "whatsapp-group-editor__sum-row--ok" : "")}
+					${this.editing ? line(__("To remove"), removing ? `−${fmt(removing)}` : "0", removing ? "whatsapp-group-editor__sum-row--dg" : "") : ""}
+					${line(__("After saving"), fmt(after), "whatsapp-group-editor__sum-row--total")}
 				</dl>
 			</section>`);
 		}

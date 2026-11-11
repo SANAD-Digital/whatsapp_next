@@ -13,7 +13,7 @@ The fields are the prototype's own — `text`, `number`, `email`, `textarea`, `s
 server and only a listed record can be chosen), `rows` (a child table whose rows are `select` and
 `link` controls with a remove, and an add button), `list` (a bordered read-mostly table with an
 add row), `choice` (a searchable grid of options), `phone` (the kit's `PhoneField`) and `html` — drawn with the kit's controls (`whatsapp-input`, `whatsapp-select`,
-`whatsapp-seg`, `whatsapp-toggle`, `whatsapp-btn`, `whatsapp-badge`). Values are tracked against the initial ones, so the
+`whatsapp-segmented`, `whatsapp-toggle`, `whatsapp-button`, `whatsapp-badge`). Values are tracked against the initial ones, so the
 header says when something changed and an action with `requires_dirty` sleeps until then.
 
 ## Usage

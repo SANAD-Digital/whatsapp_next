@@ -71,13 +71,13 @@ frappe.provide("whatsapp_next.campaign");
 			// this screen inventing sizes of its own.
 			this.$wrapper.addClass("whatsapp whatsapp--compact");
 			this.$wrapper.html(`
-				<div class="whatsapp-cb__shell">
-					<div class="whatsapp-cb__top" data-el="header"></div>
-					<div class="whatsapp-cb__body">
-						<main class="whatsapp-cb__main">
-							<div class="whatsapp-cb__panel">
-								<div class="whatsapp-cb__panel-head" data-el="stepper"></div>
-								<div class="whatsapp-cb__pane" data-el="pane"></div>
+				<div class="whatsapp-campaign-builder__shell">
+					<div class="whatsapp-campaign-builder__top" data-el="header"></div>
+					<div class="whatsapp-campaign-builder__body">
+						<main class="whatsapp-campaign-builder__main">
+							<div class="whatsapp-campaign-builder__panel">
+								<div class="whatsapp-campaign-builder__panel-head" data-el="stepper"></div>
+								<div class="whatsapp-campaign-builder__pane" data-el="pane"></div>
 							</div>
 						</main>
 					</div>
@@ -235,7 +235,7 @@ frappe.provide("whatsapp_next.campaign");
 		/** The whole screen, including the step's own pane. */
 		render() {
 			const wizard = this.wizard();
-			this.$wrapper.toggleClass("whatsapp-cb--wizard", wizard).toggleClass("whatsapp-cb--monitor", !wizard);
+			this.$wrapper.toggleClass("whatsapp-campaign-builder--wizard", wizard).toggleClass("whatsapp-campaign-builder--monitor", !wizard);
 			// until the campaign exists there is no device, no audience and no duration to state:
 			// the band would be four dashes over an empty name
 			this.$("header").toggle(!this.frm.is_new());

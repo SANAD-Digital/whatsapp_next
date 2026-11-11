@@ -22,7 +22,7 @@
 // and two `min-width` queries open it out — 620 px gives the form its second column, 900 px brings
 // the rail in.
 
-@keyframes whatsapp-onb-in {
+@keyframes whatsapp-onboarding-in {
 	from {
 		opacity: 0;
 		transform: translateY(6px);
@@ -33,13 +33,13 @@
 	}
 }
 
-@keyframes whatsapp-onb-spin {
+@keyframes whatsapp-onboarding-spin {
 	to {
 		transform: rotate(360deg);
 	}
 }
 
-.whatsapp-onb {
+.whatsapp-onboarding {
 	--whatsapp-onb-gap: 14px;
 	// compact fields (owner, 2026-10-08): 38 px at 13.5 px, through the kit's own variables
 	--whatsapp-h: 38px;
@@ -160,7 +160,7 @@
 		font-size: 14.5px;
 		line-height: 1.6;
 
-		.whatsapp-ico {
+		.whatsapp-icon {
 			margin-block-start: 4px;
 			color: var(--whatsapp-brand-bright);
 		}
@@ -419,7 +419,7 @@
 		border-radius: 0;
 		background: transparent;
 		box-shadow: none;
-		animation: whatsapp-onb-in 0.22s ease-out;
+		animation: whatsapp-onboarding-in 0.22s ease-out;
 	}
 	// the platform's form widths: 27rem for a short step, 36rem for the long sign-up
 	&__card--sm {
@@ -484,7 +484,7 @@
 		font-weight: 600;
 		color: var(--whatsapp-ink);
 	}
-	.whatsapp-btn--block {
+	.whatsapp-button--block {
 		min-block-size: 42px;
 		font-size: 14px;
 	}
@@ -541,9 +541,9 @@
 		min-inline-size: 0;
 	}
 	// a button that is a link (share on WhatsApp): Desk's link underline stays off it
-	a.whatsapp-btn,
-	a.whatsapp-btn:hover,
-	a.whatsapp-btn:focus {
+	a.whatsapp-button,
+	a.whatsapp-button:hover,
+	a.whatsapp-button:focus {
 		text-decoration: none;
 	}
 	// "Send it on WhatsApp" inside a waiting strip: the strip's own ink, underlined, never a button
@@ -606,13 +606,13 @@
 	&__card--lg.whatsapp-card {
 		gap: 12px;
 
-		.whatsapp-onb__card-head {
+		.whatsapp-onboarding__card-head {
 			margin-block-end: 0;
 		}
-		.whatsapp-onb__card-title {
+		.whatsapp-onboarding__card-title {
 			font-size: 21px;
 		}
-		.whatsapp-onb__card-sub {
+		.whatsapp-onboarding__card-sub {
 			line-height: 1.5;
 		}
 	}
@@ -648,7 +648,7 @@
 			transform: rotate(45deg);
 		}
 	}
-	&__pinned.whatsapp-btnbar {
+	&__pinned.whatsapp-button-bar {
 		position: sticky;
 		inset-block-end: 0;
 		z-index: 2;
@@ -661,10 +661,10 @@
 	// the password's label row carries "Generate" and "Show" and is taller than a plain label: the
 	// field beside it takes the same height, so both inputs sit on one line
 	&__label-row,
-	[data-field="whatsapp-onb-pw2"] > .whatsapp-field__label {
+	[data-field="whatsapp-onboarding-pw2"] > .whatsapp-field__label {
 		min-block-size: 30px;
 	}
-	[data-field="whatsapp-onb-pw2"] > .whatsapp-field__label {
+	[data-field="whatsapp-onboarding-pw2"] > .whatsapp-field__label {
 		display: flex;
 		align-items: center;
 		gap: 4px;
@@ -900,7 +900,7 @@
 		color: var(--whatsapp-ink-3);
 	}
 	// the gate that stands in for the create button until the terms have been read
-	&__gate.whatsapp-btn {
+	&__gate.whatsapp-button {
 		border-style: dashed;
 		white-space: normal;
 		text-align: center;
@@ -1282,7 +1282,7 @@
 	// Verbs and motion
 	// =============================================================================================
 
-	&__grow.whatsapp-btn {
+	&__grow.whatsapp-button {
 		flex: 1 1 180px;
 	}
 	&__btn--busy::before {
@@ -1293,7 +1293,7 @@
 		border-radius: 50%;
 		border: 2px solid currentColor;
 		border-block-start-color: transparent;
-		animation: whatsapp-onb-spin 0.7s linear infinite;
+		animation: whatsapp-onboarding-spin 0.7s linear infinite;
 	}
 
 	&__foot-note {
@@ -1411,24 +1411,24 @@
 // The one glyph whose meaning is its direction. `chevronEnd` already points at the end of the
 // line, so Arabic needs nothing — but Desk renders some icon sets unmirrored, so the rule is
 // stated rather than assumed.
-html[dir="rtl"] .whatsapp-onb__route-arrow {
+html[dir="rtl"] .whatsapp-onboarding__route-arrow {
 	transform: scaleX(-1);
 }
 
 // "Sign in with another account?" — what goes, what stays, and the backup before it
 // a sign-in with several accounts: one button per account, the chosen one marked (owner, 2026-11-04)
-.whatsapp-onb__accounts {
+.whatsapp-onboarding__accounts {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	margin-block-end: 12px;
 }
-.whatsapp-onb__accounts-lead {
+.whatsapp-onboarding__accounts-lead {
 	margin: 0;
 	font-size: 13px;
 	color: var(--whatsapp-ink-3);
 }
-.whatsapp-onb__account {
+.whatsapp-onboarding__account {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
@@ -1441,13 +1441,13 @@ html[dir="rtl"] .whatsapp-onb__route-arrow {
 	cursor: pointer;
 	b { font-size: 14px; font-weight: 600; color: var(--whatsapp-ink); }
 	span { font-size: 12px; color: var(--whatsapp-ink-4); }
-	.whatsapp-onb__account-site { color: var(--whatsapp-ink-3); }
+	.whatsapp-onboarding__account-site { color: var(--whatsapp-ink-3); }
 	&[aria-pressed="true"] { border-color: var(--whatsapp-pri); box-shadow: inset 0 0 0 1px var(--whatsapp-pri); }
 	&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 2px; }
 }
 
 // the account another site has: what moving it means, and the verb (owner, 2026-11-04)
-.whatsapp-onb__inuse {
+.whatsapp-onboarding__inuse {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
@@ -1459,7 +1459,7 @@ html[dir="rtl"] .whatsapp-onb__route-arrow {
 	p { margin: 0; font-size: 13px; line-height: 1.6; }
 }
 
-.whatsapp-onb__switch {
+.whatsapp-onboarding__switch {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -1477,7 +1477,7 @@ html[dir="rtl"] .whatsapp-onb__route-arrow {
 		color: var(--whatsapp-dg-i, var(--whatsapp-ink));
 	}
 }
-.whatsapp-onb__switch-backup {
+.whatsapp-onboarding__switch-backup {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

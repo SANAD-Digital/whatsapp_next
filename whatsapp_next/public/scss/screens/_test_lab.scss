@@ -9,7 +9,7 @@
 
 // ---- the screen -----------------------------------------------------------------------------------
 
-.whatsapp-lab {
+.whatsapp-test-lab {
 	display: flex;
 	flex-direction: column;
 	gap: var(--whatsapp-kit-gap-lg);
@@ -208,7 +208,7 @@
 			border-color: var(--whatsapp-dg-sb);
 			background: var(--whatsapp-dg-s);
 		}
-		.whatsapp-btn {
+		.whatsapp-button {
 			flex: none;
 		}
 	}
@@ -717,7 +717,7 @@
 			color: var(--whatsapp-pri-d);
 			font-weight: 600;
 		}
-		.whatsapp-lab__bubble {
+		.whatsapp-test-lab__bubble {
 			margin-block-start: var(--whatsapp-kit-gap-sm);
 		}
 	}
@@ -739,7 +739,7 @@
 		background: var(--whatsapp-surface);
 		box-shadow: var(--whatsapp-shadow-md);
 
-		.whatsapp-btn {
+		.whatsapp-button {
 			flex: none;
 
 			// the kit's button states its own display, which would outrank the attribute
@@ -748,7 +748,7 @@
 			}
 		}
 		@media (max-width: 575px) {
-			.whatsapp-btn {
+			.whatsapp-button {
 				inline-size: 100%;
 			}
 		}
@@ -769,7 +769,7 @@
 
 // ---- the history panel (mounted on <body> by OverlayPanel) ------------------------------------------
 
-.whatsapp-lab__history {
+.whatsapp-test-lab__history {
 	display: flex;
 	flex-direction: column;
 	gap: var(--whatsapp-kit-gap-sm);
@@ -777,7 +777,7 @@
 	padding: 0;
 	list-style: none;
 }
-.whatsapp-lab__history-row {
+.whatsapp-test-lab__history-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -796,7 +796,7 @@
 		background: var(--whatsapp-pri-s);
 	}
 }
-.whatsapp-lab__history-main {
+.whatsapp-test-lab__history-main {
 	display: flex;
 	flex-direction: column;
 	min-inline-size: 0;

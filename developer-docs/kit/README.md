@@ -151,7 +151,7 @@ accept a per-instance `api` override.
 
 | Helper | Returns |
 |---|---|
-| `btn({label, icon, variant, size, block, disabled, title, attrs, cls})` | `<button class="whatsapp-btn whatsapp-btn--{primary\|secondary\|danger\|ghost\|tonal}">`. With `icon` and no `label` it is an icon-only square, and `title` becomes its `aria-label` |
+| `btn({label, icon, variant, size, block, disabled, title, attrs, cls})` | `<button class="whatsapp-button whatsapp-button--{primary\|secondary\|danger\|ghost\|tonal}">`. With `icon` and no `label` it is an icon-only square, and `title` becomes its `aria-label` |
 | `badge(label, tone, {dot, icon})` | `.whatsapp-badge--{ok\|warn\|danger\|info\|muted\|pri}` |
 | `segmented(options, value, {label, name})` + `bind_segmented(el, on_pick)` | A `role="radiogroup"` segmented control with arrow-key selection |
 | `rule(label, note)` | A form-section rule |
@@ -175,7 +175,7 @@ Component-level helpers that other components reuse: [Toast](Toast.md) (the only
   Colours come from the `--whatsapp-*` palette.
 - **The bridge.** `public/scss/_tokens.scss` redefines the Espresso variables to palette values,
   but only on this product's own surfaces: its Pages (`#page-wa-*`), `WhatsApp *` forms,
-  `.modal.whatsapp-kit-sheet`, `.whatsapp-kit-sw`, `.whatsapp-kit-ae-layer` and `.whatsapp-kit-op`. Desk lists keep Desk
+  `.modal.whatsapp-kit-sheet`, `.whatsapp-kit-settings-window`, `.whatsapp-kit-alert-editor-layer` and `.whatsapp-kit-overlay-panel`. Desk lists keep Desk
   colours even when a kit component is mounted inside them.
 - **Dark mode.** `_tokens.scss` defines the palette twice: in `:root` and in
   `[data-theme="dark"]`. That is Desk's own theme switch, so no component needs dark-mode rules.
@@ -214,8 +214,8 @@ Component-level helpers that other components reuse: [Toast](Toast.md) (the only
    lines: the import in `index.js` and the `@import` in `style.scss`.
 2. Copy `whatsapp_next/public/scss/_tokens.scss` to `<your_app>/public/scss/_tokens.scss`. Then
    edit its `$wa-surfaces` list so it names your own Page ids and form routes instead of
-   `#page-wa-*` and `Form/WhatsApp `. Keep `.modal.whatsapp-kit-sheet`, `.whatsapp-kit-sw`, `.whatsapp-kit-ae-layer` and
-   `.whatsapp-kit-op`.
+   `#page-wa-*` and `Form/WhatsApp `. Keep `.modal.whatsapp-kit-sheet`, `.whatsapp-kit-settings-window`, `.whatsapp-kit-alert-editor-layer` and
+   `.whatsapp-kit-overlay-panel`.
 3. Create `<your_app>/public/js/<your_app>.bundle.js`:
    ```js
    import "./ui/index.js";

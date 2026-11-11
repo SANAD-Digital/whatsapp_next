@@ -96,7 +96,7 @@
 	class TestLab {
 		constructor(page) {
 			this.page = page;
-			this.$main = $(page.main).addClass("whatsapp-kit whatsapp whatsapp-lab");
+			this.$main = $(page.main).addClass("whatsapp-kit whatsapp whatsapp-test-lab");
 			this.context = null;
 			this.targets = []; // [{phone_e164, name, party, party_type, blacklisted}]
 			this.rows = []; // the rows of the run on screen
@@ -114,10 +114,10 @@
 
 		build() {
 			this.$main.html(`
-				<div class="whatsapp-lab__head"></div>
-				<div class="whatsapp-lab__body"></div>`);
-			this.$head = this.$main.find(".whatsapp-lab__head");
-			this.$body = this.$main.find(".whatsapp-lab__body");
+				<div class="whatsapp-test-lab__head"></div>
+				<div class="whatsapp-test-lab__body"></div>`);
+			this.$head = this.$main.find(".whatsapp-test-lab__head");
+			this.$body = this.$main.find(".whatsapp-test-lab__body");
 			this.header = new ui.PageHeader({
 				wrapper: this.$head,
 				title: __("Test Lab"),
@@ -128,7 +128,7 @@
 					text: __("These are real WhatsApp messages. They are sent only to the target numbers you set below, and they count against your plan."),
 				},
 			});
-			$(`<span class="whatsapp-lab__mark" aria-hidden="true">${kit.ico("shield", "md")}</span>`).prependTo(this.header.$el.find(".whatsapp-kit-pagehead__row"));
+			$(`<span class="whatsapp-test-lab__mark" aria-hidden="true">${kit.ico("shield", "md")}</span>`).prependTo(this.header.$el.find(".whatsapp-kit-page-header__row"));
 			this.state = new ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 6 });
 		}
 
@@ -159,37 +159,37 @@
 			this.cap = Math.min(cint(saved.cap) || c.limits.cap, c.limits.cap_max);
 			this.pacing = Math.max(c.limits.pacing_min, Math.min(cint(saved.pacing) || c.limits.pacing, c.limits.pacing_max));
 			this.$body.html(`
-				<section class="whatsapp-lab__section" data-section="setup" aria-labelledby="whatsapp-lab-setup-t">
+				<section class="whatsapp-test-lab__section" data-section="setup" aria-labelledby="whatsapp-lab-setup-t">
 					${this.section_title("whatsapp-lab-setup-t", __("What the test runs with"), __("Filled in from your system — change what you need."))}
-					<div class="whatsapp-card whatsapp-lab__setup"></div>
+					<div class="whatsapp-card whatsapp-test-lab__setup"></div>
 				</section>
-				<section class="whatsapp-lab__section" data-section="health" aria-labelledby="whatsapp-lab-health-t">
+				<section class="whatsapp-test-lab__section" data-section="health" aria-labelledby="whatsapp-lab-health-t">
 					${this.section_title("whatsapp-lab-health-t", __("Connection and setup"), __("Read-only checks. Nothing is sent."))}
-					<div class="whatsapp-card whatsapp-lab__health"></div>
+					<div class="whatsapp-card whatsapp-test-lab__health"></div>
 				</section>
-				<section class="whatsapp-lab__section" data-section="messages" aria-labelledby="whatsapp-lab-msg-t">
+				<section class="whatsapp-test-lab__section" data-section="messages" aria-labelledby="whatsapp-lab-msg-t">
 					${this.section_title("whatsapp-lab-msg-t", __("Messages"), __("Each ticked check sends one message to every target number."))}
-					<div class="whatsapp-lab__grid" data-grid="messages"></div>
+					<div class="whatsapp-test-lab__grid" data-grid="messages"></div>
 				</section>
-				<section class="whatsapp-lab__section" data-section="commands" aria-labelledby="whatsapp-lab-cmd-t">
+				<section class="whatsapp-test-lab__section" data-section="commands" aria-labelledby="whatsapp-lab-cmd-t">
 					${this.section_title("whatsapp-lab-cmd-t", __("Commands"), __("What a customer gets back when they write a command."))}
-					<div class="whatsapp-lab__grid whatsapp-lab__grid--wide" data-grid="commands"></div>
+					<div class="whatsapp-test-lab__grid whatsapp-test-lab__grid--wide" data-grid="commands"></div>
 				</section>
-				<section class="whatsapp-lab__section" data-section="campaign" aria-labelledby="whatsapp-lab-camp-t">
+				<section class="whatsapp-test-lab__section" data-section="campaign" aria-labelledby="whatsapp-lab-camp-t">
 					${this.section_title("whatsapp-lab-camp-t", __("Campaign and receipts"), __("A small campaign to the target numbers, and the way back from WhatsApp."))}
-					<div class="whatsapp-lab__grid" data-grid="campaign"></div>
+					<div class="whatsapp-test-lab__grid" data-grid="campaign"></div>
 				</section>
-				<section class="whatsapp-lab__section" data-section="run" aria-labelledby="whatsapp-lab-run-t">
+				<section class="whatsapp-test-lab__section" data-section="run" aria-labelledby="whatsapp-lab-run-t">
 					${this.section_title("whatsapp-lab-run-t", __("The run"), __("Every message of the run, from sending to its delivery receipt."))}
-					<div class="whatsapp-lab__summary"></div>
-					<div class="whatsapp-card whatsapp-lab__run"></div>
+					<div class="whatsapp-test-lab__summary"></div>
+					<div class="whatsapp-card whatsapp-test-lab__run"></div>
 				</section>
-				<div class="whatsapp-lab__bar" role="region" aria-label="${esc(__("Run"))}"></div>`);
-			this.$setup = this.$body.find(".whatsapp-lab__setup");
-			this.$health = this.$body.find(".whatsapp-lab__health");
-			this.$summary = this.$body.find(".whatsapp-lab__summary");
-			this.$run = this.$body.find(".whatsapp-lab__run");
-			this.$bar = this.$body.find(".whatsapp-lab__bar");
+				<div class="whatsapp-test-lab__bar" role="region" aria-label="${esc(__("Run"))}"></div>`);
+			this.$setup = this.$body.find(".whatsapp-test-lab__setup");
+			this.$health = this.$body.find(".whatsapp-test-lab__health");
+			this.$summary = this.$body.find(".whatsapp-test-lab__summary");
+			this.$run = this.$body.find(".whatsapp-test-lab__run");
+			this.$bar = this.$body.find(".whatsapp-test-lab__bar");
 			this.render_setup();
 			this.render_checks();
 			this.render_run();
@@ -201,7 +201,7 @@
 		}
 
 		section_title(id, title, note) {
-			return `<div class="whatsapp-lab__section-head"><h3 id="${id}" class="whatsapp-lab__section-title">${esc(title)}</h3><span class="whatsapp-lab__section-note">${esc(note)}</span></div>`;
+			return `<div class="whatsapp-test-lab__section-head"><h3 id="${id}" class="whatsapp-test-lab__section-title">${esc(title)}</h3><span class="whatsapp-test-lab__section-note">${esc(note)}</span></div>`;
 		}
 
 		// ---- setup strip --------------------------------------------------------------------------
@@ -218,33 +218,33 @@
 			const l = this.context.limits;
 			const devices = this.devices();
 			this.$setup.html(`
-				<div class="whatsapp-lab__setup-grid">
-					<div class="whatsapp-field whatsapp-lab__f-device">
+				<div class="whatsapp-test-lab__setup-grid">
+					<div class="whatsapp-field whatsapp-test-lab__f-device">
 						<label class="whatsapp-field__label" for="whatsapp-lab-device">${esc(__("Sending device"))}</label>
 						${
 							devices.length
 								? `<select id="whatsapp-lab-device" class="whatsapp-select">${devices
 										.map((d) => `<option value="${esc(d.name)}"${d.name === this.device ? " selected" : ""}>${esc(d.device_name || d.name)}</option>`)
 										.join("")}</select>`
-								: `<button type="button" class="whatsapp-btn whatsapp-btn--secondary" data-act="pair">${esc(__("Pair a device"))}</button>`
+								: `<button type="button" class="whatsapp-button whatsapp-button--secondary" data-act="pair">${esc(__("Pair a device"))}</button>`
 						}
-						<span class="whatsapp-field__hint whatsapp-lab__device-state"></span>
+						<span class="whatsapp-field__hint whatsapp-test-lab__device-state"></span>
 					</div>
-					<div class="whatsapp-field whatsapp-lab__f-targets">
+					<div class="whatsapp-field whatsapp-test-lab__f-targets">
 						<span class="whatsapp-field__label" id="whatsapp-lab-targets-l">${esc(__("Target numbers"))}</span>
-						<div class="whatsapp-lab__targets" role="list" aria-labelledby="whatsapp-lab-targets-l"></div>
-						<div class="whatsapp-lab__target-add">
-							<div class="whatsapp-lab__target-field"></div>
+						<div class="whatsapp-test-lab__targets" role="list" aria-labelledby="whatsapp-lab-targets-l"></div>
+						<div class="whatsapp-test-lab__target-add">
+							<div class="whatsapp-test-lab__target-field"></div>
 							${kit.btn({ label: __("Add"), icon: "plus", variant: "tonal", attrs: { "data-act": "add-target" } })}
 						</div>
 						<span class="whatsapp-field__hint">${esc(__("Your own numbers. Up to {0}; nothing is ever sent to anyone else.", [fmt_int(l.max_targets)]))}</span>
 					</div>
-					<div class="whatsapp-field whatsapp-lab__f-cap">
+					<div class="whatsapp-field whatsapp-test-lab__f-cap">
 						<label class="whatsapp-field__label" for="whatsapp-lab-cap">${esc(__("Message cap"))}</label>
 						<input id="whatsapp-lab-cap" class="whatsapp-input whatsapp-input--mono" type="number" inputmode="numeric" min="1" max="${l.cap_max}" value="${this.cap}" />
 						<span class="whatsapp-field__hint">${esc(__("The most one run may send (at most {0}).", [fmt_int(l.cap_max)]))}</span>
 					</div>
-					<div class="whatsapp-field whatsapp-lab__f-pacing">
+					<div class="whatsapp-field whatsapp-test-lab__f-pacing">
 						<label class="whatsapp-field__label" for="whatsapp-lab-pacing">${esc(__("Seconds between messages"))}</label>
 						<input id="whatsapp-lab-pacing" class="whatsapp-input whatsapp-input--mono" type="number" inputmode="numeric" min="${l.pacing_min}" max="${l.pacing_max}" value="${this.pacing}" />
 						<span class="whatsapp-field__hint">${esc(__("A pause that keeps the number safe (at least {0}).", [fmt_int(l.pacing_min)]))}</span>
@@ -252,12 +252,12 @@
 				</div>`);
 			const device = this.current_device();
 			this.phone_field = new ui.PhoneField({
-				wrapper: this.$setup.find(".whatsapp-lab__target-field"),
+				wrapper: this.$setup.find(".whatsapp-test-lab__target-field"),
 				label: "",
 				placeholder: __("Mobile number"),
 			});
 			// the field is drawn without its own label (the group's label names it), so it is named here
-			this.$setup.find(".whatsapp-lab__target-field input[type='tel']").attr("aria-label", __("Mobile number"));
+			this.$setup.find(".whatsapp-test-lab__target-field input[type='tel']").attr("aria-label", __("Mobile number"));
 			// a tester's number is most often in the device's own country: let the field take the
 			// country from the device's number, then hand it back empty
 			if (device && device.phone_e164) {
@@ -273,7 +273,7 @@
 				this.render_phone_hint();
 			});
 			this.$setup.find('[data-act="add-target"]').on("click", () => this.add_typed_target());
-			this.$setup.find(".whatsapp-lab__target-field").on("keydown", "input", (e) => {
+			this.$setup.find(".whatsapp-test-lab__target-field").on("keydown", "input", (e) => {
 				if (e.key !== "Enter") return;
 				e.preventDefault();
 				this.add_typed_target();
@@ -296,7 +296,7 @@
 
 		render_device_state() {
 			const d = this.current_device();
-			const $s = this.$setup.find(".whatsapp-lab__device-state");
+			const $s = this.$setup.find(".whatsapp-test-lab__device-state");
 			if (!d) return $s.html(esc(__("No device is set up yet.")));
 			const on = d.status === "Connected";
 			$s.html(`${kit.badge(on ? __("Connected") : __(d.status || "Disconnected"), on ? "ok" : "warn")} ${d.phone_e164 ? phone(d.phone_e164) : ""}`);
@@ -351,18 +351,18 @@
 		}
 
 		render_targets() {
-			const $t = this.$setup.find(".whatsapp-lab__targets");
+			const $t = this.$setup.find(".whatsapp-test-lab__targets");
 			if (!this.targets.length) {
-				$t.html(`<span class="whatsapp-lab__targets-none">${esc(__("No target yet — add the number that should receive the test."))}</span>`);
+				$t.html(`<span class="whatsapp-test-lab__targets-none">${esc(__("No target yet — add the number that should receive the test."))}</span>`);
 				return;
 			}
 			$t.html(
 				this.targets
 					.map((t) => {
 						const who = [t.name, t.party ? `${__(t.party_type)}: ${t.party}` : t.contact ? __("Not linked to an account") : __("Not saved as a contact")].filter(Boolean).join(" · ");
-						return `<span class="whatsapp-lab__target" role="listitem">
-							<span class="whatsapp-lab__target-text"><strong>${phone(t.phone_e164)}</strong><span>${esc(who)}</span></span>
-							<button type="button" class="whatsapp-lab__target-x" data-remove="${esc(t.phone_e164)}" aria-label="${esc(__("Remove {0}", [phone_text(t.phone_e164)]))}" title="${esc(__("Remove"))}">${kit.ico("x", "xs")}</button>
+						return `<span class="whatsapp-test-lab__target" role="listitem">
+							<span class="whatsapp-test-lab__target-text"><strong>${phone(t.phone_e164)}</strong><span>${esc(who)}</span></span>
+							<button type="button" class="whatsapp-test-lab__target-x" data-remove="${esc(t.phone_e164)}" aria-label="${esc(__("Remove {0}", [phone_text(t.phone_e164)]))}" title="${esc(__("Remove"))}">${kit.ico("x", "xs")}</button>
 						</span>`;
 					})
 					.join("")
@@ -402,13 +402,13 @@
 				? ui.plural(counts.warn, { one: __("The setup works, with {0} thing to check"), other: __("The setup works, with {0} things to check") })
 				: __("The setup is ready to send and to hear back");
 			this.$health.html(`
-				<div class="whatsapp-lab__health-head">
+				<div class="whatsapp-test-lab__health-head">
 					<label class="whatsapp-check"><input type="checkbox" data-check="health"${this.health_on === false ? "" : " checked"} /><span>${esc(__("Run these checks first"))}</span></label>
-					<span class="whatsapp-lab__health-line">${kit.badge(HEALTH[overall].label(), HEALTH[overall].tone)}<strong>${esc(headline)}</strong></span>
+					<span class="whatsapp-test-lab__health-line">${kit.badge(HEALTH[overall].label(), HEALTH[overall].tone)}<strong>${esc(headline)}</strong></span>
 					${kit.btn({ label: __("Run the checks"), icon: "scan", variant: "tonal", size: "sm", attrs: { "data-act": "health" } })}
 				</div>
-				<ul class="whatsapp-lab__health-list">${h.checks.map((c) => this.health_row(c)).join("")}</ul>
-				<p class="whatsapp-lab__health-foot">${esc(
+				<ul class="whatsapp-test-lab__health-list">${h.checks.map((c) => this.health_row(c)).join("")}</ul>
+				<p class="whatsapp-test-lab__health-foot">${esc(
 					h.live ? __("Checked now against the platform.") : __("Shown from the last known state. «Run the checks» asks the platform now.")
 				)}</p>`);
 			this.$health.find('[data-act="health"]').on("click", (e) => {
@@ -432,12 +432,12 @@
 
 		health_row(c) {
 			const s = HEALTH[c.status] || HEALTH.warn;
-			return `<li class="whatsapp-lab__health-row whatsapp-lab__health-row--${c.status}">
-				<span class="whatsapp-lab__health-ico whatsapp-lab__tone--${s.tone}" aria-hidden="true">${kit.ico(s.icon, "sm")}</span>
-				<span class="whatsapp-lab__health-text">
-					<span class="whatsapp-lab__health-title">${esc(c.title)}<span class="whatsapp-kit-visually-hidden"> — ${esc(s.label())}</span></span>
-					<span class="whatsapp-lab__health-detail">${esc(c.detail)}</span>
-					${c.fix ? `<span class="whatsapp-lab__health-fix">${esc(c.fix)}</span>` : ""}
+			return `<li class="whatsapp-test-lab__health-row whatsapp-test-lab__health-row--${c.status}">
+				<span class="whatsapp-test-lab__health-ico whatsapp-test-lab__tone--${s.tone}" aria-hidden="true">${kit.ico(s.icon, "sm")}</span>
+				<span class="whatsapp-test-lab__health-text">
+					<span class="whatsapp-test-lab__health-title">${esc(c.title)}<span class="whatsapp-kit-visually-hidden"> — ${esc(s.label())}</span></span>
+					<span class="whatsapp-test-lab__health-detail">${esc(c.detail)}</span>
+					${c.fix ? `<span class="whatsapp-test-lab__health-fix">${esc(c.fix)}</span>` : ""}
 				</span>
 				${c.route && c.status !== "ok" ? kit.btn({ label: c.route_label || __("Open"), variant: "secondary", size: "sm", attrs: { "data-route": c.key } }) : ""}
 			</li>`;
@@ -447,13 +447,13 @@
 
 		/** One check card: a tick to include it, what it does, its own picker, and its result. */
 		card({ key, title, note, body = "", checked = true, wide = false }) {
-			return `<article class="whatsapp-card whatsapp-lab__check${wide ? " whatsapp-lab__check--wide" : ""}" data-card="${key}">
-				<header class="whatsapp-lab__check-head">
-					<label class="whatsapp-check whatsapp-lab__check-pick"><input type="checkbox" data-check="${key}"${checked ? " checked" : ""} /><span class="whatsapp-lab__check-title">${esc(title)}</span></label>
-					<span class="whatsapp-lab__check-state" data-state="${key}"></span>
+			return `<article class="whatsapp-card whatsapp-test-lab__check${wide ? " whatsapp-test-lab__check--wide" : ""}" data-card="${key}">
+				<header class="whatsapp-test-lab__check-head">
+					<label class="whatsapp-check whatsapp-test-lab__check-pick"><input type="checkbox" data-check="${key}"${checked ? " checked" : ""} /><span class="whatsapp-test-lab__check-title">${esc(title)}</span></label>
+					<span class="whatsapp-test-lab__check-state" data-state="${key}"></span>
 				</header>
-				<p class="whatsapp-lab__check-note">${esc(note)}</p>
-				<div class="whatsapp-lab__check-body">${body}</div>
+				<p class="whatsapp-test-lab__check-note">${esc(note)}</p>
+				<div class="whatsapp-test-lab__check-body">${body}</div>
 			</article>`;
 		}
 
@@ -468,15 +468,15 @@
 		render_checks() {
 			const c = this.context;
 			const none = (text, route_label, route) =>
-				`<p class="whatsapp-lab__none">${esc(text)} <button type="button" class="whatsapp-lab__link" data-go='${esc(JSON.stringify(route))}'>${esc(route_label)}</button></p>`;
+				`<p class="whatsapp-test-lab__none">${esc(text)} <button type="button" class="whatsapp-test-lab__link" data-go='${esc(JSON.stringify(route))}'>${esc(route_label)}</button></p>`;
 			const file_row = (kind) => `
-				<div class="whatsapp-lab__file" data-file="${kind}">
-					<span class="whatsapp-lab__file-name" data-file-name>${esc(__("The app's sample file ({0})", [c.samples[kind].file_name]))}</span>
+				<div class="whatsapp-test-lab__file" data-file="${kind}">
+					<span class="whatsapp-test-lab__file-name" data-file-name>${esc(__("The app's sample file ({0})", [c.samples[kind].file_name]))}</span>
 					${kit.btn({ label: __("Pick another file"), icon: "attach", variant: "ghost", size: "sm", attrs: { "data-act": "pick-file", "data-kind": kind } })}
 				</div>`;
 			const preview_box = (key) => `
-				<div class="whatsapp-lab__actions">${kit.btn({ label: __("Preview"), icon: "search", variant: "tonal", size: "sm", attrs: { "data-act": "preview", "data-kind": key } })}</div>
-				<div class="whatsapp-lab__preview" data-preview="${key}" hidden></div>`;
+				<div class="whatsapp-test-lab__actions">${kit.btn({ label: __("Preview"), icon: "search", variant: "tonal", size: "sm", attrs: { "data-act": "preview", "data-kind": key } })}</div>
+				<div class="whatsapp-test-lab__preview" data-preview="${key}" hidden></div>`;
 			const doc_field = (key) => `
 				<label class="whatsapp-field" data-doc-field="${key}" hidden>
 					<span class="whatsapp-field__label" data-doc-label></span>
@@ -527,7 +527,7 @@
 								`<select class="whatsapp-select" data-pick="notification">${this.options(c.notifications, { label: (n) => (cint(n.enabled) ? n.name : __("{0} (switched off)", [n.name])) })}</select>`
 						  ) +
 						  doc_field("notification") +
-						  `<label class="whatsapp-toggle whatsapp-lab__real"><input type="checkbox" data-real="notification" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${esc(
+						  `<label class="whatsapp-toggle whatsapp-test-lab__real"><input type="checkbox" data-real="notification" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${esc(
 								__("Send to the record's real recipients instead")
 						  )}</span></label>` +
 						  preview_box("notification")
@@ -549,13 +549,13 @@
 			const commands = c.commands || [];
 			const command_rows = commands
 				.map(
-					(cmd, i) => `<li class="whatsapp-lab__cmd" data-cmd="${esc(cmd.code)}">
+					(cmd, i) => `<li class="whatsapp-test-lab__cmd" data-cmd="${esc(cmd.code)}">
 						<label class="whatsapp-check"><input type="checkbox" data-cmd-pick="${esc(cmd.code)}"${i < 8 ? " checked" : ""} /><span class="whatsapp-kit-visually-hidden">${esc(__("Try {0}", [cmd.code]))}</span></label>
-						<span class="whatsapp-lab__cmd-text">
-							<input class="whatsapp-input whatsapp-lab__cmd-input" type="text" dir="auto" data-cmd-text="${esc(cmd.code)}" value="${esc(cmd.code)}" aria-label="${esc(__("The message to try for {0}", [cmd.code]))}" />
-							<span class="whatsapp-lab__cmd-note">${esc([cmd.title && cmd.title !== cmd.code ? cmd.title : "", cint(cmd.requires_linked_contact) ? __("needs a linked account") : ""].filter(Boolean).join(" · "))}</span>
+						<span class="whatsapp-test-lab__cmd-text">
+							<input class="whatsapp-input whatsapp-test-lab__cmd-input" type="text" dir="auto" data-cmd-text="${esc(cmd.code)}" value="${esc(cmd.code)}" aria-label="${esc(__("The message to try for {0}", [cmd.code]))}" />
+							<span class="whatsapp-test-lab__cmd-note">${esc([cmd.title && cmd.title !== cmd.code ? cmd.title : "", cint(cmd.requires_linked_contact) ? __("needs a linked account") : ""].filter(Boolean).join(" · "))}</span>
 						</span>
-						<span class="whatsapp-lab__cmd-result" data-cmd-result="${esc(cmd.code)}"></span>
+						<span class="whatsapp-test-lab__cmd-result" data-cmd-result="${esc(cmd.code)}"></span>
 					</li>`
 				)
 				.join("");
@@ -566,24 +566,24 @@
 				checked: !!commands.length && !!c.commands_enabled,
 				wide: true,
 				body: commands.length
-					? `<div class="whatsapp-lab__cmd-setup">
+					? `<div class="whatsapp-test-lab__cmd-setup">
 							${this.field(__("Written by"), `<select class="whatsapp-select" data-pick="sender"></select>`, __("A command answers a number with its own account's records."))}
-							<label class="whatsapp-toggle whatsapp-lab__real"><input type="checkbox" data-real="command" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${esc(__("Also send the reply to that number for real"))}</span></label>
+							<label class="whatsapp-toggle whatsapp-test-lab__real"><input type="checkbox" data-real="command" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${esc(__("Also send the reply to that number for real"))}</span></label>
 						</div>
-						${c.commands_enabled ? "" : `<p class="whatsapp-lab__warn">${esc(__("Commands are switched off in the settings: a real message would get no reply."))}</p>`}
-						<ul class="whatsapp-lab__cmds">${command_rows}</ul>`
+						${c.commands_enabled ? "" : `<p class="whatsapp-test-lab__warn">${esc(__("Commands are switched off in the settings: a real message would get no reply."))}</p>`}
+						<ul class="whatsapp-test-lab__cmds">${command_rows}</ul>`
 					: none(__("No active command yet."), __("Open commands"), ["List", "WhatsApp Command"]),
 			});
-			const phone_card = `<article class="whatsapp-card whatsapp-lab__check whatsapp-lab__check--wide" data-card="listen">
-				<header class="whatsapp-lab__check-head">
-					<span class="whatsapp-lab__check-title">${esc(__("Try it from your phone"))}</span>
-					<span class="whatsapp-lab__check-state" data-state="listen"></span>
+			const phone_card = `<article class="whatsapp-card whatsapp-test-lab__check whatsapp-test-lab__check--wide" data-card="listen">
+				<header class="whatsapp-test-lab__check-head">
+					<span class="whatsapp-test-lab__check-title">${esc(__("Try it from your phone"))}</span>
+					<span class="whatsapp-test-lab__check-state" data-state="listen"></span>
 				</header>
-				<p class="whatsapp-lab__check-note" data-phone-hint></p>
-				<div class="whatsapp-lab__check-body">
-					<div class="whatsapp-lab__words">${commands.map((cmd) => `<code class="whatsapp-lab__word" dir="auto">${esc(cmd.code)}</code>`).join("")}</div>
-					<div class="whatsapp-lab__actions">${kit.btn({ label: __("Listen for my message"), icon: "chat", variant: "tonal", size: "sm", attrs: { "data-act": "listen" } })}</div>
-					<div class="whatsapp-lab__inbound" data-inbound aria-live="polite"></div>
+				<p class="whatsapp-test-lab__check-note" data-phone-hint></p>
+				<div class="whatsapp-test-lab__check-body">
+					<div class="whatsapp-test-lab__words">${commands.map((cmd) => `<code class="whatsapp-test-lab__word" dir="auto">${esc(cmd.code)}</code>`).join("")}</div>
+					<div class="whatsapp-test-lab__actions">${kit.btn({ label: __("Listen for my message"), icon: "chat", variant: "tonal", size: "sm", attrs: { "data-act": "listen" } })}</div>
+					<div class="whatsapp-test-lab__inbound" data-inbound aria-live="polite"></div>
 				</div>
 			</article>`;
 			this.$body.find('[data-grid="commands"]').html(commands_card + phone_card);
@@ -607,23 +607,23 @@
 					)}
 					<div data-camp="text">${this.field(__("Message text"), `<textarea class="whatsapp-textarea" rows="2" data-input="campaign">${esc(__("Test Lab · test campaign"))}</textarea>`)}</div>
 					<div data-camp="template" hidden>${this.field(__("Template"), `<select class="whatsapp-select" data-pick="campaign_template">${this.options(text_templates, { label: (t) => t.template_name || t.name })}</select>`)}</div>
-					<label class="whatsapp-toggle whatsapp-lab__real"><input type="checkbox" data-real="schedule" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${esc(
+					<label class="whatsapp-toggle whatsapp-test-lab__real"><input type="checkbox" data-real="schedule" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${esc(
 						__("Schedule it {0} minutes ahead instead of starting now", [fmt_int(c.limits.schedule_minutes)])
 					)}</span></label>
 					<span class="whatsapp-field__hint">${esc(__("A scheduled campaign is started by the scheduler, so this also proves the scheduler works."))}</span>`,
 			});
-			const receipts = `<article class="whatsapp-card whatsapp-lab__check" data-card="receipts">
-				<header class="whatsapp-lab__check-head">
-					<span class="whatsapp-lab__check-title">${esc(__("Delivery and read receipts"))}</span>
-					<span class="whatsapp-lab__check-state" data-state="receipts"></span>
+			const receipts = `<article class="whatsapp-card whatsapp-test-lab__check" data-card="receipts">
+				<header class="whatsapp-test-lab__check-head">
+					<span class="whatsapp-test-lab__check-title">${esc(__("Delivery and read receipts"))}</span>
+					<span class="whatsapp-test-lab__check-state" data-state="receipts"></span>
 				</header>
-				<p class="whatsapp-lab__check-note">${esc(__("A receipt is WhatsApp telling this site that a message arrived or was read. It is checked on the messages of the run — there is nothing to tick."))}</p>
-				<div class="whatsapp-lab__check-body" data-receipts></div>
+				<p class="whatsapp-test-lab__check-note">${esc(__("A receipt is WhatsApp telling this site that a message arrived or was read. It is checked on the messages of the run — there is nothing to tick."))}</p>
+				<div class="whatsapp-test-lab__check-body" data-receipts></div>
 			</article>`;
 			this.$body.find('[data-grid="campaign"]').html(campaign + receipts);
 
 			this.camp_mode = "text";
-			kit.bind_segmented(this.$body.find('[data-card="campaign"] .whatsapp-seg'), (v) => {
+			kit.bind_segmented(this.$body.find('[data-card="campaign"] .whatsapp-segmented'), (v) => {
 				this.camp_mode = v;
 				this.$body.find('[data-camp="text"]').prop("hidden", v === "template");
 				this.$body.find('[data-camp="template"]').prop("hidden", v !== "template");
@@ -770,9 +770,9 @@
 				if (r.error) problems.push(r.error);
 			}
 			return `
-				${problems.map((p) => `<p class="whatsapp-lab__warn" role="alert">${esc(p)}</p>`).join("")}
-				${message ? `<div class="whatsapp-lab__bubble" dir="auto">${esc(message)}</div>` : problems.length ? "" : `<p class="whatsapp-lab__none">${esc(__("The message is empty."))}</p>`}
-				<dl class="whatsapp-lab__facts">${facts.map((f) => `<div><dt>${esc(f[0])}</dt><dd dir="auto">${esc(f[1])}</dd></div>`).join("")}</dl>`;
+				${problems.map((p) => `<p class="whatsapp-test-lab__warn" role="alert">${esc(p)}</p>`).join("")}
+				${message ? `<div class="whatsapp-test-lab__bubble" dir="auto">${esc(message)}</div>` : problems.length ? "" : `<p class="whatsapp-test-lab__none">${esc(__("The message is empty."))}</p>`}
+				<dl class="whatsapp-test-lab__facts">${facts.map((f) => `<div><dt>${esc(f[0])}</dt><dd dir="auto">${esc(f[1])}</dd></div>`).join("")}</dl>`;
 		}
 
 		// ---- the plan -----------------------------------------------------------------------------
@@ -868,7 +868,7 @@
 			// button replaced under the pointer never receives that click.
 			if (!this.$bar.children().length) {
 				this.$bar.html(`
-					<span class="whatsapp-lab__bar-text" role="status"></span>
+					<span class="whatsapp-test-lab__bar-text" role="status"></span>
 					${kit.btn({ label: __("Stop"), icon: "pause", variant: "danger", attrs: { "data-act": "stop" } })}
 					${kit.btn({ label: __("Run selected"), icon: "send", variant: "primary", attrs: { "data-act": "run" } })}`);
 				this.$bar.find('[data-act="run"]').on("click", () => this.start());
@@ -880,8 +880,8 @@
 			}
 			const warn = over && !this.running;
 			this.$bar
-				.find(".whatsapp-lab__bar-text")
-				.toggleClass("whatsapp-lab__bar-text--over", warn)
+				.find(".whatsapp-test-lab__bar-text")
+				.toggleClass("whatsapp-test-lab__bar-text--over", warn)
 				.text(warn ? __("{0} messages — more than the cap of {1}. Untick a check or raise the cap.", [fmt_int(messages), fmt_int(this.cap)]) : text);
 			this.$bar.find('[data-act="stop"]').prop("hidden", !this.running);
 			this.$bar
@@ -1023,7 +1023,7 @@
 		async countdown(total, template) {
 			for (let left = total; left > 0 && !this.stopped; left--) {
 				this.progress_text = __(template, [left]);
-				this.$bar.find(".whatsapp-lab__bar-text").text(this.progress_text);
+				this.$bar.find(".whatsapp-test-lab__bar-text").text(this.progress_text);
 				await sleep(1000);
 			}
 		}
@@ -1116,14 +1116,14 @@
 			const s = row.step || {};
 			const res = s.result || {};
 			const lines = [];
-			if (row.error) lines.push(`<span class="whatsapp-lab__row-error">${esc(row.error)}</span>`);
+			if (row.error) lines.push(`<span class="whatsapp-test-lab__row-error">${esc(row.error)}</span>`);
 			if (row.kind === "command" && res.status) {
 				const facts = [status_word(res.status)];
 				if (res.block_reason) facts.push(__("Reason: {0}", [__(res.block_reason)]));
 				if (res.function_ms) facts.push(__("{0} ms", [fmt_int(res.function_ms)]));
 				lines.push(`<span>${esc(facts.join(" · "))}</span>`);
 				const replies = (res.replies || []).map((r) => r.body || (r.file_name ? `[${r.file_name}]` : "")).filter(Boolean);
-				if (replies.length) lines.push(`<details class="whatsapp-lab__reply"><summary>${esc(__("The reply the customer gets"))}</summary><div class="whatsapp-lab__bubble" dir="auto">${esc(replies.join("\n\n"))}</div></details>`);
+				if (replies.length) lines.push(`<details class="whatsapp-test-lab__reply"><summary>${esc(__("The reply the customer gets"))}</summary><div class="whatsapp-test-lab__bubble" dir="auto">${esc(replies.join("\n\n"))}</div></details>`);
 			}
 			if (row.kind === "campaign" && s.campaign_row) {
 				const c = s.campaign_row;
@@ -1141,15 +1141,15 @@
 			(s.messages || []).forEach((m) => {
 				const times = [m.send_seconds != null ? __("sent in {0}", [seconds(m.send_seconds)]) : null, m.deliver_seconds != null ? __("delivered in {0}", [seconds(m.deliver_seconds)]) : null].filter(Boolean).join(" · ");
 				const reason = m.error_message || m.error_code;
-				lines.push(`<span class="whatsapp-lab__msg">
-					<button type="button" class="whatsapp-lab__link" data-log="${esc(m.name)}">${esc(__("Message"))} ${phone(m.phone_e164)}</button>
-					<span class="whatsapp-lab__msg-status">${esc(status_word(m.status))}</span>
-					${times ? `<span class="whatsapp-lab__msg-times">${esc(times)}</span>` : ""}
-					${reason && ["Failed", "Held", "Cancelled"].includes(m.status) ? `<span class="whatsapp-lab__row-error">${esc(reason)}</span>` : ""}
+				lines.push(`<span class="whatsapp-test-lab__msg">
+					<button type="button" class="whatsapp-test-lab__link" data-log="${esc(m.name)}">${esc(__("Message"))} ${phone(m.phone_e164)}</button>
+					<span class="whatsapp-test-lab__msg-status">${esc(status_word(m.status))}</span>
+					${times ? `<span class="whatsapp-test-lab__msg-times">${esc(times)}</span>` : ""}
+					${reason && ["Failed", "Held", "Cancelled"].includes(m.status) ? `<span class="whatsapp-test-lab__row-error">${esc(reason)}</span>` : ""}
 				</span>`);
 			});
 			if (row.state === "sent" && this.receipt_deadline && Date.now() > this.receipt_deadline)
-				lines.push(`<span class="whatsapp-lab__row-error">${esc(__("No delivery receipt arrived yet. The phone may be offline, or the webhook is not reaching this site."))}</span>`);
+				lines.push(`<span class="whatsapp-test-lab__row-error">${esc(__("No delivery receipt arrived yet. The phone may be offline, or the webhook is not reaching this site."))}</span>`);
 			return lines.join("");
 		}
 
@@ -1157,15 +1157,15 @@
 			if (!this.$run) return;
 			if (!this.run) {
 				this.$summary.empty();
-				this.$run.html(`<div class="whatsapp-lab__run-empty"><strong>${esc(__("Nothing has been run yet"))}</strong><span>${esc(__("Tick the checks above and press «Run selected». Each message shows here as it is sent and delivered."))}</span></div>`);
+				this.$run.html(`<div class="whatsapp-test-lab__run-empty"><strong>${esc(__("Nothing has been run yet"))}</strong><span>${esc(__("Tick the checks above and press «Run selected». Each message shows here as it is sent and delivered."))}</span></div>`);
 				return;
 			}
 			this.render_summary();
 			const meta = this.status && this.status.run;
 			const head = `
-				<div class="whatsapp-lab__run-head">
-					<span class="whatsapp-lab__run-title">${esc(this.readonly ? __("An earlier run") : __("This run"))}${meta ? ` · <span dir="ltr">${esc(frappe.datetime.str_to_user(meta.started_at))}</span>` : ""}</span>
-					<span class="whatsapp-lab__run-actions">
+				<div class="whatsapp-test-lab__run-head">
+					<span class="whatsapp-test-lab__run-title">${esc(this.readonly ? __("An earlier run") : __("This run"))}${meta ? ` · <span dir="ltr">${esc(frappe.datetime.str_to_user(meta.started_at))}</span>` : ""}</span>
+					<span class="whatsapp-test-lab__run-actions">
 						${kit.btn({ label: __("Refresh", null, "Test Lab"), icon: "clock", variant: "ghost", size: "sm", attrs: { "data-act": "refresh" } })}
 						${kit.btn({ label: __("Copy report"), icon: "copy", variant: "tonal", size: "sm", attrs: { "data-act": "copy" } })}
 						${kit.btn({ label: __("Download"), icon: "doc", variant: "ghost", size: "sm", attrs: { "data-act": "download" } })}
@@ -1176,18 +1176,18 @@
 			} else {
 				this.$run.html(
 					head +
-						`<ol class="whatsapp-lab__rows">${this.rows
+						`<ol class="whatsapp-test-lab__rows">${this.rows
 							.map((row) => {
 								const s = row.step || {};
-								return `<li class="whatsapp-lab__row whatsapp-lab__row--${row.state}">
-									<span class="whatsapp-lab__row-n" aria-hidden="true">${fmt_int(row.n)}</span>
-									<span class="whatsapp-lab__row-main">
-										<span class="whatsapp-lab__row-title"><strong dir="auto">${esc(row.label)}</strong>${row.target ? ` ${phone(row.target)}` : ""}</span>
-										<span class="whatsapp-lab__row-detail">${this.row_detail(row)}</span>
+								return `<li class="whatsapp-test-lab__row whatsapp-test-lab__row--${row.state}">
+									<span class="whatsapp-test-lab__row-n" aria-hidden="true">${fmt_int(row.n)}</span>
+									<span class="whatsapp-test-lab__row-main">
+										<span class="whatsapp-test-lab__row-title"><strong dir="auto">${esc(row.label)}</strong>${row.target ? ` ${phone(row.target)}` : ""}</span>
+										<span class="whatsapp-test-lab__row-detail">${this.row_detail(row)}</span>
 									</span>
-									<span class="whatsapp-lab__row-end">
+									<span class="whatsapp-test-lab__row-end">
 										${state_badge(row.state)}
-										${s.campaign ? `<button type="button" class="whatsapp-lab__link" data-campaign="${esc(s.campaign)}">${esc(__("Open the campaign"))}</button>` : ""}
+										${s.campaign ? `<button type="button" class="whatsapp-test-lab__link" data-campaign="${esc(s.campaign)}">${esc(__("Open the campaign"))}</button>` : ""}
 									</span>
 								</li>`;
 							})
@@ -1216,7 +1216,7 @@
 				.forEach((r) => {
 					const res = (r.step || {}).result || {};
 					const why = res.block_reason ? __(res.block_reason) : res.function_ms ? __("{0} ms", [fmt_int(res.function_ms)]) : "";
-					this.$body.find(`[data-cmd-result="${r.code}"]`).html(`${state_badge(r.state)}${why ? `<span class="whatsapp-lab__cmd-why">${esc(why)}</span>` : ""}`);
+					this.$body.find(`[data-cmd-result="${r.code}"]`).html(`${state_badge(r.state)}${why ? `<span class="whatsapp-test-lab__cmd-why">${esc(why)}</span>` : ""}`);
 				});
 		}
 
@@ -1254,20 +1254,20 @@
 			const $state = this.$body.find('[data-state="receipts"]');
 			if (!r || !r.messages) {
 				$state.html(kit.badge(__("Waits for a run"), "muted"));
-				$r.html(`<p class="whatsapp-lab__none">${esc(__("Send at least one message: its delivery receipt proves that WhatsApp can reach this site."))}</p>`);
+				$r.html(`<p class="whatsapp-test-lab__none">${esc(__("Send at least one message: its delivery receipt proves that WhatsApp can reach this site."))}</p>`);
 				return;
 			}
 			const timed_out = this.receipt_deadline && Date.now() > this.receipt_deadline;
 			const state = r.delivered ? (r.delivered >= r.messages - r.failed ? "ok" : "info") : r.sent && timed_out ? "danger" : "info";
 			$state.html(kit.badge(state === "ok" ? __("Receipts arrive") : state === "danger" ? __("No receipt") : __("Waiting…"), state));
 			$r.html(`
-				<dl class="whatsapp-lab__facts">
+				<dl class="whatsapp-test-lab__facts">
 					<div><dt>${esc(__("Left the site"))}</dt><dd>${esc(__("{0} of {1}", [fmt_int(r.sent), fmt_int(r.messages)]))}</dd></div>
 					<div><dt>${esc(__("Delivered", null, "Test Lab"))}</dt><dd>${esc(fmt_int(r.delivered))}</dd></div>
 					<div><dt>${esc(__("Read", null, "Test Lab"))}</dt><dd>${esc(fmt_int(r.read))}</dd></div>
 					<div><dt>${esc(__("Last event from the platform"))}</dt><dd>${esc(last ? frappe.datetime.prettyDate(last) : __("Nothing yet"))}</dd></div>
 				</dl>
-				${state === "danger" ? `<p class="whatsapp-lab__warn" role="alert">${esc(__("Messages left the site but no delivery receipt came back. Check the webhook in the settings, and that the target phone is online."))}</p>` : ""}`);
+				${state === "danger" ? `<p class="whatsapp-test-lab__warn" role="alert">${esc(__("Messages left the site but no delivery receipt came back. Check the webhook in the settings, and that the target phone is online."))}</p>` : ""}`);
 		}
 
 		// ---- the live check: a real message from the phone ---------------------------------------
@@ -1302,18 +1302,18 @@
 			const good = rows.some((r) => r.delivered);
 			if (!rows.length) {
 				$state.html(listening ? kit.badge(__("Listening…"), "info") : "");
-				$i.html(listening ? `<p class="whatsapp-lab__waiting"><span class="whatsapp-lab__pulse" aria-hidden="true"></span>${esc(__("Waiting for your message… write a command from your phone now."))}</p>` : this.listening_until ? `<p class="whatsapp-lab__warn">${esc(__("No message arrived in five minutes. Check that the device is connected and the webhook is active, then try again."))}</p>` : "");
+				$i.html(listening ? `<p class="whatsapp-test-lab__waiting"><span class="whatsapp-test-lab__pulse" aria-hidden="true"></span>${esc(__("Waiting for your message… write a command from your phone now."))}</p>` : this.listening_until ? `<p class="whatsapp-test-lab__warn">${esc(__("No message arrived in five minutes. Check that the device is connected and the webhook is active, then try again."))}</p>` : "");
 				return;
 			}
 			$state.html(kit.badge(good ? __("Received and answered") : __("Received", null, "Test Lab"), good ? "ok" : "info"));
 			$i.html(
-				`<ul class="whatsapp-lab__inbound-rows">${rows
+				`<ul class="whatsapp-test-lab__inbound-rows">${rows
 					.map((r) => {
 						const verdict = r.command_status === "Executed" ? "ok" : r.command_status === "Blocked" ? "warn" : r.command_status === "Failed" ? "danger" : "muted";
 						const reply = !r.replies.length ? __("No reply was sent") : r.delivered ? __("Reply delivered") : r.answered ? __("Reply sent") : __("Reply on its way");
-						return `<li class="whatsapp-lab__inbound-row">
-							<span class="whatsapp-lab__inbound-text"><strong dir="auto">${esc(r.body || status_word(r.message_type))}</strong><span>${phone(r.phone_e164)} · <span dir="ltr">${esc(frappe.datetime.prettyDate(r.creation))}</span></span></span>
-							<span class="whatsapp-lab__inbound-end">${kit.badge(r.command ? `${r.command} · ${status_word(r.command_status)}` : r.command_status && r.command_status !== "None" ? status_word(r.command_status) : __("Not a command"), verdict)}${r.block_reason ? kit.badge(__(r.block_reason), "warn", { dot: false }) : ""}${kit.badge(reply, r.delivered ? "ok" : r.replies.length ? "info" : "muted")}</span>
+						return `<li class="whatsapp-test-lab__inbound-row">
+							<span class="whatsapp-test-lab__inbound-text"><strong dir="auto">${esc(r.body || status_word(r.message_type))}</strong><span>${phone(r.phone_e164)} · <span dir="ltr">${esc(frappe.datetime.prettyDate(r.creation))}</span></span></span>
+							<span class="whatsapp-test-lab__inbound-end">${kit.badge(r.command ? `${r.command} · ${status_word(r.command_status)}` : r.command_status && r.command_status !== "None" ? status_word(r.command_status) : __("Not a command"), verdict)}${r.block_reason ? kit.badge(__(r.block_reason), "warn", { dot: false }) : ""}${kit.badge(reply, r.delivered ? "ok" : r.replies.length ? "info" : "muted")}</span>
 						</li>`;
 					})
 					.join("")}</ul>`
@@ -1388,12 +1388,12 @@
 								{
 									label: __("Runs", null, "Test Lab"),
 									render: ($el) => {
-										if (!(runs || []).length) return $el.html(`<p class="whatsapp-lab__none">${esc(__("No run yet."))}</p>`);
+										if (!(runs || []).length) return $el.html(`<p class="whatsapp-test-lab__none">${esc(__("No run yet."))}</p>`);
 										$el.html(
-											`<ul class="whatsapp-lab__history">${runs
+											`<ul class="whatsapp-test-lab__history">${runs
 												.map(
-													(r) => `<li><button type="button" class="whatsapp-lab__history-row" data-run="${esc(r.id)}">
-														<span class="whatsapp-lab__history-main"><strong dir="ltr">${esc(frappe.datetime.str_to_user(r.started_at))}</strong><span>${esc(
+													(r) => `<li><button type="button" class="whatsapp-test-lab__history-row" data-run="${esc(r.id)}">
+														<span class="whatsapp-test-lab__history-main"><strong dir="ltr">${esc(frappe.datetime.str_to_user(r.started_at))}</strong><span>${esc(
 														[r.user_name, ui.plural(r.checks, { one: __("{0} check"), other: __("{0} checks") }), ui.plural(r.messages, { one: __("{0} message"), other: __("{0} messages") })].join(" · ")
 													)}</span></span>
 														${r.failed ? kit.badge(__("{0} failed", [fmt_int(r.failed)]), "danger") : r.messages ? kit.badge(__("{0} delivered", [fmt_int(r.delivered)]), r.delivered >= r.messages ? "ok" : "info") : kit.badge(__("No messages"), "muted")}

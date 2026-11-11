@@ -1,4 +1,4 @@
-.whatsapp-kit-groupcreate {
+.whatsapp-kit-group-create {
 	&__members { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-sm); }
 	&__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--whatsapp-kit-gap-sm); }
 	&__count { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }

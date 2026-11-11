@@ -14,7 +14,7 @@
 
 // An icon never grows to fill a flex row (a bare <svg> flex item would). Espresso icons carry
 // `es-icon`, the legacy set carries `icon`.
-:is(.whatsapp-kit, .whatsapp-kit-ent, .whatsapp-kit-fact, .whatsapp-kit-chipline, .whatsapp-kit-doc__block-title, .whatsapp-kit-timeline) :is(svg.es-icon, svg.icon) {
+:is(.whatsapp-kit, .whatsapp-kit-entity, .whatsapp-kit-fact, .whatsapp-kit-chipline, .whatsapp-kit-doc__block-title, .whatsapp-kit-timeline) :is(svg.es-icon, svg.icon) {
 	flex: none;
 }
 
@@ -53,7 +53,7 @@
 }
 
 // A person is a circle, everything else is a tile — the quickest way to tell them apart.
-.whatsapp-kit-ent--person .whatsapp-kit-avatar,
+.whatsapp-kit-entity--person .whatsapp-kit-avatar,
 .whatsapp-kit-avatar--circle { border-radius: var(--radius-full, 999px); }
 
 .whatsapp-kit-thumb {
@@ -219,7 +219,7 @@
 // column so the eye runs down them and across to the value; a hairline between rows, none after
 // the last. The key column is a share of the row with a floor, so a long key wraps rather than
 // pushing its value off the row.
-.whatsapp-kit-kv {
+.whatsapp-kit-key-value {
 	margin: 0;
 	padding-inline: var(--whatsapp-kit-gap-md);
 	border: var(--whatsapp-kit-border);
@@ -277,7 +277,7 @@
 }
 
 // Key / value list — the "additional details" block.
-.whatsapp-kit-dl {
+.whatsapp-kit-definition-list {
 	display: grid;
 	gap: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-lg);
 	margin: 0;
@@ -348,8 +348,8 @@
 }
 
 // Icon-only quick actions on a row or card.
-.whatsapp-kit-iconbtn-row { display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-xs); flex: none; }
-.whatsapp-kit-iconbtn {
+.whatsapp-kit-icon-button-row { display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-xs); flex: none; }
+.whatsapp-kit-icon-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -369,7 +369,7 @@
 
 // ---- entities ------------------------------------------------------------------------------
 
-.whatsapp-kit-ent {
+.whatsapp-kit-entity {
 	display: flex;
 	align-items: center;
 	gap: var(--whatsapp-kit-gap-sm);
@@ -406,8 +406,8 @@
 	&--inline {
 		display: inline-flex;
 		gap: var(--whatsapp-kit-gap-xs);
-		.whatsapp-kit-ent__sub { color: var(--ink-gray-5); }
-		.whatsapp-kit-ent__title { font-weight: 500; }
+		.whatsapp-kit-entity__sub { color: var(--ink-gray-5); }
+		.whatsapp-kit-entity__title { font-weight: 500; }
 	}
 
 	// compact — dense lists and pick results.
@@ -440,12 +440,12 @@
 		border-radius: var(--whatsapp-kit-card-radius);
 		background: var(--surface-base);
 		block-size: 100%;
-		.whatsapp-kit-ent__head { display: flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); }
-		.whatsapp-kit-ent__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--whatsapp-kit-gap-sm); margin-block-start: auto; }
-		.whatsapp-kit-ent__body { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-xs); }
-		.whatsapp-kit-ent__cover { position: relative; display: block; margin: calc(-1 * var(--whatsapp-kit-gap-md)); margin-block-end: 0; }
-		.whatsapp-kit-ent__flag { position: absolute; inset-block-start: var(--whatsapp-kit-gap-sm); inset-inline-end: var(--whatsapp-kit-gap-sm); }
-		.whatsapp-kit-ent__title { white-space: normal; }
+		.whatsapp-kit-entity__head { display: flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); }
+		.whatsapp-kit-entity__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--whatsapp-kit-gap-sm); margin-block-start: auto; }
+		.whatsapp-kit-entity__body { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-xs); }
+		.whatsapp-kit-entity__cover { position: relative; display: block; margin: calc(-1 * var(--whatsapp-kit-gap-md)); margin-block-end: 0; }
+		.whatsapp-kit-entity__flag { position: absolute; inset-block-start: var(--whatsapp-kit-gap-sm); inset-inline-end: var(--whatsapp-kit-gap-sm); }
+		.whatsapp-kit-entity__title { white-space: normal; }
 		&:hover { border-color: var(--outline-gray-2); }
 	}
 
@@ -457,9 +457,9 @@
 		border: var(--whatsapp-kit-border);
 		border-radius: var(--whatsapp-kit-card-radius);
 		background: var(--surface-base);
-		.whatsapp-kit-ent__hero-body { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-sm); min-inline-size: 0; flex: 1; }
-		.whatsapp-kit-ent__hero-head { display: flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); flex-wrap: wrap; }
-		.whatsapp-kit-ent__title { font-size: var(--text-lg, 16px); white-space: normal; margin: 0; }
+		.whatsapp-kit-entity__hero-body { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-sm); min-inline-size: 0; flex: 1; }
+		.whatsapp-kit-entity__hero-head { display: flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); flex-wrap: wrap; }
+		.whatsapp-kit-entity__title { font-size: var(--text-lg, 16px); white-space: normal; margin: 0; }
 		@media (max-width: 520px) {
 			flex-direction: column;
 		}
@@ -469,13 +469,13 @@
 	&--file .whatsapp-kit-avatar { border-radius: var(--whatsapp-kit-radius); }
 }
 
-[dir="rtl"] .whatsapp-kit-ent__go { transform: scaleX(-1); }
+[dir="rtl"] .whatsapp-kit-entity__go { transform: scaleX(-1); }
 
-.whatsapp-kit-ent-list {
+.whatsapp-kit-entity-list {
 	display: flex;
 	flex-direction: column;
 	gap: var(--whatsapp-kit-gap-sm);
 	&--card, &--compact { flex-direction: row; flex-wrap: wrap; }
 	&__item { min-inline-size: 0; }
-	&--row > .whatsapp-kit-ent-list__item { inline-size: 100%; }
+	&--row > .whatsapp-kit-entity-list__item { inline-size: 100%; }
 }

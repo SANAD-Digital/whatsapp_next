@@ -6,7 +6,7 @@
 
 $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-.whatsapp-kit-bs {
+.whatsapp-kit-bulk-send {
 	inline-size: min(1180px, 100%);
 
 	&__top {
@@ -236,7 +236,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 		@media (max-width: 899px) {
 			min-block-size: auto;
 			overflow: visible;
-			.whatsapp-kit-bs__settings { max-block-size: none; }
+			.whatsapp-kit-bulk-send__settings { max-block-size: none; }
 		}
 	}
 
@@ -313,7 +313,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 		background: var(--whatsapp-surface);
 		border-block-end: 1px solid var(--whatsapp-border);
 
-		.whatsapp-kit-ce__switch-text { flex: 1; }
+		.whatsapp-kit-command-editor__switch-text { flex: 1; }
 	}
 
 	&__note {
@@ -374,7 +374,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 	}
 
 	&__attach { flex: none; display: flex; padding: 8px 12px 0; background: var(--whatsapp-bg); border-block-start: 1px solid var(--whatsapp-border); }
-	&__attach + .whatsapp-kit-bs__composer { border-block-start: 0; }
+	&__attach + .whatsapp-kit-bulk-send__composer { border-block-start: 0; }
 
 	&__bubble-at { align-self: flex-end; font-size: 11px; color: var(--whatsapp-ink-4); }
 

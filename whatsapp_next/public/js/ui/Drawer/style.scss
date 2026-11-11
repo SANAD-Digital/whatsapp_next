@@ -46,7 +46,7 @@
 	&__open { color: var(--whatsapp-ink-2); &:hover { color: var(--whatsapp-ink); text-decoration: none; } }
 	// the kit's button is drawn for the kit's 20 px icons; Espresso's carry their own size and
 	// Desk's icon rule centres them with auto margins, which would pull them off their word
-	.whatsapp-btn svg { flex: none; margin: 0; }
+	.whatsapp-button svg { flex: none; margin: 0; }
 
 	&__body {
 		min-height: 160px;

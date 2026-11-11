@@ -2,10 +2,10 @@
 // OverlayPanel shell: a 300 px column of the group's fields and summary on the surface, the members
 // pane on the page background beside it, each scrolling on its own. Logical properties only.
 
-.whatsapp-kit-op.whatsapp-ge {
+.whatsapp-kit-overlay-panel.whatsapp-group-editor {
 	block-size: min(760px, calc(100% - 28px));
 
-	.whatsapp-kit-op__body {
+	.whatsapp-kit-overlay-panel__body {
 		display: grid;
 		grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
 		grid-template-rows: auto minmax(0, 1fr);
@@ -14,34 +14,34 @@
 		overflow: hidden;
 		background: var(--whatsapp-bg);
 	}
-	.whatsapp-kit-op__summary {
+	.whatsapp-kit-overlay-panel__summary {
 		grid-column: 1 / -1;
 		margin: 12px 16px 0;
 		&[hidden] { display: none; }
 	}
-	.whatsapp-kit-op__body > .whatsapp-kit-op__section {
+	.whatsapp-kit-overlay-panel__body > .whatsapp-kit-overlay-panel__section {
 		grid-row: 2;
 		min-block-size: 0;
 	}
 	// the fields column
-	.whatsapp-kit-op__body > .whatsapp-kit-op__section:nth-of-type(1) {
+	.whatsapp-kit-overlay-panel__body > .whatsapp-kit-overlay-panel__section:nth-of-type(1) {
 		overflow: auto;
 		padding: 16px;
 		background: var(--whatsapp-surface);
 		border-inline-end: 1px solid var(--whatsapp-border);
-		.whatsapp-kit-op__grid { gap: 14px; }
-		.whatsapp-kit-op__note { margin-block-start: 4px; }
+		.whatsapp-kit-overlay-panel__grid { gap: 14px; }
+		.whatsapp-kit-overlay-panel__note { margin-block-start: 4px; }
 	}
 	// the members pane fills its column
-	.whatsapp-kit-op__body > .whatsapp-kit-op__section:nth-of-type(2) {
+	.whatsapp-kit-overlay-panel__body > .whatsapp-kit-overlay-panel__section:nth-of-type(2) {
 		display: flex;
-		.whatsapp-kit-op__grid,
-		.whatsapp-kit-op__field,
-		.whatsapp-kit-op__html { display: flex; flex-direction: column; flex: 1; min-block-size: 0; }
+		.whatsapp-kit-overlay-panel__grid,
+		.whatsapp-kit-overlay-panel__field,
+		.whatsapp-kit-overlay-panel__html { display: flex; flex-direction: column; flex: 1; min-block-size: 0; }
 	}
 }
 
-.whatsapp-ge__sum {
+.whatsapp-group-editor__sum {
 	display: flex;
 	flex-direction: column;
 	gap: 7px;
@@ -51,8 +51,8 @@
 	border: 1px solid var(--whatsapp-border);
 	dl { display: flex; flex-direction: column; gap: 7px; margin: 0; }
 }
-.whatsapp-ge__sum-title { font-size: 11px; font-weight: 600; color: var(--whatsapp-ink-2); }
-.whatsapp-ge__sum-row {
+.whatsapp-group-editor__sum-title { font-size: 11px; font-weight: 600; color: var(--whatsapp-ink-2); }
+.whatsapp-group-editor__sum-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -65,8 +65,8 @@
 	&--total dd { color: var(--whatsapp-pri-d); }
 }
 
-.whatsapp-ge__members { flex: 1; min-block-size: 0; }
-.whatsapp-ge__bar {
+.whatsapp-group-editor__members { flex: 1; min-block-size: 0; }
+.whatsapp-group-editor__bar {
 	flex: none;
 	display: flex;
 	align-items: center;
@@ -75,16 +75,16 @@
 	padding: 10px 14px;
 	border-block-end: 1px solid var(--whatsapp-border);
 }
-.whatsapp-ge__bar-label { font-size: 11px; font-weight: 600; color: var(--whatsapp-ink-3); }
-.whatsapp-ge__sources { display: flex; flex-wrap: wrap; gap: 6px; }
-.whatsapp-ge__tools {
+.whatsapp-group-editor__bar-label { font-size: 11px; font-weight: 600; color: var(--whatsapp-ink-3); }
+.whatsapp-group-editor__sources { display: flex; flex-wrap: wrap; gap: 6px; }
+.whatsapp-group-editor__tools {
 	flex: none;
 	display: flex;
 	gap: 8px;
 	padding: 14px 14px 10px;
-	.whatsapp-ge__search { flex: 1; min-inline-size: 180px; background: var(--whatsapp-surface); }
+	.whatsapp-group-editor__search { flex: 1; min-inline-size: 180px; background: var(--whatsapp-surface); }
 }
-.whatsapp-ge__list {
+.whatsapp-group-editor__list {
 	flex: 1;
 	min-block-size: 140px;
 	overflow: auto;
@@ -93,7 +93,7 @@
 	flex-direction: column;
 	gap: 5px;
 }
-.whatsapp-ge__row {
+.whatsapp-group-editor__row {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -105,15 +105,15 @@
 	&--new { border-color: var(--whatsapp-ok-sb); background: var(--whatsapp-ok-s); }
 	&--removed {
 		background: var(--whatsapp-sunken);
-		.whatsapp-ge__row-name, .whatsapp-ge__row-phone { text-decoration: line-through; color: var(--whatsapp-ink-4); }
+		.whatsapp-group-editor__row-name, .whatsapp-group-editor__row-phone { text-decoration: line-through; color: var(--whatsapp-ink-4); }
 	}
 }
-.whatsapp-ge__row-main { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; flex: 1; }
-.whatsapp-ge__row-name { font-size: 12px; font-weight: 600; color: var(--whatsapp-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.whatsapp-ge__row-phone { text-align: start; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; color: var(--whatsapp-ink-4); }
-.whatsapp-ge__row-phone--main { font-size: 12px; font-weight: 600; color: var(--whatsapp-ink); }
-.whatsapp-ge__more { display: flex; justify-content: center; padding-block: 6px; }
-.whatsapp-ge__empty {
+.whatsapp-group-editor__row-main { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; flex: 1; }
+.whatsapp-group-editor__row-name { font-size: 12px; font-weight: 600; color: var(--whatsapp-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whatsapp-group-editor__row-phone { text-align: start; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; color: var(--whatsapp-ink-4); }
+.whatsapp-group-editor__row-phone--main { font-size: 12px; font-weight: 600; color: var(--whatsapp-ink); }
+.whatsapp-group-editor__more { display: flex; justify-content: center; padding-block: 6px; }
+.whatsapp-group-editor__empty {
 	padding: 16px;
 	border-radius: 8px;
 	background: var(--whatsapp-surface);
@@ -122,7 +122,7 @@
 	color: var(--whatsapp-ink-4);
 	line-height: 1.9;
 }
-.whatsapp-ge__foot {
+.whatsapp-group-editor__foot {
 	flex: none;
 	display: flex;
 	align-items: center;
@@ -132,25 +132,25 @@
 	background: var(--whatsapp-surface);
 	border-block-start: 1px solid var(--whatsapp-border);
 }
-.whatsapp-ge__foot-label { font-size: 11px; font-weight: 700; color: var(--whatsapp-ink-2); }
-.whatsapp-ge__foot-count { color: var(--whatsapp-pri-d); }
-.whatsapp-ge__foot-note { font-size: 11px; color: var(--whatsapp-ink-4); }
-.whatsapp-ge__foot-actions { margin-inline-start: auto; display: flex; gap: 8px; }
-.whatsapp-ge__clear { color: var(--whatsapp-dg-i); }
+.whatsapp-group-editor__foot-label { font-size: 11px; font-weight: 700; color: var(--whatsapp-ink-2); }
+.whatsapp-group-editor__foot-count { color: var(--whatsapp-pri-d); }
+.whatsapp-group-editor__foot-note { font-size: 11px; color: var(--whatsapp-ink-4); }
+.whatsapp-group-editor__foot-actions { margin-inline-start: auto; display: flex; gap: 8px; }
+.whatsapp-group-editor__clear { color: var(--whatsapp-dg-i); }
 
 @media (max-width: 859px) {
 	// one scrolling column: the fields, then the members; nothing scrolls on its own
-	.whatsapp-kit-op.whatsapp-ge {
-		.whatsapp-kit-op__body {
+	.whatsapp-kit-overlay-panel.whatsapp-group-editor {
+		.whatsapp-kit-overlay-panel__body {
 			display: flex;
 			flex-direction: column;
 			overflow: auto;
 		}
-		.whatsapp-kit-op__body > .whatsapp-kit-op__section { flex: none; }
-		.whatsapp-kit-op__body > .whatsapp-kit-op__section:nth-of-type(1) { overflow: visible; border-inline-end: 0; border-block-end: 1px solid var(--whatsapp-border); }
-		.whatsapp-kit-op__body > .whatsapp-kit-op__section:nth-of-type(2) {
-			.whatsapp-kit-op__grid, .whatsapp-kit-op__field, .whatsapp-kit-op__html { flex: none; }
+		.whatsapp-kit-overlay-panel__body > .whatsapp-kit-overlay-panel__section { flex: none; }
+		.whatsapp-kit-overlay-panel__body > .whatsapp-kit-overlay-panel__section:nth-of-type(1) { overflow: visible; border-inline-end: 0; border-block-end: 1px solid var(--whatsapp-border); }
+		.whatsapp-kit-overlay-panel__body > .whatsapp-kit-overlay-panel__section:nth-of-type(2) {
+			.whatsapp-kit-overlay-panel__grid, .whatsapp-kit-overlay-panel__field, .whatsapp-kit-overlay-panel__html { flex: none; }
 		}
-		.whatsapp-ge__list { flex: none; overflow: visible; min-block-size: 0; }
+		.whatsapp-group-editor__list { flex: none; overflow: visible; min-block-size: 0; }
 	}
 }

@@ -503,7 +503,7 @@ frappe.provide("whatsapp_next.devices");
 						)}</p>
 					</div>
 				</div>
-				<div class="whatsapp-btnbar"><button type="button" class="btn btn-primary btn-sm" data-act="retry">${ui.escape(__("Show a new code"))}</button></div>`);
+				<div class="whatsapp-button-bar"><button type="button" class="btn btn-primary btn-sm" data-act="retry">${ui.escape(__("Show a new code"))}</button></div>`);
 			this.$pair.find('[data-act="retry"]').on("click", () => this.start_pairing());
 			ui.announce(__("Another number was linked, so it was unlinked"), { assertive: true });
 		}
@@ -826,7 +826,7 @@ frappe.provide("whatsapp_next.devices");
 			});
 			this.mark_header();
 			// the title with its buttons and the state tabs stay while the cards scroll beneath
-			ui.pin_stack(this.$screen, [".whatsapp-kit-pagehead__row", ".whatsapp-devices__rail"]);
+			ui.pin_stack(this.$screen, [".whatsapp-kit-page-header__row", ".whatsapp-devices__rail"]);
 			this.bind_realtime();
 			$(wrapper).on("hide", () => this.unbind_realtime());
 		}
@@ -834,7 +834,7 @@ frappe.provide("whatsapp_next.devices");
 		/** The screen's mark: the tinted plate carrying the screen's icon beside its title. */
 		mark_header() {
 			$(`<span class="whatsapp-devices__mark" aria-hidden="true">${ui.icon("es-line-mobile", "md")}</span>`).prependTo(
-				this.header.$el.find(".whatsapp-kit-pagehead__row")
+				this.header.$el.find(".whatsapp-kit-page-header__row")
 			);
 		}
 

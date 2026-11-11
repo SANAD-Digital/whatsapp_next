@@ -49,29 +49,29 @@ whatsapp.ui.PageHeader = class PageHeader {
 	make() {
 		const o = this.opts;
 		this.$el = $(`
-			<header class="whatsapp-kit whatsapp-kit-pagehead">
-				<div class="whatsapp-kit-pagehead__row">
-					<div class="whatsapp-kit-pagehead__text">
-						${o.title && !this.desk_page ? `<h2 class="whatsapp-kit-pagehead__title">${ui.escape(o.title)}</h2>` : ""}
-						${o.description && !this.desk_page ? `<p class="whatsapp-kit-pagehead__desc">${ui.escape(o.description)}</p>` : ""}
+			<header class="whatsapp-kit whatsapp-kit-page-header">
+				<div class="whatsapp-kit-page-header__row">
+					<div class="whatsapp-kit-page-header__text">
+						${o.title && !this.desk_page ? `<h2 class="whatsapp-kit-page-header__title">${ui.escape(o.title)}</h2>` : ""}
+						${o.description && !this.desk_page ? `<p class="whatsapp-kit-page-header__desc">${ui.escape(o.description)}</p>` : ""}
 					</div>
-					<div class="whatsapp-kit-pagehead__actions"></div>
+					<div class="whatsapp-kit-page-header__actions"></div>
 				</div>
-				<div class="whatsapp-kit-pagehead__stats"></div>
-				<div class="whatsapp-kit-pagehead__banner" hidden></div>
-				<div class="whatsapp-kit-pagehead__blocks"></div>
+				<div class="whatsapp-kit-page-header__stats"></div>
+				<div class="whatsapp-kit-page-header__banner" hidden></div>
+				<div class="whatsapp-kit-page-header__blocks"></div>
 			</header>`);
-		this.$actions = this.$el.find(".whatsapp-kit-pagehead__actions");
-		this.$stats = this.$el.find(".whatsapp-kit-pagehead__stats");
-		this.$banner = this.$el.find(".whatsapp-kit-pagehead__banner");
-		this.$blocks = this.$el.find(".whatsapp-kit-pagehead__blocks");
+		this.$actions = this.$el.find(".whatsapp-kit-page-header__actions");
+		this.$stats = this.$el.find(".whatsapp-kit-page-header__stats");
+		this.$banner = this.$el.find(".whatsapp-kit-page-header__banner");
+		this.$blocks = this.$el.find(".whatsapp-kit-page-header__blocks");
 		if (!this.desk_page) this.render_actions();
 		else this.$actions.remove();
 		// a header may carry nothing but a banner and its blocks (a screen whose console names
 		// itself, or one whose title is Desk's strip): an empty title row would then reserve space
 		// and draw a stray margin
-		if (this.desk_page || (!o.title && !o.description)) this.$el.find(".whatsapp-kit-pagehead__text").remove();
-		if (!this.$el.find(".whatsapp-kit-pagehead__row").children().length) this.$el.find(".whatsapp-kit-pagehead__row").remove();
+		if (this.desk_page || (!o.title && !o.description)) this.$el.find(".whatsapp-kit-page-header__text").remove();
+		if (!this.$el.find(".whatsapp-kit-page-header__row").children().length) this.$el.find(".whatsapp-kit-page-header__row").remove();
 		if (o.stats && o.stats.length) {
 			this.stats = new whatsapp.ui.ListStatsCard({ wrapper: this.$stats, cards: o.stats, refresh_seconds: o.refresh_seconds, layout: "kpi" });
 		} else {
@@ -124,7 +124,7 @@ whatsapp.ui.PageHeader = class PageHeader {
 			if (a.count == null) return;
 			Promise.resolve(typeof a.count === "function" ? a.count() : a.count).then((n) => {
 				if (n == null) return;
-				$btn.append(` <span class="whatsapp-kit-pagehead__count whatsapp-kit-tabular">${ui.escape(ui.format_int(n))}</span>`);
+				$btn.append(` <span class="whatsapp-kit-page-header__count whatsapp-kit-tabular">${ui.escape(ui.format_int(n))}</span>`);
 			});
 		});
 	}
@@ -140,14 +140,14 @@ whatsapp.ui.PageHeader = class PageHeader {
 		this.$actions.empty();
 		(this.opts.secondary || []).forEach((a) => {
 			if (!this.allowed(a)) return;
-			const count = a.count != null ? ` <span class="whatsapp-kit-pagehead__count whatsapp-kit-tabular">${ui.escape(ui.format_int(a.count))}</span>` : "";
+			const count = a.count != null ? ` <span class="whatsapp-kit-page-header__count whatsapp-kit-tabular">${ui.escape(ui.format_int(a.count))}</span>` : "";
 			$(`<button type="button" class="btn btn-default btn-sm">${a.icon ? ui.icon(a.icon, "xs") + " " : ""}${ui.escape(a.label)}${count}</button>`)
 				.on("click", () => a.handler(this))
 				.appendTo(this.$actions);
 		});
 		const p = this.opts.primary;
 		if (p && this.allowed(p)) {
-			$(`<button type="button" class="btn btn-primary btn-sm whatsapp-kit-pagehead__primary">${p.icon ? ui.icon(p.icon, "xs") + " " : ""}${ui.escape(p.label)}</button>`)
+			$(`<button type="button" class="btn btn-primary btn-sm whatsapp-kit-page-header__primary">${p.icon ? ui.icon(p.icon, "xs") + " " : ""}${ui.escape(p.label)}</button>`)
 				.on("click", () => p.handler(this))
 				.appendTo(this.$actions);
 		}
@@ -166,10 +166,10 @@ whatsapp.ui.PageHeader = class PageHeader {
 		this.$banner
 			.attr("role", tone === "red" ? "alert" : "status")
 			.removeAttr("hidden")
-			.attr("class", `whatsapp-kit-pagehead__banner whatsapp-kit-tone--${tone}`)
-			.html(`<span class="whatsapp-kit-pagehead__banner-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span><span class="whatsapp-kit-pagehead__banner-text">${ui.escape(banner.text)}</span>`);
+			.attr("class", `whatsapp-kit-page-header__banner whatsapp-kit-tone--${tone}`)
+			.html(`<span class="whatsapp-kit-page-header__banner-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span><span class="whatsapp-kit-page-header__banner-text">${ui.escape(banner.text)}</span>`);
 		if (banner.action && banner.action.handler) {
-			$(`<button type="button" class="btn btn-default btn-xs whatsapp-kit-pagehead__banner-action">${ui.escape(banner.action.label)}</button>`)
+			$(`<button type="button" class="btn btn-default btn-xs whatsapp-kit-page-header__banner-action">${ui.escape(banner.action.label)}</button>`)
 				.on("click", () => banner.action.handler(this))
 				.appendTo(this.$banner);
 		}
@@ -191,12 +191,12 @@ whatsapp.ui.PageHeader = class PageHeader {
 	// ---- blocks ----------------------------------------------------------------------------
 
 	get_block(key) {
-		return this.$blocks.find(`.whatsapp-kit-pagehead__block[data-key="${key}"]`);
+		return this.$blocks.find(`.whatsapp-kit-page-header__block[data-key="${key}"]`);
 	}
 
 	render_block(block) {
 		let $el = this.get_block(block.key);
-		if (!$el.length) $el = $(`<section class="whatsapp-kit-pagehead__block" data-key="${ui.escape(block.key)}"></section>`).appendTo(this.$blocks);
+		if (!$el.length) $el = $(`<section class="whatsapp-kit-page-header__block" data-key="${ui.escape(block.key)}"></section>`).appendTo(this.$blocks);
 		try {
 			return Promise.resolve(block.render($el, this)).catch((err) => {
 				new whatsapp.ui.EmptyState({ wrapper: $el, state: "error", size: "sm", description: err.message, action: { label: __("Retry"), onclick: () => this.render_block(block) } });

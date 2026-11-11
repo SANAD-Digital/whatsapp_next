@@ -2,7 +2,7 @@
 // its name — the same in every list, table and drawer. The dot carries a tooltip and the state is
 // also in words for a screen reader, so the colour is never the only signal (WCAG 1.4.1).
 
-.whatsapp-devlink {
+.whatsapp-device-link {
 	display: inline-flex;
 	align-items: center;
 	gap: 7px;
@@ -12,7 +12,7 @@
 	text-decoration: none;
 	vertical-align: middle;
 
-	&:hover .whatsapp-devlink__name { color: var(--whatsapp-pri-d); text-decoration: underline; text-underline-offset: 2px; }
+	&:hover .whatsapp-device-link__name { color: var(--whatsapp-pri-d); text-decoration: underline; text-underline-offset: 2px; }
 
 	&__dot {
 		inline-size: 8px;

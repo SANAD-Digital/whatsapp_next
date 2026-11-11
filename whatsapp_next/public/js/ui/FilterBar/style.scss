@@ -611,7 +611,7 @@
 
 // The option drawer: one filter's list, rising from the bottom of the screen where a thumb is.
 // It stops around half the screen and grows to 88 % as the list needs it, scrolling inside itself.
-.whatsapp-kit-optsheet {
+.whatsapp-kit-options-sheet {
 	position: fixed;
 	inset: 0;
 	z-index: 2000;
@@ -704,6 +704,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.whatsapp-kit-optsheet__panel,
-	.whatsapp-kit-optsheet__scrim { transition: none; }
+	.whatsapp-kit-options-sheet__panel,
+	.whatsapp-kit-options-sheet__scrim { transition: none; }
 }
