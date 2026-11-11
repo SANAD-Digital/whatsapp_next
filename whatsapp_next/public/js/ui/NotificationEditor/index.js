@@ -886,27 +886,9 @@ frappe.provide("sanad.ui");
 			});
 		}
 
+		/** The same "What it has done" panel as the alert editor's, drawn by its code. */
 		draw_history() {
-			const s = this.data.stats || {};
-			const recent = this.data.recent || [];
-			if (!this.draft.name) return this.$root.find("[data-slot=history]").html("");
-			const tone = { Read: "ok", Delivered: "ok", Sent: "info", Queued: "muted", Sending: "muted", Failed: "danger", Cancelled: "muted" };
-			this.$root.find("[data-slot=history]").html(`
-				<div class="sanad-ae__hist">
-					<div class="sanad-ae__side-head"><strong>${esc(__("What it has done"))}</strong></div>
-					<dl class="sanad-ae__facts">
-						<div><dt>${esc(__("Sent"))}</dt><dd>${esc(sanad.ui.format_int(s.send_count || 0))}</dd></div>
-						<div><dt>${esc(__("Last sent"))}</dt><dd>${esc(s.last_sent_at ? frappe.datetime.str_to_user(s.last_sent_at) : "—")}</dd></div>
-					</dl>
-					${s.last_error ? `<div class="sanad-ae__note sanad-ae__note--danger">${sanad.ui.ico("error", "sm")}<span>${esc(s.last_error)}</span></div>` : ""}
-					${
-						recent.length
-							? `<ul class="sanad-ae__recent">${recent
-									.map((r) => `<li><span dir="ltr">${esc(r.display_name || sanad.ui.phone(r.phone_e164))}</span>${sanad.ui.group_tag(r.phone_e164)}${sanad.ui.badge(__(r.status), tone[r.status] || "muted")}<time title="${esc(frappe.datetime.str_to_user(r.creation))}">${esc(sanad.ui.ago(r.creation))}</time></li>`)
-									.join("")}</ul>`
-							: ""
-					}
-				</div>`);
+			return sanad.ui.AlertEditor.prototype.draw_history.call(this);
 		}
 
 		draw_sentence() {

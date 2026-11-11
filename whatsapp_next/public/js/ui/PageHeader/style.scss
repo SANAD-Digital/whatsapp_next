@@ -1,5 +1,5 @@
 // PageHeader — title row, KPI row (ListStatsCard `kpi` layout), banner, custom blocks; plus the
-// shared progress bar and "strip" primitives that blocks and DataList cells use.
+// shared progress bar that blocks and DataList cells use.
 
 .sanad-pagehead {
 	display: flex;
@@ -77,46 +77,6 @@
 	&__blocks { display: flex; flex-direction: column; gap: var(--sanad-gap-md); }
 	&__block:empty { display: none; }
 }
-
-// Strip = one bordered row per item (campaign sending now / scheduled) with a coloured inline-start rule.
-.sanad-strip {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--sanad-gap-md);
-	padding-block: var(--sanad-gap-sm);
-	padding-inline: var(--sanad-gap-md);
-	border: var(--sanad-border);
-	border-inline-start: 3px solid var(--sanad-accent);
-	border-radius: var(--sanad-radius);
-	background: var(--surface-base);
-	&--green { border-inline-start-color: var(--ink-green-7); }
-	&--amber { border-inline-start-color: var(--ink-amber-7); }
-	&__title {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--sanad-gap-sm);
-		font-weight: 600;
-		color: var(--ink-gray-9);
-		min-width: 0;
-		a { color: inherit; }
-	}
-	&__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
-	&__meta {
-		display: inline-flex;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
-		align-items: center;
-		color: var(--ink-gray-6);
-		font-size: var(--text-sm, 13px);
-		min-width: 0;
-	}
-	&__grow { flex: 1 1 200px; min-width: 160px; }
-	&__actions { display: inline-flex; gap: var(--sanad-gap-sm); margin-inline-start: auto; .btn { min-height: var(--sanad-target); } }
-	&__note { flex-basis: 100%; font-size: var(--text-xs, 12px); color: var(--ink-gray-6); }
-}
-.sanad-strip-list { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); }
-.sanad-strip-more { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); margin-block-start: var(--sanad-gap-xs); }
 
 // Progress bar (sent = green, failed = red) with a tabular "sent / total" label.
 .sanad-progress {

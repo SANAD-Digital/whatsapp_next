@@ -192,8 +192,6 @@
 		&:hover, &:focus-visible { text-decoration: underline; }
 	}
 	&__poll-options--drawer { gap: var(--sanad-gap-sm); }
-	&__poll-group { padding-block: var(--sanad-gap-xs); border-block-end: var(--sanad-border); &:last-child { border-block-end: 0; } }
-	&__poll-group-title { display: flex; justify-content: space-between; font-weight: 600; margin-block-end: 4px; }
 	&__poll-voters { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; li { display: flex; justify-content: space-between; gap: var(--sanad-gap-sm); } }
 	&__poll-voter { font-weight: 500; }
 	&__poll-note { margin: var(--sanad-gap-xs) 0 0; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }

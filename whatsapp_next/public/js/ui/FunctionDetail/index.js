@@ -155,31 +155,11 @@ frappe.provide("sanad.ui");
 
 		render() {
 			if (!this.$root) return;
-			const active = document.activeElement;
-			const focus_key = active && this.$root.get(0).contains(active) ? active.getAttribute("data-f") : null;
-			const sel = focus_key && "selectionStart" in active ? [active.selectionStart, active.selectionEnd] : null;
-			const scrolls = {};
-			this.$root.find("[data-scroll]").each((_, el) => (scrolls[el.getAttribute("data-scroll")] = el.scrollTop));
+			const restore = sanad.ui.hold_focus(this.$root);
 			const tab = this.ui.tab;
 			const body = tab === "details" ? this.render_details() : tab === "log" ? this.render_log() : this.render_preview();
 			this.$body.html(`${this.render_header()}${body}${this.render_footer()}`);
-			Object.keys(scrolls).forEach((k) => {
-				const el = this.$root.find(`[data-scroll="${k}"]`).get(0);
-				if (el) el.scrollTop = scrolls[k];
-			});
-			if (focus_key) {
-				const el = this.$root.find(`[data-f="${focus_key}"]`).get(0);
-				if (el) {
-					el.focus();
-					if (sel && "setSelectionRange" in el) {
-						try {
-							el.setSelectionRange(sel[0], sel[1]);
-						} catch (e) {
-							// number inputs do not support a selection
-						}
-					}
-				}
-			}
+			restore();
 			if (tab === "preview") this.mount_thread();
 		}
 
@@ -732,17 +712,7 @@ frappe.provide("sanad.ui");
 				this.render();
 				return;
 			}
-			if (e.key === "Tab") {
-				const nodes = this.$root.find("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])").filter(":visible").get();
-				if (!nodes.length) return;
-				if (e.shiftKey && document.activeElement === nodes[0]) {
-					e.preventDefault();
-					nodes[nodes.length - 1].focus();
-				} else if (!e.shiftKey && document.activeElement === nodes[nodes.length - 1]) {
-					e.preventDefault();
-					nodes[0].focus();
-				}
-			}
+			sanad.ui.keep_tab_inside(e, this.$root);
 		}
 
 		on_outside(e) {

@@ -21,16 +21,8 @@ export class CurrentSource extends BaseSource {
 		this.txt = "";
 		const cfg = this.picker.current_config();
 		this.cfg = cfg;
-		const $head = $('<div class="sanad-picker__head"></div>');
-		$head.append(this.search_box(__("Search by name or phone"), (txt) => this.reload({ txt })));
 		const types = cfg.source_types || [];
-		if (types.length) $head.append(this.select_field(__("Source"), types, (v) => this.reload({ source_type: v })));
-		this.$results = $('<div class="sanad-picker__results"></div>');
-		this.$pager = this.pager((p) => this.reload({ page: p }));
-		this.$foot = $('<div class="sanad-picker__foot"></div>');
-		this.$pane.append($head, this.$results, this.$pager, this.$foot);
-		this.state = this.state_for(this.$results);
-		this.reload();
+		this.search_pane(types.length ? [this.select_field(__("Source"), types, (v) => this.reload({ source_type: v }))] : []);
 	}
 
 	reload({ txt, source_type, page } = {}) {

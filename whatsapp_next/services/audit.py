@@ -107,6 +107,5 @@ def log(
 	# a record of what happened stays writable when the record it names is gone or never had a
 	# row (a blocked number that is not in WhatsApp Numbers)
 	doc.flags.ignore_links = True
-	doc.flags.wa_audit_insert = True
 	doc.insert(ignore_permissions=True)
 	return doc.name

@@ -590,8 +590,7 @@
 		gap: 8px;
 	}
 
-	&__grid,
-	&__stack {
+	&__grid {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: 8px 12px;

@@ -25,18 +25,6 @@
 	const is_manager = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
 	const command_list = (entry) => frappe.set_route("List", "WhatsApp Command", entry ? { function: entry.function_key } : {});
 
-	/** `1.10.0` sorts after `1.9.0`: compare versions the way the server does. */
-	const version_tuple = (v) => cstr(v).split(/[.-]/).map((p) => (/^\d+$/.test(p) ? cint(p) : 0));
-	const version_cmp = (a, b) => {
-		const ta = version_tuple(a);
-		const tb = version_tuple(b);
-		for (let i = 0; i < Math.max(ta.length, tb.length); i++) {
-			const d = (ta[i] || 0) - (tb[i] || 0);
-			if (d) return d;
-		}
-		return 0;
-	};
-
 	// ---- cell badges (the table keeps the kit's StatusBadge like every other list) ------------
 
 	/** Update state is a fact about two versions: it always reads as a word, never as a colour. */

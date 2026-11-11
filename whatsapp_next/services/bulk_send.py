@@ -14,7 +14,7 @@ from frappe import _
 from frappe.utils import cint, format_datetime, get_datetime, now_datetime
 
 from whatsapp_next.exceptions import WAValidationError
-from whatsapp_next.services import audit, campaign_runner, picker
+from whatsapp_next.services import audit, campaign_runner, editor_payload, picker
 from whatsapp_next.services.attachments import message_parts
 from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.permissions import contact_phones
@@ -160,11 +160,10 @@ def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 	scheduled_at, kind, attachment, contact}` (`kind` as the composer's "+" picks it, D-137; a file's
 	text is its caption) and start it now (or schedule it). Returns `{campaign, status, recipients,
 	excluded, invalid}`. E: `WAValidationError` (no recipient, empty message, bad schedule)."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
-	unknown = sorted(
-		set(payload)
-		- {
+	editor_payload.require_object(payload)
+	editor_payload.reject_unknown(
+		payload,
+		(
 			"groups",
 			"contacts",
 			"numbers",
@@ -176,10 +175,8 @@ def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 			"kind",
 			"attachment",
 			"contact",
-		}
+		),
 	)
-	if unknown:
-		frappe.throw(_("Unknown payload keys: {0}").format(", ".join(unknown)), WAValidationError)
 	body = (payload.get("body") or "").strip()
 	template = payload.get("template") or None
 	kind = (payload.get("kind") or "text").lower()

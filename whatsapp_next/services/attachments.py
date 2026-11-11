@@ -381,21 +381,6 @@ def _pymupdf():
 		return None
 
 
-def pdf_first_page_png(pdf_bytes: bytes) -> bytes | None:
-	"""PNG of the first page (PyMuPDF). `None` when PyMuPDF is missing or the PDF is unreadable."""
-	fitz = _pymupdf()
-	if fitz is None:
-		return None
-	try:
-		with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
-			if doc.page_count == 0:
-				return None
-			pix = doc[0].get_pixmap(matrix=fitz.Matrix(PNG_ZOOM, PNG_ZOOM), alpha=False)
-			return pix.tobytes("png")
-	except Exception:
-		return None
-
-
 def single_page_pdf_png(pdf_bytes: bytes) -> bytes | None:
 	"""PNG of a PDF that has exactly one page; `None` for a longer or unreadable PDF, or when
 	PyMuPDF is missing."""

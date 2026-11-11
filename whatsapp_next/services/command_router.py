@@ -34,14 +34,6 @@ from whatsapp_next.services.permissions import PARTY_TYPES
 MAP_CACHE_KEY = "wa:commands:map"
 HELP_TOKENS = ("*", "?", "؟", "help", "مساعدة")
 COMMAND_PREFIXES = ("#", "/", "!")
-BLOCK_REASONS = (
-	"Blacklist",
-	"Not Allowed",
-	"Party Type",
-	"Not Linked",
-	"Commands Disabled",
-	"Function Inactive",
-)
 _ARG_RE = re.compile(r"^#?([A-Za-z_][\w]*)=(.*)$")
 
 

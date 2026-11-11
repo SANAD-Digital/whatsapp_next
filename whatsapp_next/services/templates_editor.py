@@ -14,6 +14,7 @@ from frappe import _
 from frappe.utils import cint, get_datetime
 
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
+from whatsapp_next.services import editor_payload
 
 DOCTYPE = "WhatsApp Template"
 
@@ -42,11 +43,6 @@ def _get(name: str):
 	return frappe.get_doc(DOCTYPE, name)
 
 
-def _message_types() -> list[str]:
-	df = frappe.get_meta(DOCTYPE).get_field("message_type")
-	return [o for o in (df.options or "").split("\n") if o] if df else ["Text"]
-
-
 def _categories() -> list[str]:
 	rows = frappe.get_list(
 		DOCTYPE, fields=["category"], group_by="category", order_by="category asc", limit=100
@@ -73,7 +69,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 	return {
 		"template": template,
 		"categories": _categories(),
-		"message_types": _message_types(),
+		"message_types": editor_payload.select_options(DOCTYPE, "message_type", default=["Text"]),
 		"can_write": can_write,
 		"can_delete": can_delete,
 	}
@@ -101,8 +97,7 @@ def save(payload: dict) -> dict[str, Any]:
 	"""Create or update the template from the payload; a changed name renames it. Refuses to
 	overwrite an edit saved elsewhere since the window opened (`modified`). Returns `{name,
 	modified}`. The controller validates everything else."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
+	editor_payload.require_object(payload)
 	new_name = (payload.get("template_name") or "").strip()
 	if not new_name:
 		frappe.throw(_("Give the template a name"), WAValidationError)
@@ -110,14 +105,13 @@ def save(payload: dict) -> dict[str, Any]:
 	if name:
 		doc = _get(name)
 		doc.check_permission("write")
-		opened = payload.get("modified")
-		if opened and get_datetime(opened) != get_datetime(doc.modified):
-			frappe.throw(
-				_(
-					"Someone else saved this template after you opened it. Close it and open it again to see their changes."
-				),
-				WAValidationError,
-			)
+		editor_payload.refuse_stale(
+			doc,
+			payload.get("modified"),
+			_(
+				"Someone else saved this template after you opened it. Close it and open it again to see their changes."
+			),
+		)
 		_apply(doc, payload)
 		doc.save()
 		if new_name != doc.name:

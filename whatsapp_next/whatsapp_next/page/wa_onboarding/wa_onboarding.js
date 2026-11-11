@@ -444,15 +444,6 @@ frappe.provide("whatsapp_next.onboarding");
 			return !!(step && step.done);
 		}
 
-		step_detail(key) {
-			const step = (this.status.steps || []).find((s) => s.key === key);
-			return (step && step.detail) || "";
-		}
-
-		/**
-		 * Open where this site actually stands. An account whose keys are already on this site is
-		 * an account that exists, so the rail is complete and the screen opens on "جاهز للعمل".
-		 */
 		/**
 		 * The site is linked now. The boot this page was loaded with still says "send to the wizard"
 		 * (`desk/setup_redirect.js`); left as it is, opening Home bounced the person straight back here.

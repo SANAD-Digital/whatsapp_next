@@ -11,7 +11,6 @@ list (`last_error`, attempts), `WhatsApp Log.error_code`, `WhatsApp Audit Log`, 
 |---|---|---|
 | Messages stay **Queued** forever and nothing is sent | The scheduler is disabled. `dispatch_tick` runs from `scheduler_events` every minute | `bench --site <site> enable-scheduler` and `bench --site <site> scheduler resume`. Check with `bench doctor` |
 | Queued, the scheduler runs, still nothing sent | No worker is consuming the `short` queue | Start workers for `short` (and `long` for campaigns and alerts). See [install-and-configure.md §5](install-and-configure.md#5-workers-and-scheduler) |
-| Queued, workers fine | Global pause: `WhatsApp Settings.queue_paused = 1` makes `dispatch_tick` do nothing. A pause-only action raises `WAQueuePausedError` (409 `queue_paused`) | Resume from the Queue screen (Manager). `queue_paused_by`, `queue_paused_at` and `queue_pause_reason` say who paused it and why |
 | Queued on one device only | That device is not `Connected`, is `disabled`, or has no `platform_device`. `dispatch_device_batch` skips it. Sends to it raise `WADeviceOfflineError` (409 `device_offline`) | Re-pair it on `/app/wa-devices`. The hourly `devices.sync_from_provider` and the `connection.*` webhooks update the status |
 | A batch fails and the device flips to **Disconnected** | The provider raised `DeviceOfflineError` on the whole call. Every claimed row went back to `Queued` with back-off | Reconnect the device. The rows are then sent on the next tick |
 | Items stuck in **Sending** | A worker died after claiming them | `reconcile.requeue_stale_claims` (every 5 minutes) puts claims older than 10 minutes back in the queue |
@@ -57,7 +56,6 @@ JSON error carries `exc_type` and the class `code`.
 | `WANotFoundError` | 404 | `not_found` | Record or key unknown |
 | `WAStateConflictError` | 409 | `state_conflict` | Action not allowed in the current state |
 | `WADeviceOfflineError` | 409 | `device_offline` | Device not Connected |
-| `WAQueuePausedError` | 409 | `queue_paused` | Action needs a running queue |
 | `WAProviderRejectedError` | 422 | `provider_rejected` | Platform business rejection (`reason`, `provider_code`) |
 | `WANotSupportedError` | 422 | `not_supported` | The active provider lacks the capability (422, not 501: Desk's `request.js` breaks on 501) |
 | `WARateLimitError` | 429 | `rate_limit` | Provider or local rate limit |

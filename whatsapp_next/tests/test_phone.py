@@ -64,14 +64,10 @@ class TestPhone(IntegrationTestCase):
 		self.assertEqual(phone.classify("120363000000000001@g.us"), ("Group", "120363000000000001@g.us"))
 		self.assertEqual(phone.classify("1234@lid"), ("LID", "1234@lid"))
 		self.assertEqual(phone.classify("nope"), (None, None))
-		self.assertTrue(phone.is_valid_key("+966501234567"))
-		self.assertFalse(phone.is_valid_key("nope"))
 
 	def test_key_and_jid_conversions(self):
 		self.assertEqual(phone.key_for("+966501234567", None), "+966501234567")
 		self.assertEqual(phone.key_for("+966501234567", "1@g.us"), "1@g.us")
-		self.assertEqual(phone.to_jid("+966501234567"), "966501234567@s.whatsapp.net")
-		self.assertEqual(phone.to_jid("1@g.us"), "1@g.us")
 		self.assertEqual(phone.to_provider("+966501234567"), "966501234567")
 		self.assertEqual(phone.to_provider("1@g.us"), "1@g.us")
 

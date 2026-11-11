@@ -585,26 +585,58 @@ ui.announce = function (text, { assertive = false } = {}) {
 	window.setTimeout(() => $region.text(text), 30);
 };
 
+const FOCUSABLE =
+	'a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** One keydown: a Tab off the last focusable element of `$root` wraps to the first, and back.
+ * For a window with a key handler of its own; `trap_focus` binds the same rule by itself. */
+ui.keep_tab_inside = function (e, $root) {
+	if (e.key !== "Tab") return;
+	const items = $root.find(FOCUSABLE).filter(":visible").toArray();
+	if (!items.length) return;
+	const first = items[0];
+	const last = items[items.length - 1];
+	if (e.shiftKey && document.activeElement === first) {
+		e.preventDefault();
+		last.focus();
+	} else if (!e.shiftKey && document.activeElement === last) {
+		e.preventDefault();
+		first.focus();
+	}
+};
+
 /** Keep Tab inside `$root` (dialogs handled by Bootstrap; drawers and sheets use this). */
 ui.trap_focus = function ($root) {
-	const selector =
-		'a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-	const handler = (e) => {
-		if (e.key !== "Tab") return;
-		const items = $root.find(selector).filter(":visible").toArray();
-		if (!items.length) return;
-		const first = items[0];
-		const last = items[items.length - 1];
-		if (e.shiftKey && document.activeElement === first) {
-			e.preventDefault();
-			last.focus();
-		} else if (!e.shiftKey && document.activeElement === last) {
-			e.preventDefault();
-			first.focus();
-		}
-	};
+	const handler = (e) => ui.keep_tab_inside(e, $root);
 	$root.on("keydown.sanadtrap", handler);
 	return () => $root.off("keydown.sanadtrap", handler);
+};
+
+/** Before a window re-renders its markup: the focused control (by its `data-f`), its selection and
+ * the offset of every `[data-scroll]`. Call the returned function once the new markup is in. */
+ui.hold_focus = function ($root) {
+	const root = $root.get(0);
+	const active = document.activeElement;
+	const key = active && root && root.contains(active) ? active.getAttribute("data-f") : null;
+	const sel = key && "selectionStart" in active ? [active.selectionStart, active.selectionEnd] : null;
+	const scrolls = {};
+	$root.find("[data-scroll]").each((_, el) => (scrolls[el.getAttribute("data-scroll")] = el.scrollTop));
+	return () => {
+		Object.keys(scrolls).forEach((k) => {
+			const el = $root.find(`[data-scroll="${k}"]`).get(0);
+			if (el) el.scrollTop = scrolls[k];
+		});
+		const el = key && $root.find(`[data-f="${key}"]`).get(0);
+		if (!el) return;
+		el.focus();
+		if (sel && "setSelectionRange" in el) {
+			try {
+				el.setSelectionRange(sel[0], sel[1]);
+			} catch (e) {
+				// number inputs do not support a selection
+			}
+		}
+	};
 };
 
 /** Skeleton rows markup (loading state — never a spinner). */

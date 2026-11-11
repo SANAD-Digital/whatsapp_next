@@ -17,18 +17,12 @@ export class ContactsSource extends BaseSource {
 	render() {
 		this.txt = "";
 		this.link_doctype = "";
-		const $head = $('<div class="sanad-picker__head"></div>');
-		$head.append(this.search_box(__("Search by name or phone"), (txt) => this.reload({ txt })));
 		const link_doctypes = this.entry.link_doctypes || this.picker.opts.contact_link_doctypes || [];
-		if (link_doctypes.length) {
-			$head.append(this.select_field(__("Linked to"), link_doctypes.map((d) => ({ value: d, label: __(d) })), (v) => this.reload({ link_doctype: v })));
-		}
-		this.$results = $('<div class="sanad-picker__results"></div>');
-		this.$pager = this.pager((p) => this.reload({ page: p }));
-		this.$foot = $('<div class="sanad-picker__foot"></div>');
-		this.$pane.append($head, this.$results, this.$pager, this.$foot);
-		this.state = this.state_for(this.$results);
-		this.reload();
+		this.search_pane(
+			link_doctypes.length
+				? [this.select_field(__("Linked to"), link_doctypes.map((d) => ({ value: d, label: __(d) })), (v) => this.reload({ link_doctype: v }))]
+				: []
+		);
 	}
 
 	reload({ txt, link_doctype, page } = {}) {

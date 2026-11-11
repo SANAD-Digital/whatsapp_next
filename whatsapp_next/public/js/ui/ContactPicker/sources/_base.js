@@ -164,6 +164,19 @@ export class BaseSource {
 		return $dd;
 	}
 
+	/** The pane a searchable list source draws: the search box (with `extras` beside it), the results,
+	 * the pager and the footer under them; then the first load through the source's `reload`. */
+	search_pane(extras = []) {
+		const $head = $('<div class="sanad-picker__head"></div>');
+		$head.append(this.search_box(__("Search by name or phone"), (txt) => this.reload({ txt })), ...extras);
+		this.$results = $('<div class="sanad-picker__results"></div>');
+		this.$pager = this.pager((p) => this.reload({ page: p }));
+		this.$foot = $('<div class="sanad-picker__foot"></div>');
+		this.$pane.append($head, this.$results, this.$pager, this.$foot);
+		this.state = this.state_for(this.$results);
+		this.reload();
+	}
+
 	/** Loading / empty / error host for the pane's result area. */
 	state_for($area) {
 		return new sanad.ui.EmptyState({ wrapper: $area, state: "loading", size: "sm", rows: 4 });

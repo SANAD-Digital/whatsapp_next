@@ -221,8 +221,7 @@ The wrapper is marked `__wa_api_endpoint__ = True` and keeps its role tuple in `
 which the surface tests read.
 
 Error classes (`whatsapp_next/exceptions.py`) and their HTTP codes: `WAPermissionError` 403,
-`WANotFoundError` 404, `WAStateConflictError` 409 (and `WADeviceOfflineError`,
-`WAQueuePausedError`), `WAValidationError` 417 (and `WAInvalidPhoneError`, `WABlacklistedError`,
+`WANotFoundError` 404, `WAStateConflictError` 409 (and `WADeviceOfflineError`), `WAValidationError` 417 (and `WAInvalidPhoneError`, `WABlacklistedError`,
 `WAUnknownNumberPolicyError`, `WAFileError`), `WAProviderRejectedError` 422,
 `WANotSupportedError` 422, `WARateLimitError` 429, `WAProviderAuthError` 424,
 `WAProviderUnavailableError` 503.

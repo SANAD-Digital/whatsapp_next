@@ -86,17 +86,6 @@
 		dd { margin: 0; color: var(--ink-gray-9); font-size: var(--text-base, 14px); overflow-wrap: anywhere; }
 		&--wide { grid-column: 1 / -1; dd { white-space: pre-wrap; } }
 	}
-	&__section { margin-block-start: var(--sanad-gap-xl); }
-	&__section-title {
-		font-size: var(--text-sm, 13px);
-		font-weight: 600;
-		color: var(--ink-gray-6);
-		text-transform: uppercase;
-		letter-spacing: 0.02em;
-		margin: 0 0 var(--sanad-gap-sm);
-		padding-block-end: var(--sanad-gap-xs);
-		border-block-end: var(--sanad-border);
-	}
 
 	// form mode
 	&__form .frappe-control { margin-block-end: var(--sanad-gap-md); }

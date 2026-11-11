@@ -207,11 +207,6 @@ frappe.provide("whatsapp_next.campaign");
 			return i < this.step && this.step_problem(i) ? 1 : 0;
 		}
 
-		/** Every step may be opened. A step that is not finished says so inside itself. */
-		can_go() {
-			return true;
-		}
-
 		go(i) {
 			const next = Math.max(0, Math.min(cint(i), C.STEPS.length - 1));
 			if (next === this.step) return;

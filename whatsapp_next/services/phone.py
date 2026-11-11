@@ -234,15 +234,6 @@ def key_for(phone_e164: str | None, jid: str | None = None) -> str | None:
 	return phone_e164 or None
 
 
-def to_jid(key: str | None) -> str | None:
-	"""E.164 → `digits@s.whatsapp.net`; JIDs unchanged."""
-	if not key:
-		return None
-	if is_jid(key):
-		return key
-	return re.sub(r"\D", "", key) + "@s.whatsapp.net"
-
-
 def to_provider(key: str | None) -> str | None:
 	"""Provider boundary form: E.164 digits **without** `+`; JIDs unchanged (platform PB-05)."""
 	if not key:
@@ -250,12 +241,6 @@ def to_provider(key: str | None) -> str | None:
 	if is_jid(key):
 		return key
 	return re.sub(r"\D", "", key)
-
-
-def is_valid_key(value: str | None) -> bool:
-	"""True when `value` is a group/LID JID or a normalizable individual number."""
-	kind, _key = classify(value)
-	return kind is not None
 
 
 def mask(value: str | None) -> str:

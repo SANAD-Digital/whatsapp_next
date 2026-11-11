@@ -128,32 +128,3 @@ def _take_over(
 def _bump_duplicate(name: str) -> None:
 	current = cint(frappe.db.get_value("WhatsApp Webhook Event", name, "duplicate_count"))
 	frappe.db.set_value("WhatsApp Webhook Event", name, "duplicate_count", current + 1, update_modified=False)
-
-
-def store_ignored(
-	event_id: str | None,
-	event_name: str | None,
-	*,
-	reason: str,
-	signature_valid: bool,
-	timestamp_fresh: bool,
-	platform_device: str | None = None,
-) -> str | None:
-	"""Record a rejected delivery as `Ignored` with a blanked payload (forensics without PII).
-	Deliveries without an event id are not stored at all (step 1)."""
-	if not event_id:
-		return None
-	c = claim(
-		event_id,
-		event_name or "unknown",
-		payload=None,
-		device=None,
-		platform_device=platform_device,
-		client_ref=None,
-		provider_message_id=None,
-		signature_valid=signature_valid,
-		timestamp_fresh=timestamp_fresh,
-		status="Ignored",
-		error=reason,
-	)
-	return c.name

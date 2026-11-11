@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import cint, now_datetime
 
 from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError, WAValidationError
-from whatsapp_next.services import audit
+from whatsapp_next.services import audit, editor_payload
 from whatsapp_next.services import function_header as fh
 from whatsapp_next.services.devices import default_device
 
@@ -69,11 +69,8 @@ def save(payload: dict, user: str | None = None) -> str:
 	disabled_inputs[], disabled_replies[], ask_inputs, access{}, description}`.
 	E: `WAStateConflictError` (target Active), `WAValidationError` (unknown key, word collision,
 	a name not in the function's header); audited `Command Changed`. Returns the command's name."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
-	unknown = sorted(set(payload) - ALLOWED_KEYS)
-	if unknown:
-		frappe.throw(_("Unknown payload keys: {0}").format(", ".join(unknown)), WAValidationError)
+	editor_payload.require_object(payload)
+	editor_payload.reject_unknown(payload, ALLOWED_KEYS)
 	name = payload.get("name")
 	if name:
 		doc = get(name)
@@ -210,11 +207,8 @@ def save_editor(payload: dict, user: str | None = None) -> dict[str, str]:
 	"""The editor's save: the payload plus the `status` its header toggle chose. An Active command is
 	stopped, saved and put back to the chosen status in one request, so the edit lock (which guards
 	every other write path) never sees a live command change. Returns `{name, status}`."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
-	unknown = sorted(set(payload) - EDITOR_KEYS)
-	if unknown:
-		frappe.throw(_("Unknown payload keys: {0}").format(", ".join(unknown)), WAValidationError)
+	editor_payload.require_object(payload)
+	editor_payload.reject_unknown(payload, EDITOR_KEYS)
 	fields = {k: v for k, v in payload.items() if k != "status"}
 	status = payload.get("status")
 	if status not in (None, "Active", "Inactive"):
@@ -426,9 +420,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 
 def _draft(payload: dict):
 	"""An unsaved command built from the editor payload (never inserted)."""
-	unknown = sorted(set(payload) - EDITOR_KEYS)
-	if unknown:
-		frappe.throw(_("Unknown payload keys: {0}").format(", ".join(unknown)), WAValidationError)
+	editor_payload.reject_unknown(payload, EDITOR_KEYS)
 	doc = frappe.new_doc("WhatsApp Command")
 	fields = {k: v for k, v in payload.items() if k not in ("name", "status")}
 	_apply(doc, fields)
@@ -442,8 +434,7 @@ def preview(payload: dict, sender: dict | None = None, values: dict | None = Non
 	`dry_run`: nothing is saved, nothing is sent. `sender{contact, party_type, party_name, phone}`,
 	`values{input key → text}`. Returns `{text, status, block_reason, reply_sent, args, missing[],
 	replies[], error}`; `reply_sent` says whether a live route would actually send the block reply."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
+	editor_payload.require_object(payload)
 	doc = _draft(payload)
 	if not doc.function:
 		frappe.throw(_("Pick a function first"), WAValidationError)

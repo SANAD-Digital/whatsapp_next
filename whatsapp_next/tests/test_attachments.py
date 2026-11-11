@@ -277,10 +277,10 @@ class TestAttachments(IntegrationTestCase):
 		self.assertTrue(pdf.content.startswith(b"%PDF"))
 		self.assertEqual((pdf.file_name, pdf.mime_type), ("wa-test-role.pdf", "application/pdf"))
 		self.assertEqual(frappe.local.lang, frappe.local.lang)  # restored
-		png = attachments.pdf_first_page_png(pdf.content)
+		png = attachments.single_page_pdf_png(pdf.content)  # a one-page print
 		if png is not None:  # PyMuPDF optional
 			self.assertTrue(png.startswith(b"\x89PNG"))
-		self.assertIsNone(attachments.pdf_first_page_png(b"not a pdf"))
+		self.assertIsNone(attachments.single_page_pdf_png(b"not a pdf"))
 		with self.assertRaises(WAFileError):
 			attachments.render_print_pdf("Role", "no-such-role")
 		url = attachments.save_private_file(pdf.content, "wa-test-role.pdf", ("Role", "System Manager"))

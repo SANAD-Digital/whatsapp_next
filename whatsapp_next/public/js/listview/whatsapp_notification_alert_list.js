@@ -17,34 +17,21 @@ function new_alert() {
 }
 
 function toggle_enabled(doc, listview) {
-	const enable = !cint(doc.enabled);
-	const title = doc.alert_name || doc.name;
-	return sanad.ui.ConfirmDialog.ask({
-		title: enable ? __("Enable {0}?", [title]) : __("Disable {0}?", [title]),
-		message: enable
-			? __("The alert will run on its schedule and send its report or message.")
-			: __("The alert will not run until it is enabled again."),
+	return whatsapp_next.enabled_toggle.ask(listview, DOCTYPE, doc, {
+		title: doc.alert_name || doc.name,
+		enable_message: __("The alert will run on its schedule and send its report or message."),
+		disable_message: __("The alert will not run until it is enabled again."),
 		impact: [
 			{ label: __("Periodicity"), value: __(doc.periodicity || "") },
 			{ label: __("Device"), value: doc.device || "—" },
 		],
-		confirm_label: enable ? __("Enable") : __("Disable"),
-		danger: !enable,
-		on_confirm: () => frappe.xcall("frappe.client.set_value", { doctype: DOCTYPE, name: doc.name, fieldname: "enabled", value: enable ? 1 : 0 }),
-	})
-		.then(() => {
-			sanad.ui.Toast.success(enable ? __("Alert enabled") : __("Alert disabled"));
-			listview.refresh();
-			listview._sanad_header && listview._sanad_header.refresh();
-		})
-		.catch(() => {});
+		enabled_toast: __("Alert enabled"),
+		disabled_toast: __("Alert disabled"),
+	});
 }
 
 function status_chip(doc, can_write) {
-	const enabled = !!cint(doc.enabled);
-	const badge = sanad.ui.StatusBadge.html({ label: enabled ? __("Enabled") : __("Disabled"), colour: enabled ? "green" : "gray" });
-	if (!can_write) return badge;
-	return `<button type="button" class="btn btn-link p-0 wa-toggle-enabled" data-name="${frappe.utils.escape_html(doc.name)}" aria-pressed="${enabled}" aria-label="${frappe.utils.escape_html(enabled ? __("Enabled — click to disable") : __("Disabled — click to enable"))}">${badge}</button>`;
+	return whatsapp_next.enabled_toggle.chip(doc, can_write);
 }
 
 /** `[now, now + 24 h]` in the system time zone, as `YYYY-MM-DD HH:mm:ss`. */
@@ -185,12 +172,6 @@ frappe.listview_settings[DOCTYPE] = {
 			});
 		}
 
-		listview.$result.off("click.waalert").on("click.waalert", ".wa-toggle-enabled", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			const name = $(e.currentTarget).data("name");
-			const doc = (listview.data || []).find((d) => d.name === name);
-			if (doc) toggle_enabled(doc, listview);
-		});
+		whatsapp_next.enabled_toggle.bind(listview, "waalert", toggle_enabled);
 	},
 };

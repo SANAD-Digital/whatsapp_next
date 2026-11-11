@@ -50,9 +50,8 @@ perm?, condition?}`, `secondary[{label, icon?, count?, handler, roles?, perm?}]`
 `() => Promise<banner|null>`), `blocks[{key, render($el, header) → void|Promise, events?}]`,
 `events {name: (data, header)}`, `refresh_seconds`.
 Methods: `refresh()` (banner + blocks + KPIs), `set_banner(b)`, `get_block(key)`, `destroy()`.
-Shared primitives shipped with the component's stylesheet: `.sanad-strip` / `.sanad-strip-list`
-(bordered item rows with a coloured inline-start rule) and `.sanad-progress` (sent / failed bar
-with a tabular label) — used by campaign strips and by DataList progress cells.
+Shared primitive shipped with the component's stylesheet: `.sanad-progress` (sent / failed bar
+with a tabular label) — used by DataList progress cells.
 
 ## Live use
 `WhatsApp Campaign` list — `public/js/listview/whatsapp_campaign_list.js` ("New campaign" in the page bar,

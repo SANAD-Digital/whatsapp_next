@@ -27,7 +27,7 @@ from whatsapp_next.exceptions import (
 	WAStateConflictError,
 	WAValidationError,
 )
-from whatsapp_next.services import audit
+from whatsapp_next.services import audit, editor_payload
 from whatsapp_next.services.phone import classify, normalize
 
 ELEVATED_ROLE = "WhatsApp Contact User"
@@ -763,8 +763,7 @@ def _validated_payload(
 	payload: dict[str, Any] | None,
 ) -> tuple[dict[str, Any], list[dict] | None, list[dict] | None]:
 	"""Split a create/update payload into scalar fields, phone rows and link rows; reject unknown keys."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
+	editor_payload.require_object(payload)
 	_check_keys(payload, (*CONTACT_WRITE_FIELDS, *CONTACT_TABLE_KEYS), "Contact")
 	scalars = {k: payload[k] for k in CONTACT_WRITE_FIELDS if k in payload}
 	phones = links = None

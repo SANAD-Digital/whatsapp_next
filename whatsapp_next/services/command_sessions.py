@@ -181,6 +181,22 @@ def numbered_answer(command, spec: dict[str, Any], raw: str) -> str:
 	return answer
 
 
+def _list_prompt(title: str, label: str, rows: list[dict]) -> dict:
+	"""The question as a WhatsApp list: one section named after the input, its `rows` to pick from."""
+	return {
+		"output_key": "prompt",
+		"message_type": "List",
+		"body": _("Choose {0}").format(label),
+		"interactive": {
+			"title": title,
+			"text": _("Choose {0}").format(label),
+			"button_text": _("Choose"),
+			"sections": [{"title": label, "rows": rows}],
+		},
+		"attachment": None,
+	}
+
+
 def question(command, spec: dict[str, Any]) -> dict[str, Any]:
 	"""The reply asking for one input: a list (dates, or more than three choices), buttons (up to
 	three choices), or buttons with a typed answer expected (text, numbers without choices). A plan
@@ -197,18 +213,7 @@ def question(command, spec: dict[str, Any]) -> dict[str, Any]:
 		rows = [{"id": ARG_PREFIX + v, "title": _(t)} for v, t in DATE_PRESETS]
 		rows.append({"id": TYPE_IT, "title": _("Another date"), "description": _("Type it, e.g. 2026-10-31")})
 		rows.append({"id": CANCEL, "title": _("Cancel")})
-		return {
-			"output_key": "prompt",
-			"message_type": "List",
-			"body": _("Choose {0}").format(label),
-			"interactive": {
-				"title": title,
-				"text": _("Choose {0}").format(label),
-				"button_text": _("Choose"),
-				"sections": [{"title": label, "rows": rows}],
-			},
-			"attachment": None,
-		}
+		return _list_prompt(title, label, rows)
 	if choices:
 		if len(choices) <= 2:
 			buttons = [{"type": "reply", "id": ARG_PREFIX + v, "text": t} for v, t in choices]
@@ -223,18 +228,7 @@ def question(command, spec: dict[str, Any]) -> dict[str, Any]:
 		rows = [{"id": ARG_PREFIX + v, "title": t} for v, t in choices]
 		rows.append({"id": TYPE_IT, "title": _("Another value"), "description": _("Type it")})
 		rows.append({"id": CANCEL, "title": _("Cancel")})
-		return {
-			"output_key": "prompt",
-			"message_type": "List",
-			"body": _("Choose {0}").format(label),
-			"interactive": {
-				"title": title,
-				"text": _("Choose {0}").format(label),
-				"button_text": _("Choose"),
-				"sections": [{"title": label, "rows": rows}],
-			},
-			"attachment": None,
-		}
+		return _list_prompt(title, label, rows)
 	hint = _("a number") if kind == "int" else _("a date, e.g. 2026-10-31") if kind == "date" else ""
 	text = _("Type {0}").format(label) + (f" ({hint})" if hint else "")
 	return {

@@ -208,11 +208,7 @@ frappe.provide("sanad.ui");
 
 		render() {
 			if (!this.draft) return;
-			const active = document.activeElement;
-			const focus_key = active && this.$root.get(0).contains(active) ? active.getAttribute("data-f") : null;
-			const sel = focus_key && "selectionStart" in active ? [active.selectionStart, active.selectionEnd] : null;
-			const scrolls = {};
-			this.$root.find("[data-scroll]").each((_, el) => (scrolls[el.getAttribute("data-scroll")] = el.scrollTop));
+			const restore = sanad.ui.hold_focus(this.$root);
 
 			const tab = this.ui.tab;
 			const body = tab === "setup" ? this.render_setup() : tab === "perms" ? this.render_perms() : this.render_preview();
@@ -220,23 +216,7 @@ frappe.provide("sanad.ui");
 			this.$root.find(".sanad-ce").toggleClass("sanad-ce--readonly", this.read_only);
 			if (this.read_only) this.$body.find("input, textarea, select").not("[data-keep]").prop("disabled", true);
 
-			Object.keys(scrolls).forEach((k) => {
-				const el = this.$root.find(`[data-scroll="${k}"]`).get(0);
-				if (el) el.scrollTop = scrolls[k];
-			});
-			if (focus_key) {
-				const el = this.$root.find(`[data-f="${focus_key}"]`).get(0);
-				if (el) {
-					el.focus();
-					if (sel && "setSelectionRange" in el) {
-						try {
-							el.setSelectionRange(sel[0], sel[1]);
-						} catch (e) {
-							// number inputs do not support a selection
-						}
-					}
-				}
-			}
+			restore();
 			if (tab === "preview") this.mount_thread();
 		}
 
@@ -899,19 +879,7 @@ frappe.provide("sanad.ui");
 				this.touch();
 				return;
 			}
-			if (e.key === "Tab") {
-				const nodes = this.$root.find("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])").filter(":visible").get();
-				if (!nodes.length) return;
-				const first = nodes[0];
-				const last = nodes[nodes.length - 1];
-				if (e.shiftKey && document.activeElement === first) {
-					e.preventDefault();
-					last.focus();
-				} else if (!e.shiftKey && document.activeElement === last) {
-					e.preventDefault();
-					first.focus();
-				}
-			}
+			sanad.ui.keep_tab_inside(e, this.$root);
 		}
 
 		on_outside(e) {

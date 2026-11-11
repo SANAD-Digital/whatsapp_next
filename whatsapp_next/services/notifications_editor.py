@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import cint
 
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
-from whatsapp_next.services import attachments, audit, dispatch, notifications, templates
+from whatsapp_next.services import attachments, audit, dispatch, editor_payload, notifications, templates
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.phone import mask, normalize
 from whatsapp_next.whatsapp_next.doctype.whatsapp_notification.whatsapp_notification import ALLOWED_METHODS
@@ -77,11 +77,6 @@ def _get(name: str):
 	if not frappe.db.exists(DOCTYPE, name):
 		frappe.throw(_("Notification {0} not found").format(name), WANotFoundError)
 	return frappe.get_doc(DOCTYPE, name)
-
-
-def _options(doctype: str, fieldname: str) -> list[str]:
-	df = frappe.get_meta(doctype).get_field(fieldname)
-	return [o for o in (df.options or "").split("\n") if o] if df else []
 
 
 def _values(doc) -> dict[str, Any]:
@@ -165,9 +160,9 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		"stats": stats,
 		"recent": recent,
 		"options": {
-			"event": _options(DOCTYPE, "event"),
-			"message_type": _options(DOCTYPE, "message_type"),
-			"recipient_type": _options(RECIPIENT_DOCTYPE, "recipient_type"),
+			"event": editor_payload.select_options(DOCTYPE, "event"),
+			"message_type": editor_payload.select_options(DOCTYPE, "message_type"),
+			"recipient_type": editor_payload.select_options(RECIPIENT_DOCTYPE, "recipient_type"),
 			"method": list(ALLOWED_METHODS),
 		},
 		"devices": devices,
@@ -190,9 +185,7 @@ def document_setup(document_type: str) -> dict[str, Any]:
 
 
 def _apply(doc, payload: dict) -> None:
-	unknown = sorted(set(payload) - PAYLOAD_KEYS)
-	if unknown:
-		frappe.throw(_("Unknown payload keys: {0}").format(", ".join(unknown)), WAValidationError)
+	editor_payload.reject_unknown(payload, PAYLOAD_KEYS)
 	for f in FIELDS:
 		if f not in payload:
 			continue
@@ -214,21 +207,12 @@ def _apply(doc, payload: dict) -> None:
 	if doc.notification_name:
 		doc.notification_name = doc.notification_name.strip()
 	if "recipients" in payload:
-		rows = payload.get("recipients") or []
-		if not isinstance(rows, list):
-			frappe.throw(_("recipients must be a list"), WAValidationError)
-		doc.set("recipients", [])
-		for row in rows:
-			if isinstance(row, dict):
-				doc.append(
-					"recipients", {f: row.get(f) for f in RECIPIENT_FIELDS if row.get(f) not in (None, "")}
-				)
+		editor_payload.replace_recipients(doc, payload.get("recipients"), RECIPIENT_FIELDS)
 
 
 def _draft(payload: dict):
 	"""The editor's notification as an unsaved document: the saved one with the payload over it, or new."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
+	editor_payload.require_object(payload)
 	name = payload.get("name")
 	# a saved notification is loaded and changed in memory only — nothing here calls save
 	doc = _get(name) if name else frappe.new_doc(DOCTYPE)
@@ -454,8 +438,7 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 def save(payload: dict) -> dict[str, Any]:
 	"""Create or update the notification from the payload; a changed name renames it. Returns
 	`{name}`. The controller validates everything."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
+	editor_payload.require_object(payload)
 	name = payload.get("name")
 	new_name = (payload.get("notification_name") or "").strip()
 	if not new_name:

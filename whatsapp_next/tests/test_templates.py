@@ -68,9 +68,6 @@ class TestTemplates(IntegrationTestCase):
 		self.assertIn("doc.role_name", hints)
 		self.assertIn("recipient", hints)
 		self.assertEqual(templates.variables(None)[:2], ["doc", "recipient"])
-		self.assertEqual(
-			templates.referenced_names("{{ doc.a }} {{doc.b}} {{ recipient.x }}"), ["doc", "recipient"]
-		)
 
 	def test_sample_context(self):
 		ctx = templates.sample_context("Role", '{"doc": {"role_name": "Sample"}, "code": "X1"}')

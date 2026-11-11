@@ -294,13 +294,3 @@ def variables(reference_doctype: str | None) -> list[str]:
 			if c.fieldtype not in _HINT_EXCLUDED_TYPES and c.fieldname
 		]
 	return list(dict.fromkeys(names))
-
-
-_VAR_RE = re.compile(r"{{\s*([a-zA-Z_][\w.]*)")
-
-
-def referenced_names(source: str | None) -> list[str]:
-	"""Top-level names a template references (`{{ doc.x }}` → `doc`), for validation hints."""
-	if not source:
-		return []
-	return list(dict.fromkeys(m.group(1).split(".")[0] for m in _VAR_RE.finditer(source)))

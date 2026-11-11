@@ -15,14 +15,7 @@ export class WhatsAppNumbersSource extends BaseSource {
 
 	render() {
 		this.txt = "";
-		const $head = $('<div class="sanad-picker__head"></div>');
-		$head.append(this.search_box(__("Search by name or phone"), (txt) => this.reload({ txt })));
-		this.$results = $('<div class="sanad-picker__results"></div>');
-		this.$pager = this.pager((p) => this.reload({ page: p }));
-		this.$foot = $('<div class="sanad-picker__foot"></div>');
-		this.$pane.append($head, this.$results, this.$pager, this.$foot);
-		this.state = this.state_for(this.$results);
-		this.reload();
+		this.search_pane();
 	}
 
 	reload({ txt, page } = {}) {

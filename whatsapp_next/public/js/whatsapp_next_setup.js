@@ -187,3 +187,46 @@ whatsapp_next.refresh_profiles = (source_doctype, names, { on_done } = {}) =>
 			return r;
 		})
 		.catch((err) => sanad.ui.Toast.error(err));
+
+// The Status column of a list whose rows switch on and off (notifications, alerts): the badge, a
+// button over it for whoever may write, and the confirmed switch a click on it opens. The list
+// passes its own words; the flow, the write and the refresh are the same for every list.
+whatsapp_next.enabled_toggle = {
+	chip(doc, can_write) {
+		const enabled = !!cint(doc.enabled);
+		const badge = sanad.ui.StatusBadge.html({ label: enabled ? __("Enabled") : __("Disabled"), colour: enabled ? "green" : "gray" });
+		if (!can_write) return badge;
+		return `<button type="button" class="btn btn-link p-0 wa-toggle-enabled" data-name="${frappe.utils.escape_html(doc.name)}" aria-pressed="${enabled}" aria-label="${frappe.utils.escape_html(enabled ? __("Enabled — click to disable") : __("Disabled — click to enable"))}">${badge}</button>`;
+	},
+
+	/** Ask, switch `enabled`, then refresh the list and its header.
+	 * `words`: `{title, enable_message, disable_message, impact[], enabled_toast, disabled_toast}`. */
+	ask(listview, doctype, doc, words) {
+		const enable = !cint(doc.enabled);
+		return sanad.ui.ConfirmDialog.ask({
+			title: enable ? __("Enable {0}?", [words.title]) : __("Disable {0}?", [words.title]),
+			message: enable ? words.enable_message : words.disable_message,
+			impact: words.impact,
+			confirm_label: enable ? __("Enable") : __("Disable"),
+			danger: !enable,
+			on_confirm: () => frappe.xcall("frappe.client.set_value", { doctype, name: doc.name, fieldname: "enabled", value: enable ? 1 : 0 }),
+		})
+			.then(() => {
+				sanad.ui.Toast.success(enable ? words.enabled_toast : words.disabled_toast);
+				listview.refresh();
+				listview._sanad_header && listview._sanad_header.refresh();
+			})
+			.catch(() => {});
+	},
+
+	/** A click on a row's chip opens `toggle(doc, listview)` (delegated: rows re-render on every refresh). */
+	bind(listview, namespace, toggle) {
+		listview.$result.off(`click.${namespace}`).on(`click.${namespace}`, ".wa-toggle-enabled", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const name = $(e.currentTarget).data("name");
+			const doc = (listview.data || []).find((d) => d.name === name);
+			if (doc) toggle(doc, listview);
+		});
+	},
+};

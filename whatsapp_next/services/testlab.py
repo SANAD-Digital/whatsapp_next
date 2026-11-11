@@ -56,7 +56,6 @@ KINDS: tuple[str, ...] = (
 	"campaign",
 )
 POLL_FIELDS = ("poll_question", "poll_options", "poll_allow_multiple")
-QUICK_KINDS = {"quick_text": "text", "quick_image": "image", "quick_document": "document"}
 
 CAP_DEFAULT, CAP_MAX = 20, 50
 PACING_DEFAULT, PACING_MIN, PACING_MAX = 8, 3, 60

@@ -156,25 +156,9 @@ frappe.provide("sanad.ui");
 
 		render() {
 			if (!this.$root || !this.ctx) return;
-			const active = document.activeElement;
-			const focus_key = active && this.$root.get(0).contains(active) ? active.getAttribute("data-f") : null;
-			const sel = focus_key && "selectionStart" in active ? [active.selectionStart, active.selectionEnd] : null;
-			const scroll = this.$root.find("[data-scroll=list]").scrollTop();
+			const restore = sanad.ui.hold_focus(this.$root);
 			this.$body.html(`<div class="sanad-bs__grid">${this.render_list()}${this.render_message()}</div>`);
-			this.$root.find("[data-scroll=list]").scrollTop(scroll || 0);
-			if (focus_key) {
-				const el = this.$root.find(`[data-f="${focus_key}"]`).get(0);
-				if (el) {
-					el.focus();
-					if (sel && "setSelectionRange" in el) {
-						try {
-							el.setSelectionRange(sel[0], sel[1]);
-						} catch (e) {
-							// not every input has a selection
-						}
-					}
-				}
-			}
+			restore();
 		}
 
 		render_list() {
@@ -463,17 +447,7 @@ frappe.provide("sanad.ui");
 				e.stopPropagation();
 				return this.close();
 			}
-			if (e.key === "Tab") {
-				const nodes = this.$root.find("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])").filter(":visible").get();
-				if (!nodes.length) return;
-				if (e.shiftKey && document.activeElement === nodes[0]) {
-					e.preventDefault();
-					nodes[nodes.length - 1].focus();
-				} else if (!e.shiftKey && document.activeElement === nodes[nodes.length - 1]) {
-					e.preventDefault();
-					nodes[0].focus();
-				}
-			}
+			sanad.ui.keep_tab_inside(e, this.$root);
 		}
 
 		on_input(e) {

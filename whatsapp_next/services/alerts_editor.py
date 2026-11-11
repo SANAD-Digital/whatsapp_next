@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import cint, now_datetime
 
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
-from whatsapp_next.services import alerts, alerts_dates, audit
+from whatsapp_next.services import alerts, alerts_dates, audit, editor_payload
 from whatsapp_next.services.phone import normalize
 from whatsapp_next.whatsapp_next.doctype.whatsapp_notification_alert.whatsapp_notification_alert import (
 	_as_time,
@@ -67,11 +67,6 @@ def _get(name: str):
 	if not frappe.db.exists(DOCTYPE, name):
 		frappe.throw(_("Notification alert {0} not found").format(name), WANotFoundError)
 	return frappe.get_doc(DOCTYPE, name)
-
-
-def _meta_options(fieldname: str) -> list[str]:
-	df = frappe.get_meta(DOCTYPE).get_field(fieldname)
-	return [o for o in (df.options or "").split("\n") if o] if df else []
 
 
 def _values(doc) -> dict[str, Any]:
@@ -143,12 +138,14 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		"stats": stats,
 		"recent": recent,
 		"options": {
-			"periodicity": _meta_options("periodicity"),
-			"day_of_week": _meta_options("day_of_week"),
-			"month_of_year": _meta_options("month_of_year"),
-			"content_type": _meta_options("content_type"),
-			"attachment_format": _meta_options("attachment_format"),
-			"recipient_type": _meta_options_child("recipient_type"),
+			"periodicity": editor_payload.select_options(DOCTYPE, "periodicity"),
+			"day_of_week": editor_payload.select_options(DOCTYPE, "day_of_week"),
+			"month_of_year": editor_payload.select_options(DOCTYPE, "month_of_year"),
+			"content_type": editor_payload.select_options(DOCTYPE, "content_type"),
+			"attachment_format": editor_payload.select_options(DOCTYPE, "attachment_format"),
+			"recipient_type": editor_payload.select_options(
+				"WhatsApp Notification Alert Recipient", "recipient_type"
+			),
 		},
 		"devices": devices,
 		"templates": templates,
@@ -164,11 +161,6 @@ def editor(name: str | None = None) -> dict[str, Any]:
 	}
 
 
-def _meta_options_child(fieldname: str) -> list[str]:
-	df = frappe.get_meta("WhatsApp Notification Alert Recipient").get_field(fieldname)
-	return [o for o in (df.options or "").split("\n") if o] if df else []
-
-
 # ---- the draft -----------------------------------------------------------------------------
 
 
@@ -181,9 +173,7 @@ def _json_text(value: Any) -> str | None:
 
 
 def _apply(doc, payload: dict) -> None:
-	unknown = sorted(set(payload) - PAYLOAD_KEYS)
-	if unknown:
-		frappe.throw(_("Unknown payload keys: {0}").format(", ".join(unknown)), WAValidationError)
+	editor_payload.reject_unknown(payload, PAYLOAD_KEYS)
 	for f in FIELDS:
 		if f not in payload:
 			continue
@@ -198,22 +188,12 @@ def _apply(doc, payload: dict) -> None:
 	if doc.alert_name:
 		doc.alert_name = doc.alert_name.strip()
 	if "recipients" in payload:
-		rows = payload.get("recipients") or []
-		if not isinstance(rows, list):
-			frappe.throw(_("recipients must be a list"), WAValidationError)
-		doc.set("recipients", [])
-		for row in rows:
-			if not isinstance(row, dict):
-				continue
-			doc.append(
-				"recipients", {f: row.get(f) for f in RECIPIENT_FIELDS if row.get(f) not in (None, "")}
-			)
+		editor_payload.replace_recipients(doc, payload.get("recipients"), RECIPIENT_FIELDS)
 
 
 def _draft(payload: dict):
 	"""The editor's alert as an unsaved document: the saved one with the payload over it, or new."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
+	editor_payload.require_object(payload)
 	name = payload.get("name")
 	# a saved alert is loaded and changed in memory only — nothing here calls save
 	doc = _get(name) if name else frappe.new_doc(DOCTYPE)
@@ -335,8 +315,7 @@ def send_test(payload: dict, phone: str) -> dict[str, Any]:
 def save(payload: dict) -> dict[str, Any]:
 	"""Create or update the alert from the payload; a changed name renames it. Returns
 	`{name, next_run_at}`. The controller validates everything."""
-	if not isinstance(payload, dict):
-		frappe.throw(_("payload must be an object"), WAValidationError)
+	editor_payload.require_object(payload)
 	name = payload.get("name")
 	if name:
 		doc = _get(name)

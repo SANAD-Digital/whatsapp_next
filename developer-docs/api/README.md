@@ -120,7 +120,6 @@ so the readable message also goes into `_server_messages`.
 | `WANotFoundError` | 404 | The record is unknown |
 | `WAStateConflictError` | 409 | The action isn't allowed in the record's current state |
 | `WADeviceOfflineError` | 409 | No usable device, or the device isn't registered on the platform |
-| `WAQueuePausedError` | 409 | The action needs a running queue |
 | `WAProviderRejectedError` | 422 | The provider rejected the request as a business rule. The Python object carries `reason` and `provider_code`. |
 | `WANotSupportedError` | 422 | The active provider lacks the capability. It returns 422, not 501, because Frappe's `request.js` mishandles a 501. |
 | `WARateLimitError` | 429 | A provider or local rate limit |

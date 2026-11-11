@@ -71,12 +71,6 @@ class WADeviceOfflineError(WAStateConflictError):
 	code = "device_offline"
 
 
-class WAQueuePausedError(WAStateConflictError):
-	"""Action requires a running queue (409)."""
-
-	code = "queue_paused"
-
-
 class WAProviderAuthError(WANextError):
 	"""Credentials missing or rejected by the platform (424 Failed Dependency: the platform this
 	depends on refused us). Not 502 — Frappe's client answers every 502 with a bare "Internal Server
