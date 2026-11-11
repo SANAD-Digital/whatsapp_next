@@ -2,6 +2,12 @@
 # sign-up's platform keys, a fetched webhook secret) must survive the next ordinary save of
 # WhatsApp Settings. Before the fix the field stayed empty in `tabSingles`, and Frappe's
 # `_save_passwords` read that as "cleared" and deleted the stored key.
+#
+# Storing a sign-up's keys is "a new account" (`onboarding.store_signup_credentials`): it removes
+# the site's webhook endpoint from the platform and forgets the link — `setup_completed`, the
+# connection test, the webhook. So the whole class runs on the fake provider (2026-11-11: run on
+# the real one it deleted an endpoint of the dev site's account on the platform), and the link's
+# state is put back with the keys (it left the dev site sent to the setup wizard on every screen).
 
 from __future__ import annotations
 
@@ -9,12 +15,16 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils.password import get_decrypted_password, remove_encrypted_password, set_encrypted_password
 
+from whatsapp_next.providers import registry
 from whatsapp_next.providers.schemas import SignupState
 from whatsapp_next.services import onboarding
 from whatsapp_next.services.settings import store_secret
+from whatsapp_next.tests.fake_provider import FakeProvider
 
 SETTINGS = "WhatsApp Settings"
 FIELDS = ("customer_api_key", "customer_api_secret", "api_key", "api_secret", "webhook_secret")
+# what forgetting the link resets, and when the keys last changed
+LINK_STATE = (*onboarding.SIGN_OUT_RESET, "credentials_updated_at")
 
 
 def _read(fieldname: str) -> str | None:
@@ -28,6 +38,12 @@ class TestSettingsSecrets(IntegrationTestCase):
 		# the site's own keys and placeholders, put back exactly as they were
 		cls._secrets = {f: _read(f) for f in FIELDS}
 		cls._singles = {f: frappe.db.get_single_value(SETTINGS, f) for f in FIELDS}
+		meta = frappe.get_meta(SETTINGS)
+		cls._link_state = {
+			f: frappe.db.get_single_value(SETTINGS, f) for f in LINK_STATE if meta.has_field(f)
+		}
+		# nothing here may reach the platform the dev site is linked to
+		registry.override_for_tests(FakeProvider())
 
 	@classmethod
 	def tearDownClass(cls):
@@ -37,7 +53,10 @@ class TestSettingsSecrets(IntegrationTestCase):
 			else:
 				remove_encrypted_password(SETTINGS, SETTINGS, f)
 			frappe.db.set_single_value(SETTINGS, f, cls._singles[f] or "", update_modified=False)
+		frappe.db.set_single_value(SETTINGS, cls._link_state, update_modified=False)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		registry.clear_override()
+		registry.clear_cache()
 		# committed: the runner's rollback must not undo the restore
 		frappe.db.commit()
 		super().tearDownClass()
