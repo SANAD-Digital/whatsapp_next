@@ -205,9 +205,9 @@ def preview_picker_source_reach(source: dict[str, Any] | str) -> dict[str, Any]:
 	)
 	if linked:
 		phones = _phones_for(sorted({r.contact for r in rows}))
-		for r in rows:
-			first = next(iter(phones.get(r.contact) or []), None)
-			r.phone = first["phone"] if first else None
+		for record in rows:
+			first = next(iter(phones.get(record.contact) or []), None)
+			record.phone = first["phone"] if first else None
 	usable = [r for r in rows if r.get("phone") and normalize_phone_to_e164(r.phone)]
 	# counted on at most 500 records: enough to say whether the choice works, cheap on a big table
 	with_number = (

@@ -36,7 +36,7 @@ class TestReceipts(IntegrationTestCase):
 		doc.insert(ignore_permissions=True)
 		return doc
 
-	def _settings(self, **values):
+	def _set_settings_values(self, **values):
 		for k, v in values.items():
 			frappe.db.set_single_value("WhatsApp Settings", k, v)
 		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
@@ -58,7 +58,7 @@ class TestReceipts(IntegrationTestCase):
 
 	def test_modes(self):
 		doc = self._inbound()
-		self._settings(mark_read_mode="When a command replies", typing_indicator=0)
+		self._set_settings_values(mark_read_mode="When a command replies", typing_indicator=0)
 		with (
 			patch("whatsapp_next.providers.registry.get_provider", return_value=self.provider),
 			patch("frappe.enqueue") as enqueue,
@@ -68,11 +68,11 @@ class TestReceipts(IntegrationTestCase):
 			receipts.on_command_replied(doc.name)
 			self.assertEqual(self.provider.mark_read.call_count, 1)
 			self.assertFalse(receipts.send_typing_indicator(doc.name))
-			self._settings(mark_read_mode="Every received message", typing_indicator=1)
+			self._set_settings_values(mark_read_mode="Every received message", typing_indicator=1)
 			receipts.on_received(doc.name)
 			enqueue.assert_called_once()
 			self.assertTrue(receipts.send_typing_indicator(doc.name))
-			self._settings(mark_read_mode="Never")
+			self._set_settings_values(mark_read_mode="Never")
 			receipts.on_command_replied(doc.name)
 		self.assertEqual(self.provider.mark_read.call_count, 1)
 		self.provider.send_presence.assert_called_once()

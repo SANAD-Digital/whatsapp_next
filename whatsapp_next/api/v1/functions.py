@@ -30,9 +30,9 @@ def get_catalog() -> dict[str, Any]:
 	calls: dict[str, int] = {}
 	commands = frappe.get_all("WhatsApp Command", fields=["name", "function"])
 	runs = command_router.recent_run_counts([c.name for c in commands], days=30)
-	for c in commands:
-		counts[c.function] = counts.get(c.function, 0) + 1
-		calls[c.function] = calls.get(c.function, 0) + runs.get(c.name, 0)
+	for command in commands:
+		counts[command.function] = counts.get(command.function, 0) + 1
+		calls[command.function] = calls.get(command.function, 0) + runs.get(command.name, 0)
 	for e in entries:
 		e["commands_count"] = counts.get(e["function_key"], 0)
 		e["calls_30d"] = calls.get(e["function_key"], 0)

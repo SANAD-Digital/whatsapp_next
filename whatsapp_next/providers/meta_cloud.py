@@ -182,8 +182,8 @@ class MetaCloudProvider(BaseProvider):
 		self, headers: Mapping[str, str], raw_body: bytes, secret: str, max_skew: int = DEFAULT_MAX_SKEW
 	) -> SignatureCheck:
 		"""`X-Hub-Signature-256: sha256=<hex HMAC(app_secret, raw_body)>`; no timestamp header → fresh."""
-		h = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
-		header = h.get("x-hub-signature-256", "")
+		lowercase_headers = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
+		header = lowercase_headers.get("x-hub-signature-256", "")
 		if not header.startswith("sha256=") or not secret:
 			return SignatureCheck(valid=False, fresh=True, reason="missing signature")
 		expected = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
@@ -204,52 +204,60 @@ class MetaCloudProvider(BaseProvider):
 		messages = value.get("messages") or []
 		statuses = value.get("statuses") or []
 		if messages:
-			m = messages[0]
+			first_message = messages[0]
 			contact = (value.get("contacts") or [{}])[0]
-			mtype = str(m.get("type") or "text")
+			mtype = str(first_message.get("type") or "text")
 			text = (
-				(m.get("text") or {}).get("body") if mtype == "text" else (m.get(mtype) or {}).get("caption")
+				(first_message.get("text") or {}).get("body")
+				if mtype == "text"
+				else (first_message.get(mtype) or {}).get("caption")
 			)
 			inbound = InboundPayload(
-				provider_message_id=m.get("id"),
-				sender_phone=("+" + m["from"]) if m.get("from") else None,
-				sender_jid=(m.get("from") + "@s.whatsapp.net") if m.get("from") else None,
-				chat_jid=(m.get("from") + "@s.whatsapp.net") if m.get("from") else None,
-				from_jid=(m.get("from") + "@s.whatsapp.net") if m.get("from") else None,
+				provider_message_id=first_message.get("id"),
+				sender_phone=("+" + first_message["from"]) if first_message.get("from") else None,
+				sender_jid=(first_message.get("from") + "@s.whatsapp.net")
+				if first_message.get("from")
+				else None,
+				chat_jid=(first_message.get("from") + "@s.whatsapp.net")
+				if first_message.get("from")
+				else None,
+				from_jid=(first_message.get("from") + "@s.whatsapp.net")
+				if first_message.get("from")
+				else None,
 				push_name=(contact.get("profile") or {}).get("name"),
 				message_type=mtype.capitalize()
 				if mtype in ("text", "image", "video", "audio", "document", "sticker", "location", "reaction")
 				else "Other",
 				body=text,
-				reaction=(m.get("reaction") or {}).get("emoji"),
-				reaction_to=(m.get("reaction") or {}).get("message_id"),
-				received_at=_site_clock(int(m["timestamp"]))
-				if str(m.get("timestamp") or "").isdigit()
+				reaction=(first_message.get("reaction") or {}).get("emoji"),
+				reaction_to=(first_message.get("reaction") or {}).get("message_id"),
+				received_at=_site_clock(int(first_message["timestamp"]))
+				if str(first_message.get("timestamp") or "").isdigit()
 				else None,
 			)
 			return WebhookEvent(
-				event_id=str(m.get("id") or ""),
+				event_id=str(first_message.get("id") or ""),
 				event_name="message.reaction" if mtype == "reaction" else "message.received",
 				timestamp=inbound.received_at,
 				platform_device=platform_device,
-				provider_message_id=m.get("id"),
+				provider_message_id=first_message.get("id"),
 				inbound=inbound,
 				raw=body,
 			)
 		if statuses:
-			s = statuses[0]
-			name = _STATUS_EVENTS.get(str(s.get("status") or "").lower(), "message.status")
-			errors = s.get("errors") or []
+			first_status = statuses[0]
+			name = _STATUS_EVENTS.get(str(first_status.get("status") or "").lower(), "message.status")
+			errors = first_status.get("errors") or []
 			return WebhookEvent(
-				event_id=f"{s.get('id')}:{s.get('status')}",
+				event_id=f"{first_status.get('id')}:{first_status.get('status')}",
 				event_name=name,
-				timestamp=_site_clock(int(s["timestamp"]))
-				if str(s.get("timestamp") or "").isdigit()
+				timestamp=_site_clock(int(first_status["timestamp"]))
+				if str(first_status.get("timestamp") or "").isdigit()
 				else None,
 				platform_device=platform_device,
-				client_ref=s.get("biz_opaque_callback_data"),
-				provider_message_id=s.get("id"),
-				status=str(s.get("status") or "").capitalize(),
+				client_ref=first_status.get("biz_opaque_callback_data"),
+				provider_message_id=first_status.get("id"),
+				status=str(first_status.get("status") or "").capitalize(),
 				reason=(errors[0].get("title") if errors else None),
 				raw=body,
 			)

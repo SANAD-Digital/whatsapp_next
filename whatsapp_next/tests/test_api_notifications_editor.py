@@ -26,7 +26,7 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 		ensure_settings(send_only_to_known_numbers=0)
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_notifications()
 		self.todo = frappe.get_doc({"doctype": "ToDo", "description": "apitest notifed body"}).insert(
 			ignore_permissions=True
 		)
@@ -40,10 +40,10 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 		).insert(ignore_permissions=True)
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_notifications()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_notifications():
 		delete_all("WhatsApp Notification", {"notification_name": ("in", [NAME, RENAMED])})
 		delete_all("WhatsApp Template", {"template_name": TEMPLATE})
 		delete_all("ToDo", {"description": ("like", "apitest notifed%")})

@@ -215,23 +215,23 @@ def report_png(html_text: str, *, width: int = 1200) -> bytes | None:
 	binary = shutil.which(PNG_BINARY)
 	if not binary:
 		return None
-	with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as src:
-		src.write(html_text)
-		src_path = src.name
-	out_path = src_path[:-5] + ".png"
+	with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as html_file:
+		html_file.write(html_text)
+		html_path = html_file.name
+	out_path = html_path[:-5] + ".png"
 	try:
 		subprocess.run(
-			[binary, "--quiet", "--width", str(width), "--encoding", "utf-8", src_path, out_path],
+			[binary, "--quiet", "--width", str(width), "--encoding", "utf-8", html_path, out_path],
 			check=True,
 			timeout=60,
 			capture_output=True,
 		)
-		with open(out_path, "rb") as fh:
-			return _compact_png(fh.read())
+		with open(out_path, "rb") as png_file:
+			return _compact_png(png_file.read())
 	except (subprocess.SubprocessError, OSError):
 		return None
 	finally:
-		for p in (src_path, out_path):
+		for p in (html_path, out_path):
 			try:
 				import os
 

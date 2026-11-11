@@ -254,9 +254,9 @@ def nightly_reconcile(full: bool = False, batch: int = NIGHTLY_BATCH) -> dict[st
 	totals = RefreshStats()
 	batches = 0
 	for keys in read_layer.iter_keys_since(watermark, upper, batch=batch):
-		s = refresh_keys(keys)
+		batch_stats = refresh_keys(keys)
 		for f in ("visited", "inserted", "updated", "unchanged", "invalid"):
-			setattr(totals, f, getattr(totals, f) + getattr(s, f))
+			setattr(totals, f, getattr(totals, f) + getattr(batch_stats, f))
 		batches += 1
 		frappe.db.commit()
 	drift = _drift_check()

@@ -48,16 +48,16 @@ def relative_date(value: str):
 		return today.replace(month=1, day=1)
 	if word == "year_end":
 		return today.replace(month=12, day=31)
-	m = _REL_RE.match(word)
-	if m:
-		n, unit = int(m.group(1)), m.group(2).lower()
+	offset_match = _REL_RE.match(word)
+	if offset_match:
+		offset_amount, unit = int(offset_match.group(1)), offset_match.group(2).lower()
 		if unit == "d":
-			return add_days(today, n)
+			return add_days(today, offset_amount)
 		if unit == "w":
-			return add_days(today, 7 * n)
+			return add_days(today, 7 * offset_amount)
 		if unit == "m":
-			return add_months(today, n)
-		return add_months(today, 12 * n)
+			return add_months(today, offset_amount)
+		return add_months(today, 12 * offset_amount)
 	return None
 
 
@@ -74,7 +74,7 @@ def ask_specs(command) -> dict[str, list[tuple[str, str]]]:
 			part = part.strip()
 			if not part:
 				continue
-			value, _eq, label = part.partition("=")
+			value, _equals_sign, label = part.partition("=")
 			choices.append((value.strip(), (label or value).strip()))
 		out[key.strip()] = choices
 	return out

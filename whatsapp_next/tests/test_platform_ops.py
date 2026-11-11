@@ -32,7 +32,7 @@ class EndpointProvider(FakeProvider):
 
 	def configure_webhook(self, endpoint_url, events, max_retries):
 		state = WebhookEndpointState(
-			endpoint_id=self._next("WEP"),
+			endpoint_id=self._generate_fake_id("WEP"),
 			url=endpoint_url,
 			status="Active",
 			events=tuple(events),

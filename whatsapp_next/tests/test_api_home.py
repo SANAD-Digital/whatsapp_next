@@ -88,7 +88,7 @@ class TestApiHomeActivity(IntegrationTestCase):
 		delete_all("WhatsApp Device", {"platform_device": DEVICE})
 		super().tearDownClass()
 
-	def _log(self, status, error_code=None):
+	def _insert_log_with_status(self, status, error_code=None):
 		import frappe
 
 		from whatsapp_next.services.guards import status_writer
@@ -121,9 +121,9 @@ class TestApiHomeActivity(IntegrationTestCase):
 	def test_activity_counts_exactly(self):
 		with as_user("WhatsApp Viewer"):
 			before = api.get_activity(period="today")
-		doc = self._log("Failed", "device_offline")
-		self._log("Sent")
-		self._log("Sent")
+		doc = self._insert_log_with_status("Failed", "device_offline")
+		self._insert_log_with_status("Sent")
+		self._insert_log_with_status("Sent")
 		with as_user("WhatsApp Viewer"):
 			after = api.get_activity(period="7d")
 			today = api.get_activity(period="today")
@@ -157,8 +157,8 @@ class TestApiHomeActivity(IntegrationTestCase):
 		noon = get_datetime(f"{nowdate()} 12:00:00")
 		with patch.object(home, "now_datetime", return_value=noon):
 			before = home.traffic("today")["previous"]
-			earlier = self._log("Sent")
-			later = self._log("Sent")
+			earlier = self._insert_log_with_status("Sent")
+			later = self._insert_log_with_status("Sent")
 			for doc, hours in ((earlier, -1), (later, 1)):
 				frappe.db.set_value(
 					"WhatsApp Log",

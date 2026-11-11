@@ -372,15 +372,15 @@ def start_pairing(device: str, mode: str = "QR", phone: str | None = None) -> Pa
 
 def clear_pairing(device: str) -> None:
 	"""Drop the cached pairing payload (on connect / disconnect / delete)."""
-	pd = frappe.db.get_value("WhatsApp Device", device, "platform_device")
-	if pd:
-		frappe.cache.delete_value(PAIR_CACHE_KEY.format(platform_device=pd))
+	platform_device_id = frappe.db.get_value("WhatsApp Device", device, "platform_device")
+	if platform_device_id:
+		frappe.cache.delete_value(PAIR_CACHE_KEY.format(platform_device=platform_device_id))
 
 
 def poll_device_state(device: str) -> StateChange:
 	"""Ask the provider for the live state and apply it (pairing page polling, `{status, changed}`)."""
-	pd = platform_device(device)
-	state = registry.get_provider().verify_device(pd)
+	platform_device_id = platform_device(device)
+	state = registry.get_provider().verify_device(platform_device_id)
 	return apply_state(
 		device,
 		state.status if state.status in STATUSES else "Pending QR",
@@ -392,8 +392,8 @@ def poll_device_state(device: str) -> StateChange:
 
 def disconnect(device: str, user: str | None = None) -> StateChange:
 	"""Provider logout (`disconnect_device`) → `Logged Out`; audited through `apply_state`."""
-	pd = platform_device(device)
-	state = registry.get_provider().disconnect_device(pd)
+	platform_device_id = platform_device(device)
+	state = registry.get_provider().disconnect_device(platform_device_id)
 	clear_pairing(device)
 	return apply_state(
 		device,

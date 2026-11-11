@@ -111,7 +111,7 @@ def handle_webhook_request(
 				message=f"event={event_name} id={event.event_id}",
 			)
 	# 6 + 8. claim / duplicate
-	c = idempotency.claim_webhook_event(
+	claimed_event = idempotency.claim_webhook_event(
 		event.event_id or event_id,
 		event_name,
 		payload=body,
@@ -125,8 +125,8 @@ def handle_webhook_request(
 		status=status,
 		error=error,
 	)
-	if c.duplicate:
-		return Outcome(200, {"ok": True, "duplicate": True}, event=c.name)
+	if claimed_event.duplicate:
+		return Outcome(200, {"ok": True, "duplicate": True}, event=claimed_event.name)
 	frappe.db.set_single_value(
 		"WhatsApp Settings",
 		"webhook_last_event_at",
@@ -134,22 +134,22 @@ def handle_webhook_request(
 		update_modified=False,
 	)
 	if status == "Ignored":
-		return Outcome(200, {"ok": True, "ignored": True}, event=c.name)
+		return Outcome(200, {"ok": True, "ignored": True}, event=claimed_event.name)
 	# 9. process in a job
 	frappe.enqueue(
 		"whatsapp_next.webhooks.handlers.process_event",
 		# not `event=`: `frappe.enqueue` keeps that keyword for itself and the job got no row
-		webhook_event=c.name,
+		webhook_event=claimed_event.name,
 		queue="short",
 		# the stored row, not the event id: the platform sends a message's id as the event id, so
 		# its `delivered` and `read` share one, and a `read` arriving while `delivered` was still
 		# queued was dropped as a duplicate job and never handled
-		job_id=f"wa-webhook-{c.name}",
+		job_id=f"wa-webhook-{claimed_event.name}",
 		deduplicate=True,
 		enqueue_after_commit=True,
 		timeout=120,
 	)
-	return Outcome(200, {"ok": True}, event=c.name)
+	return Outcome(200, {"ok": True}, event=claimed_event.name)
 
 
 @api_endpoint(allow_guest=True, methods=("POST",))

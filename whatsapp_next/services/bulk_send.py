@@ -153,8 +153,12 @@ def estimate(
 	groups: list | None = None, contacts: list | None = None, numbers: list | None = None
 ) -> dict[str, Any]:
 	"""`{total, excluded, invalid}` for the window's figures, without the rows."""
-	r = resolve(groups, contacts, numbers)
-	return {"total": len(r["rows"]), "excluded": r["excluded"], "invalid": r["invalid"]}
+	resolved_recipients = resolve(groups, contacts, numbers)
+	return {
+		"total": len(resolved_recipients["rows"]),
+		"excluded": resolved_recipients["excluded"],
+		"invalid": resolved_recipients["invalid"],
+	}
 
 
 def create_and_start_bulk_campaign(payload: dict, user: str | None = None) -> dict[str, Any]:
@@ -200,8 +204,8 @@ def create_and_start_bulk_campaign(payload: dict, user: str | None = None) -> di
 	scheduled_at = payload.get("scheduled_at") or None
 	if scheduled_at and get_datetime(scheduled_at) <= now_datetime():
 		frappe.throw(_("The scheduled time must be in the future"), WAValidationError)
-	r = resolve(payload.get("groups"), payload.get("contacts"), payload.get("numbers"))
-	if not r["rows"]:
+	resolved_recipients = resolve(payload.get("groups"), payload.get("contacts"), payload.get("numbers"))
+	if not resolved_recipients["rows"]:
 		frappe.throw(_("No recipient: pick a group or contacts, or add numbers"), WAValidationError)
 	doc = frappe.get_doc(
 		{
@@ -225,7 +229,7 @@ def create_and_start_bulk_campaign(payload: dict, user: str | None = None) -> di
 	)
 	doc.insert()
 	by_source: dict[tuple[str, str | None], list[dict[str, Any]]] = {}
-	for row in r["rows"]:
+	for row in resolved_recipients["rows"]:
 		by_source.setdefault((row["source_type"], row.get("source_ref")), []).append(row)
 	for (source_type, source_ref), rows in by_source.items():
 		picker.commit_add(
@@ -234,9 +238,13 @@ def create_and_start_bulk_campaign(payload: dict, user: str | None = None) -> di
 	audit.record_audit_entry(
 		"Bulk Send",
 		reference=("WhatsApp Campaign", doc.name),
-		count=len(r["rows"]),
+		count=len(resolved_recipients["rows"]),
 		user=user,
-		details={"excluded": r["excluded"], "invalid": r["invalid"], "scheduled": bool(scheduled_at)},
+		details={
+			"excluded": resolved_recipients["excluded"],
+			"invalid": resolved_recipients["invalid"],
+			"scheduled": bool(scheduled_at),
+		},
 	)
 	if scheduled_at:
 		status = campaign_runner.schedule(doc.name, get_datetime(scheduled_at), user=user)
@@ -245,7 +253,7 @@ def create_and_start_bulk_campaign(payload: dict, user: str | None = None) -> di
 	return {
 		"campaign": doc.name,
 		"status": status,
-		"recipients": len(r["rows"]),
-		"excluded": r["excluded"],
-		"invalid": r["invalid"],
+		"recipients": len(resolved_recipients["rows"]),
+		"excluded": resolved_recipients["excluded"],
+		"invalid": resolved_recipients["invalid"],
 	}

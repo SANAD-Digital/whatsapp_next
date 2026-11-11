@@ -59,7 +59,7 @@ class TestApiSimulator(IntegrationTestCase):
 		)
 		# the command runs the fixture function `_test_echo` (function_fixtures.py), never the site's
 		ff.ensure_function("_test_echo")
-		cls._clean()
+		cls._delete_test_simulator_records()
 		frappe.get_doc(
 			{
 				"doctype": "WhatsApp Command",
@@ -74,13 +74,13 @@ class TestApiSimulator(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_simulator_records()
 		ensure_settings(**cls.previous)
 		cr.clear_map()
 		super().tearDownClass()
 
 	@classmethod
-	def _clean(cls):
+	def _delete_test_simulator_records(cls):
 		names = frappe.get_all("WhatsApp Log", filters={"body": ("like", f"{TAG}%")}, pluck="name")
 		if names:
 			delete_all("WhatsApp Queue Item", {"outbound_message": ("in", names)})

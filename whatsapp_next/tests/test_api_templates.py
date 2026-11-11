@@ -19,7 +19,7 @@ class TestApiTemplates(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls._clean()
+		cls._delete_test_templates()
 		frappe.get_doc(
 			{
 				"doctype": "WhatsApp Template",
@@ -39,11 +39,11 @@ class TestApiTemplates(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_templates()
 		super().tearDownClass()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_templates():
 		delete_all("WhatsApp Template", {"template_name": ("like", "ApiTest %")})
 		delete_all("ToDo", {"description": ("like", "ApiTest todo%")})
 

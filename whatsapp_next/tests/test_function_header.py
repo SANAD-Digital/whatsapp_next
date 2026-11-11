@@ -14,7 +14,7 @@ from whatsapp_next.services.function_runner import Sender
 from whatsapp_next.tests import function_fixtures as ff
 
 
-def _spec(key: str) -> dict:
+def _parse_fixture_function_header(key: str) -> dict:
 	return fh.parse_function_header(ff.FUNCTIONS[key][1])
 
 
@@ -32,7 +32,7 @@ class TestFunctionHeader(IntegrationTestCase):
 		return str(caught.exception)
 
 	def test_parse(self):
-		spec = _spec("_test_span")
+		spec = _parse_fixture_function_header("_test_span")
 		self.assertEqual(
 			(spec["function"], spec["title"], spec["version"]), ("_test_span", "Test Span", "1.0.0")
 		)
@@ -152,7 +152,7 @@ class TestFunctionHeader(IntegrationTestCase):
 		self.assertEqual(fh.function_availability({}), (True, []))
 
 	def test_parameter_groups_and_vars(self):
-		spec = _spec("_test_echo")
+		spec = _parse_fixture_function_header("_test_echo")
 		self.assertEqual([p["name"] for p in fh.command_params(spec)], ["text", "msg_result"])
 		self.assertEqual(
 			[p["name"] for p in fh.typed_params(spec)], ["text"]
@@ -161,7 +161,7 @@ class TestFunctionHeader(IntegrationTestCase):
 		self.assertEqual([v["name"] for v in fh.vars_for(spec, "other")], ["party"])
 
 	def test_build_params(self):
-		spec = _spec("_test_span")
+		spec = _parse_fixture_function_header("_test_span")
 		customer = Sender("+966500000001", None, None, None, party_type="Customer", party_name="CUST-1")
 		params, missing = fh.build_params(spec, customer, {"party": "OTHER", "party_type": "Supplier"}, "en")
 		self.assertEqual((params["party_type"], params["party"]), ("Customer", "CUST-1"))
@@ -191,7 +191,7 @@ class TestFunctionHeader(IntegrationTestCase):
 				{"timespan": "select date range", "from_date": "not a date", "to_date": "today"},
 				"en",
 			)
-		typed = _spec("_test_typed")
+		typed = _parse_fixture_function_header("_test_typed")
 		with self.assertRaises(ValueError):
 			fh.build_params(typed, customer, {"doc_name": "X", "days": "7.5"})
 		params, _m = fh.build_params(typed, customer, {"doc_name": " X ", "days": "-2", "since": "-1d"})

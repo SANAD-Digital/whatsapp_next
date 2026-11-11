@@ -36,13 +36,13 @@ class TestAlertsEditor(IntegrationTestCase):
 		ensure_settings(send_only_to_known_numbers=0)
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_alerts_and_logs()
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_alerts_and_logs()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_alerts_and_logs():
 		delete_test_rows("WhatsApp Queue Item")
 		for phone in (PHONE, TEST_PHONE):
 			delete_all("WhatsApp Log", {"phone_e164": phone})

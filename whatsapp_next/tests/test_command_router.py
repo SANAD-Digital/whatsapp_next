@@ -343,14 +343,14 @@ class TestCommandRouter(IntegrationTestCase):
 		"""The receipt and the unknown-command reply go out at once (`dispatch.send_now`); the
 		function's own reply keeps the queue; a direct send that breaks falls back to the queue."""
 
-		def live(text):
+		def simulate_live_inbound(text):
 			res = simulator.simulate_inbound(self.device, P_UNLINKED, text, persist=True)
 			frappe.db.set_value("WhatsApp Inbound Message", res.inbound, "is_simulated", 0)
 			return res.inbound
 
 		queued = lambda name: frappe.db.count("WhatsApp Queue Item", {"outbound_message": name})  # noqa: E731
 		ensure_settings(send_receipt_reply=1, receipt_reply="got it")
-		inbound = live("#tping now")
+		inbound = simulate_live_inbound("#tping now")
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now") as now:
 			result = cr.route_inbound_message(inbound)
 		self.assertEqual(result.status, "Executed")
@@ -362,13 +362,13 @@ class TestCommandRouter(IntegrationTestCase):
 		self.assertEqual(queued(receipt[0]), 0)
 		self.assertEqual(queued(result.outbound[0]), 1)  # the function's reply
 		ensure_settings(send_receipt_reply=0)
-		inbound = live("#xyz")
+		inbound = simulate_live_inbound("#xyz")
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now") as now:
 			result = cr.route_inbound_message(inbound)
 		self.assertEqual(result.status, "Not Matched")
 		now.assert_called_once_with(result.outbound[0], source="direct")
 		self.assertEqual(queued(result.outbound[0]), 0)
-		inbound = live("#xyz again")
+		inbound = simulate_live_inbound("#xyz again")
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now", side_effect=RuntimeError):
 			result = cr.route_inbound_message(inbound)
 		self.assertEqual(queued(result.outbound[0]), 1)

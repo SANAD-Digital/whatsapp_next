@@ -102,17 +102,17 @@ class TestCommandEditor(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_commands()
 		delete_all("WhatsApp Contact Group", {"group_name": GROUP})
 		delete_all("Contact", {"first_name": "EdTest Contact"})
 		delete_all("Customer", {"customer_name": CUSTOMER})
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_commands()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_commands():
 		delete_all("WhatsApp Inbound Message", {"phone_e164": PHONE})
 		delete_all("WhatsApp Command", {"code": ("like", "edtest%")})
 		delete_all(
@@ -121,7 +121,7 @@ class TestCommandEditor(IntegrationTestCase):
 		)
 		cr.clear_map()
 
-	def _save(self, **payload) -> str:
+	def _save_command_as_manager(self, **payload) -> str:
 		base = {
 			"code": CODE,
 			"function": FUNCTION,
@@ -147,7 +147,7 @@ class TestCommandEditor(IntegrationTestCase):
 	# -- model ---------------------------------------------------------------------------
 
 	def test_access_rows_are_validated(self):
-		name = self._save()
+		name = self._save_command_as_manager()
 		doc = frappe.get_doc("WhatsApp Command", name)
 		doc.append("access_entries", {"party_type": "Supplier", "contact": self.contact})
 		with self.assertRaises(WAValidationError):  # type not allowed for the command
@@ -159,10 +159,10 @@ class TestCommandEditor(IntegrationTestCase):
 		with as_user("WhatsApp Manager"), self.assertRaises(WAValidationError):
 			api.save_editor(payload={"name": name, "access": {"Customer": {"mode": "Maybe"}}})
 		# narrowing the allowed types drops the other types' rows
-		self._save(
+		self._save_command_as_manager(
 			name=name, allowed_party_types=["Customer", "Supplier"], access={"Supplier": {"mode": "Deny All"}}
 		)
-		self._save(name=name, allowed_party_types=["Customer"])
+		self._save_command_as_manager(name=name, allowed_party_types=["Customer"])
 		self.assertEqual(frappe.get_doc("WhatsApp Command", name).access_modes, [])
 
 	# -- router --------------------------------------------------------------------------
@@ -170,15 +170,17 @@ class TestCommandEditor(IntegrationTestCase):
 	def test_router_lists_and_unlinked_senders(self):
 		if not self.customer:
 			self.skipTest("no Customer on this site")
-		name = self._save(status="Active")
+		name = self._save_command_as_manager(status="Active")
 		cmd = frappe.get_doc("WhatsApp Command", name)
 		self.assertIsNone(cr.check_access(cmd, self._inbound(), self._sender()))
 		# Allow All + the contact listed → Blacklist
-		self._save(name=name, access={"Customer": {"mode": "Allow All", "contacts": [self.contact]}})
+		self._save_command_as_manager(
+			name=name, access={"Customer": {"mode": "Allow All", "contacts": [self.contact]}}
+		)
 		cmd = frappe.get_doc("WhatsApp Command", name)
 		self.assertEqual(cr.check_access(cmd, self._inbound(), self._sender()), "Blacklist")
 		# Deny All + not listed → Not Allowed; listed through a group → allowed
-		self._save(name=name, access={"Customer": {"mode": "Deny All", "groups": [GROUP]}})
+		self._save_command_as_manager(name=name, access={"Customer": {"mode": "Deny All", "groups": [GROUP]}})
 		cmd = frappe.get_doc("WhatsApp Command", name)
 		self.assertEqual(cr.check_access(cmd, self._inbound(), self._sender()), "Not Allowed")
 		g = frappe.get_doc("WhatsApp Contact Group", GROUP)
@@ -188,12 +190,12 @@ class TestCommandEditor(IntegrationTestCase):
 		# an unlinked number passes the type check unless the command requires a linked contact
 		stranger = Sender(phone_e164="+966500930599", jid=None, display_name=None, contact=None)
 		self.assertIsNone(cr.check_access(cmd, frappe._dict(message_type="Text"), stranger))
-		self._save(name=name, requires_linked_contact=1)
+		self._save_command_as_manager(name=name, requires_linked_contact=1)
 		cmd = frappe.get_doc("WhatsApp Command", name)
 		self.assertEqual(cr.check_access(cmd, frappe._dict(message_type="Text"), stranger), "Not Linked")
 
 	def test_disabled_inputs_are_not_read(self):
-		name = self._save(disabled_inputs=["text"])
+		name = self._save_command_as_manager(disabled_inputs=["text"])
 		cmd = frappe.get_doc("WhatsApp Command", name)
 		self.assertEqual(cmd.disabled_inputs, "text")
 		self.assertEqual(cr.parse_args(cmd, "hello there"), {})
@@ -222,7 +224,7 @@ class TestCommandEditor(IntegrationTestCase):
 			)
 			with self.assertRaises(frappe.ValidationError):
 				api.get_function_spec(function="_test_nope")
-		name = self._save(
+		name = self._save_command_as_manager(
 			synonyms="edtestping2", access={"Customer": {"mode": "Deny All", "contacts": [self.contact]}}
 		)
 		with as_user("WhatsApp Manager"):
@@ -234,7 +236,7 @@ class TestCommandEditor(IntegrationTestCase):
 		self.assertEqual(out["function"]["name"], FUNCTION)
 
 	def test_save_keeps_an_active_command_active(self):
-		name = self._save(status="Active")
+		name = self._save_command_as_manager(status="Active")
 		self.assertEqual(frappe.db.get_value("WhatsApp Command", name, "status"), "Active")
 		with as_user("WhatsApp Manager"):
 			out = api.save_editor(payload={"name": name, "synonyms": "edtestpong"})
@@ -325,7 +327,7 @@ class TestCommandEditor(IntegrationTestCase):
 	def test_templates_and_disabled_replies(self):
 		"""The command's own message text per language (else the function's, else the header's) and the
 		replies it switches off; names outside the header are refused."""
-		name = self._save(
+		name = self._save_command_as_manager(
 			templates=[
 				{"param": "msg_result", "language": "en", "text": "hi {{ echo }}"},
 				{"param": "msg_result", "language": "ar", "text": ""},  # emptied: falls back
@@ -407,14 +409,14 @@ class TestCommandEditor(IntegrationTestCase):
 		self.assertEqual((doc.templates, doc.settings_overrides), ([], None))
 
 	def test_delete(self):
-		name = self._save()
+		name = self._save_command_as_manager()
 		with as_user("WhatsApp Manager"):
 			api.delete_command(name=name)
 		self.assertFalse(frappe.db.exists("WhatsApp Command", name))
 		self.assertEqual(
 			frappe.db.count("WhatsApp Audit Log", {"action": "Command Deleted", "reference_name": name}), 1
 		)
-		name = self._save()
+		name = self._save_command_as_manager()
 		frappe.get_doc(
 			{
 				"doctype": "WhatsApp Inbound Message",

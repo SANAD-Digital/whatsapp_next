@@ -13,7 +13,7 @@ from whatsapp_next.services import contact_profiles
 from whatsapp_next.tests.conftest_frappe import ensure_device
 
 
-def _png() -> bytes:
+def _make_tiny_png_bytes() -> bytes:
 	import io
 
 	from PIL import Image
@@ -23,7 +23,7 @@ def _png() -> bytes:
 	return buf.getvalue()
 
 
-PNG = _png()
+PNG = _make_tiny_png_bytes()
 
 
 class Provider:

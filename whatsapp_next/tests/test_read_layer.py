@@ -91,28 +91,28 @@ class TestReadLayer(IntegrationTestCase):
 		cls.device2 = ensure_device("Read Layer Device 2", "WAD-TEST-RL02", phone="+966500000012")
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_messages()
 		# Two days back: no other module backdates rows there, so window-based tests stay isolated.
 		self.t0 = add_to_date(now_datetime(), days=-2)
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_messages()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_messages():
 		delete_all("WhatsApp Log", {"body": ("like", f"{TAG}%")})
 		delete_all("WhatsApp Inbound Message", {"body": ("like", f"{TAG}%")})
 
-	def _t(self, minutes: int) -> dt.datetime:
+	def _minutes_after_start(self, minutes: int) -> dt.datetime:
 		return add_to_date(self.t0, minutes=minutes)
 
 	# -- conversation ------------------------------------------------------------------
 
 	def test_conversation_merges_both_directions_newest_first(self):
-		o1 = _outbound(self.device, ts=self._t(1))
-		i1 = _inbound(self.device, ts=self._t(2), display_name="Push Name")
-		o2 = _outbound(self.device, ts=self._t(3))
-		_outbound(self.device, phone=KEY_B, ts=self._t(4))  # other key, must not appear
+		o1 = _outbound(self.device, ts=self._minutes_after_start(1))
+		i1 = _inbound(self.device, ts=self._minutes_after_start(2), display_name="Push Name")
+		o2 = _outbound(self.device, ts=self._minutes_after_start(3))
+		_outbound(self.device, phone=KEY_B, ts=self._minutes_after_start(4))  # other key, must not appear
 		page = read_layer.conversation(KEY_A)
 		self.assertEqual([r.name for r in page.rows], [o2, i1, o1])
 		self.assertEqual([r.direction for r in page.rows], ["Outbound", "Inbound", "Outbound"])
@@ -124,7 +124,9 @@ class TestReadLayer(IntegrationTestCase):
 		names = []
 		for i in range(5):
 			names.append(
-				_outbound(self.device, ts=self._t(i)) if i % 2 else _inbound(self.device, ts=self._t(i))
+				_outbound(self.device, ts=self._minutes_after_start(i))
+				if i % 2
+				else _inbound(self.device, ts=self._minutes_after_start(i))
 			)
 		first = read_layer.conversation(KEY_A, limit=2)
 		self.assertTrue(first.has_more)
@@ -137,24 +139,28 @@ class TestReadLayer(IntegrationTestCase):
 		self.assertIsNone(third.next_cursor)
 
 	def test_conversation_device_filter_and_group_key(self):
-		_outbound(self.device, phone=None, jid=GROUP, recipient_type="Group", ts=self._t(1))
+		_outbound(self.device, phone=None, jid=GROUP, recipient_type="Group", ts=self._minutes_after_start(1))
 		_inbound(
-			self.device2, phone=None, chat_jid=GROUP, sender_jid="966500000101@s.whatsapp.net", ts=self._t(2)
+			self.device2,
+			phone=None,
+			chat_jid=GROUP,
+			sender_jid="966500000101@s.whatsapp.net",
+			ts=self._minutes_after_start(2),
 		)
 		self.assertEqual(len(read_layer.conversation(GROUP).rows), 2)
 		self.assertEqual(len(read_layer.conversation(GROUP, device=self.device2).rows), 1)
 		self.assertEqual({r.key for r in read_layer.conversation(GROUP).rows}, {GROUP})
 
 	def test_lid_sender_keyed_by_jid(self):
-		_inbound(self.device, phone=None, sender_jid=LID, ts=self._t(1))
+		_inbound(self.device, phone=None, sender_jid=LID, ts=self._minutes_after_start(1))
 		rows = read_layer.conversation(LID).rows
 		self.assertEqual(len(rows), 1)
 		self.assertEqual(rows[0].key, LID)
 
 	def test_group_message_of_a_member_stays_out_of_the_member_thread(self):
 		"""A member's message in a group carries their number but belongs to the group's key."""
-		o1 = _outbound(self.device, ts=self._t(1))
-		_inbound(self.device, phone=KEY_A, chat_jid=GROUP, sender_jid=LID, ts=self._t(2))
+		o1 = _outbound(self.device, ts=self._minutes_after_start(1))
+		_inbound(self.device, phone=KEY_A, chat_jid=GROUP, sender_jid=LID, ts=self._minutes_after_start(2))
 		self.assertEqual([r.name for r in read_layer.conversation(KEY_A).rows], [o1])
 		self.assertEqual(len(read_layer.conversation(GROUP).rows), 1)
 		self.assertEqual(read_layer.stats_by_key([KEY_A])[KEY_A].inbound_count, 0)
@@ -162,8 +168,8 @@ class TestReadLayer(IntegrationTestCase):
 	def test_lid_key_does_not_overwrite_the_number_stats(self):
 		"""A LID sender whose number is known is keyed by the number: asking for both keys in one
 		batch must not let the LID's match rewrite the number's counters or last direction."""
-		_inbound(self.device, phone=KEY_A, sender_jid=LID, ts=self._t(1))
-		_outbound(self.device, ts=self._t(5))
+		_inbound(self.device, phone=KEY_A, sender_jid=LID, ts=self._minutes_after_start(1))
+		_outbound(self.device, ts=self._minutes_after_start(5))
 		stats = read_layer.stats_by_key([KEY_A, LID])
 		self.assertNotIn(LID, stats)
 		a = stats[KEY_A]
@@ -173,16 +179,20 @@ class TestReadLayer(IntegrationTestCase):
 	# -- cross_direction_rows ---------------------------------------------------------
 
 	def test_cross_direction_rows_direction_and_order(self):
-		_outbound(self.device, ts=self._t(1))
-		_inbound(self.device, ts=self._t(2))
-		_outbound(self.device2, phone=KEY_B, ts=self._t(3))
-		rows = read_layer.cross_direction_rows({"device": self.device, "from": self._t(0)}, {"order": "asc"})
+		_outbound(self.device, ts=self._minutes_after_start(1))
+		_inbound(self.device, ts=self._minutes_after_start(2))
+		_outbound(self.device2, phone=KEY_B, ts=self._minutes_after_start(3))
+		rows = read_layer.cross_direction_rows(
+			{"device": self.device, "from": self._minutes_after_start(0)}, {"order": "asc"}
+		)
 		self.assertEqual([r.direction for r in rows], ["Outbound", "Inbound"])
 		only_in = read_layer.cross_direction_rows(
-			{"direction": "Inbound", "device": self.device, "from": self._t(0)}
+			{"direction": "Inbound", "device": self.device, "from": self._minutes_after_start(0)}
 		)
 		self.assertEqual([r.direction for r in only_in], ["Inbound"])
-		both_keys = read_layer.cross_direction_rows({"keys": [KEY_A, KEY_B], "from": self._t(0)})
+		both_keys = read_layer.cross_direction_rows(
+			{"keys": [KEY_A, KEY_B], "from": self._minutes_after_start(0)}
+		)
 		self.assertEqual(len(both_keys), 3)
 
 	# -- iter_keys_since --------------------------------------------------------------
@@ -192,31 +202,31 @@ class TestReadLayer(IntegrationTestCase):
 		# site's own traffic on 2026-11-10 (6 batches instead of 3)
 		self.t0 = add_to_date(now_datetime(), days=-500)
 		for i in range(4):
-			_outbound(self.device, phone=KEY_A if i < 2 else KEY_B, ts=self._t(i))
-		_inbound(self.device, phone=KEY_B, ts=self._t(4))
+			_outbound(self.device, phone=KEY_A if i < 2 else KEY_B, ts=self._minutes_after_start(i))
+		_inbound(self.device, phone=KEY_B, ts=self._minutes_after_start(4))
 		# `upper` stays in the past so rows other modules create "now" fall outside the window.
-		upper = self._t(5)
-		batches = list(read_layer.iter_keys_since(self._t(-1), upper, batch=2))
+		upper = self._minutes_after_start(5)
+		batches = list(read_layer.iter_keys_since(self._minutes_after_start(-1), upper, batch=2))
 		self.assertEqual(len(batches), 3)
 		self.assertEqual(set().union(*batches), {KEY_A, KEY_B})
 		self.assertEqual(batches[0], {KEY_A})
-		later = list(read_layer.iter_keys_since(self._t(3), upper, batch=100))
+		later = list(read_layer.iter_keys_since(self._minutes_after_start(3), upper, batch=100))
 		self.assertEqual(later, [{KEY_B}])
-		self.assertEqual(list(read_layer.iter_keys_since(self._t(4), upper)), [])
+		self.assertEqual(list(read_layer.iter_keys_since(self._minutes_after_start(4), upper)), [])
 
 	# -- stats_by_key / known_keys ----------------------------------------------------
 
 	def test_stats_by_key(self):
-		_outbound(self.device, ts=self._t(1), display_name="Out Name")
-		_outbound(self.device, ts=self._t(2))
-		_inbound(self.device2, ts=self._t(3), display_name="Push Name")
-		_outbound(self.device, phone=KEY_B, ts=self._t(5))
+		_outbound(self.device, ts=self._minutes_after_start(1), display_name="Out Name")
+		_outbound(self.device, ts=self._minutes_after_start(2))
+		_inbound(self.device2, ts=self._minutes_after_start(3), display_name="Push Name")
+		_outbound(self.device, phone=KEY_B, ts=self._minutes_after_start(5))
 		stats = read_layer.stats_by_key([KEY_A, KEY_B, "+966500000999"])
 		self.assertEqual(set(stats), {KEY_A, KEY_B})
 		a = stats[KEY_A]
 		self.assertEqual((a.outbound_count, a.inbound_count), (2, 1))
-		self.assertEqual(a.first_seen, self._t(1))
-		self.assertEqual(a.last_seen, self._t(3))
+		self.assertEqual(a.first_seen, self._minutes_after_start(1))
+		self.assertEqual(a.last_seen, self._minutes_after_start(3))
 		self.assertEqual(a.last_direction, "Inbound")
 		self.assertEqual(a.last_device, self.device2)
 		self.assertEqual(a.display_name, "Push Name")
@@ -227,8 +237,14 @@ class TestReadLayer(IntegrationTestCase):
 		)
 
 	def test_known_keys(self):
-		_outbound(self.device, ts=self._t(1))
-		_inbound(self.device, phone=None, chat_jid=GROUP, sender_jid="1@s.whatsapp.net", ts=self._t(2))
+		_outbound(self.device, ts=self._minutes_after_start(1))
+		_inbound(
+			self.device,
+			phone=None,
+			chat_jid=GROUP,
+			sender_jid="1@s.whatsapp.net",
+			ts=self._minutes_after_start(2),
+		)
 		self.assertEqual(read_layer.known_keys([KEY_A, KEY_B, GROUP, LID, ""]), {KEY_A, GROUP})
 		self.assertEqual(read_layer.known_keys([]), set())
 
@@ -236,13 +252,13 @@ class TestReadLayer(IntegrationTestCase):
 
 	def test_device_stats(self):
 		for status in ("Sent", "Delivered", "Failed", "Queued"):
-			_outbound(self.device, status=status, ts=self._t(1))
-		_inbound(self.device, ts=self._t(2))
-		_outbound(self.device2, status="Failed", ts=self._t(3))
+			_outbound(self.device, status=status, ts=self._minutes_after_start(1))
+		_inbound(self.device, ts=self._minutes_after_start(2))
+		_outbound(self.device2, status="Failed", ts=self._minutes_after_start(3))
 		s = read_layer.device_stats(self.device, days=7)
 		self.assertEqual((s.sent, s.failed, s.outbound, s.inbound), (2, 1, 4, 1))
 		self.assertAlmostEqual(s.fail_rate, 1 / 3, places=3)
-		self.assertEqual(s.last_message_at, self._t(2))
+		self.assertEqual(s.last_message_at, self._minutes_after_start(2))
 
 	def test_reference_amount(self):
 		self.assertIsNone(read_layer.reference_amount("Role", "System Manager"))

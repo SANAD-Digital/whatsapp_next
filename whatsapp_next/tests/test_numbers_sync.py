@@ -42,17 +42,17 @@ class TestNumbersSync(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_numbers()
 		delete_all("Contact", {"first_name": ("in", ["NumSync System", "NumSync Linked"])})
 		super().tearDownClass()
 
 	@classmethod
-	def _clean(cls):
+	def _delete_test_numbers(cls):
 		delete_all("WhatsApp Number", {"name": ("in", KEYS)})
 		delete_all("WhatsApp Audit Log", {"action": "Numbers Synced", "reference_name": cls.device})
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_numbers()
 		with status_writer():
 			for key, contact, name in (
 				(K_HERE, None, "Push Name"),
@@ -70,7 +70,7 @@ class TestNumbersSync(IntegrationTestCase):
 					}
 				).insert(ignore_permissions=True)
 
-	def _sync(self):
+	def _sync_with_fake_phone_book(self):
 		provider = SimpleNamespace(
 			list_device_contacts=lambda platform_device: _phone_book(),
 			list_device_groups=lambda platform_device: [
@@ -80,7 +80,7 @@ class TestNumbersSync(IntegrationTestCase):
 		with patch.object(numbers_sync.registry, "get_provider", return_value=provider):
 			return numbers_sync.sync_device_contacts(self.device, user="Administrator")
 
-	def _row(self, key):
+	def _get_number_row(self, key):
 		return frappe.db.get_value(
 			"WhatsApp Number",
 			key,
@@ -97,7 +97,7 @@ class TestNumbersSync(IntegrationTestCase):
 		)
 
 	def test_updates_adds_and_links(self):
-		stats = self._sync()
+		stats = self._sync_with_fake_phone_book()
 		# 6 address-book entries (one of them a group, which is not a contact) and 1 device group
 		self.assertEqual(
 			(
@@ -110,25 +110,29 @@ class TestNumbersSync(IntegrationTestCase):
 			),
 			(6, 4, 2, 1, 1, 1),
 		)
-		here = self._row(K_HERE)  # was here, unlinked: takes the saved name, keeps its messages
+		here = self._get_number_row(K_HERE)  # was here, unlinked: takes the saved name, keeps its messages
 		self.assertEqual(
 			(here.display_name, here.saved_name, here.inbound_count), ("Saved Here", "Saved Here", 2)
 		)
 		self.assertEqual(here.synced_device, self.device)
-		new = self._row(K_NEW)  # was not here: added, not linked
+		new = self._get_number_row(K_NEW)  # was not here: added, not linked
 		self.assertEqual(
 			(new.display_name, new.link_status, new.number_type), ("Saved New", "Not Linked", "Individual")
 		)
-		system = self._row(K_SYSTEM)  # a system contact carries it: linked, named after the contact
+		system = self._get_number_row(
+			K_SYSTEM
+		)  # a system contact carries it: linked, named after the contact
 		self.assertEqual((system.contact, system.link_status), (self.system, "Linked"))
 		self.assertEqual(system.display_name, "NumSync System")
-		linked = self._row(K_LINKED)  # already linked: keeps its contact and its contact's name
+		linked = self._get_number_row(K_LINKED)  # already linked: keeps its contact and its contact's name
 		self.assertEqual(
 			(linked.contact, linked.display_name, linked.saved_name),
 			(self.linked, "NumSync Linked", "Saved Linked"),
 		)
-		self.assertEqual(self._row(LID).number_type, "LID")
-		group = self._row(GROUP)  # the device's groups come in as Group rows, named after their subject
+		self.assertEqual(self._get_number_row(LID).number_type, "LID")
+		group = self._get_number_row(
+			GROUP
+		)  # the device's groups come in as Group rows, named after their subject
 		self.assertEqual(
 			(group.number_type, group.display_name, group.synced_device), ("Group", "Team Group", self.device)
 		)
@@ -138,31 +142,31 @@ class TestNumbersSync(IntegrationTestCase):
 			)
 		)
 		# a second pass changes nothing it already wrote
-		again = self._sync()
+		again = self._sync_with_fake_phone_book()
 		self.assertEqual((again["added"], again["updated"], again["linked"]), (0, 0, 0))
 
 	def test_message_refresh_keeps_the_saved_name(self):
 		"""The materializer used to overwrite an unlinked number's name with the push name."""
-		self._sync()
+		self._sync_with_fake_phone_book()
 		nm.refresh_keys([K_HERE, K_NEW])
-		self.assertEqual(self._row(K_HERE).display_name, "Saved Here")
-		self.assertEqual(self._row(K_NEW).display_name, "Saved New")
+		self.assertEqual(self._get_number_row(K_HERE).display_name, "Saved Here")
+		self.assertEqual(self._get_number_row(K_NEW).display_name, "Saved New")
 
 	def test_a_group_links_to_a_contact_and_keeps_its_name(self):
 		"""A group can belong to a contact (a customer's chat); it keeps its own subject as its name."""
 		from whatsapp_next.services import permissions
 
-		self._sync()
+		self._sync_with_fake_phone_book()
 		permissions.link_number(GROUP, self.linked, user="Administrator")
-		group = self._row(GROUP)
+		group = self._get_number_row(GROUP)
 		self.assertEqual(
 			(group.contact, group.link_status, group.display_name), (self.linked, "Linked", "Team Group")
 		)
 		nm.refresh_keys([GROUP])
-		self.assertEqual(self._row(GROUP).display_name, "Team Group")
+		self.assertEqual(self._get_number_row(GROUP).display_name, "Team Group")
 
 	def test_linking_needs_the_contact_permission(self):
 		with patch.object(numbers_sync.permissions, "link_number", side_effect=frappe.PermissionError):
-			stats = self._sync()
+			stats = self._sync_with_fake_phone_book()
 		self.assertEqual((stats["linked"], stats["link_skipped"]), (0, 1))
-		self.assertEqual(self._row(K_SYSTEM).link_status, "Not Linked")
+		self.assertEqual(self._get_number_row(K_SYSTEM).link_status, "Not Linked")

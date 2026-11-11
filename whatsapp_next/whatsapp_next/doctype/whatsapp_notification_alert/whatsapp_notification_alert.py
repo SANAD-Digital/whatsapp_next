@@ -118,35 +118,37 @@ class WhatsAppNotificationAlert(Document):
 	def compute_next_run(self, now: datetime | None = None) -> datetime:
 		"""Next occurrence strictly after `now` (site time) for the configured periodicity."""
 		now = get_datetime(now) if now else now_datetime()
-		at = _as_time(self.notification_time)
+		time_of_day = _as_time(self.notification_time)
 		day = max(1, min(28, cint(self.day_of_month) or 1))
 		if self.periodicity == "Weekly":
-			candidate = datetime.combine(now.date(), at)
+			candidate = datetime.combine(now.date(), time_of_day)
 			ahead = (WEEKDAYS.index(self.day_of_week) - now.weekday()) % 7
 			candidate += timedelta(days=ahead)
 			if candidate <= now:
 				candidate += timedelta(days=7)
 			return candidate
 		if self.periodicity == "Monthly":
-			candidate = datetime.combine(now.date().replace(day=day), at)
+			candidate = datetime.combine(now.date().replace(day=day), time_of_day)
 			if candidate <= now:
-				candidate = datetime.combine(_add_months(now.date().replace(day=1), 1).replace(day=day), at)
+				candidate = datetime.combine(
+					_add_months(now.date().replace(day=1), 1).replace(day=day), time_of_day
+				)
 			return candidate
 		if self.periodicity == "Quarterly":
 			quarter_start = ((now.month - 1) // 3) * 3 + 1
-			candidate = datetime.combine(now.date().replace(month=quarter_start, day=day), at)
+			candidate = datetime.combine(now.date().replace(month=quarter_start, day=day), time_of_day)
 			if candidate <= now:
 				first = _add_months(now.date().replace(month=quarter_start, day=1), 3)
-				candidate = datetime.combine(first.replace(day=day), at)
+				candidate = datetime.combine(first.replace(day=day), time_of_day)
 			return candidate
 		if self.periodicity == "Yearly":
 			month = MONTHS.index(self.month_of_year) + 1
-			candidate = datetime.combine(now.date().replace(month=month, day=day), at)
+			candidate = datetime.combine(now.date().replace(month=month, day=day), time_of_day)
 			if candidate <= now:
 				candidate = candidate.replace(year=candidate.year + 1)
 			return candidate
 		# Daily
-		candidate = datetime.combine(now.date(), at)
+		candidate = datetime.combine(now.date(), time_of_day)
 		if candidate <= now:
 			candidate += timedelta(days=1)
 		return candidate

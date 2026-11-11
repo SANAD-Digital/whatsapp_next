@@ -165,18 +165,18 @@ class TestChangeReplies(TestInboundChanges):
 			)
 		)
 
-		def pick(fieldname, keys):
+		def set_reply_targets(fieldname, keys):
 			settings_service.save_fields({fieldname: [{"phone_e164": k} for k in keys]}, section="commands")
 			frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
-		pick("edit_reply_to", ["+967770000999", "120363000000222@g.us"])  # not this chat
+		set_reply_targets("edit_reply_to", ["+967770000999", "120363000000222@g.us"])  # not this chat
 		handle_event(
 			self._event("message.edited", original_text="a", new_text="b"),
 			webhook_event_name=None,
 			device=self.device,
 		)
 		self.assertEqual(self._replies(), [])
-		pick("edit_reply_to", ["967770000001"])  # this chat, written without its +
+		set_reply_targets("edit_reply_to", ["967770000001"])  # this chat, written without its +
 		handle_event(
 			self._event("message.edited", original_text="b", new_text="c"),
 			webhook_event_name=None,

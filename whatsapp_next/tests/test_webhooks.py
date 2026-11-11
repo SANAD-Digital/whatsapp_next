@@ -100,7 +100,7 @@ class TestWebhooks(IntegrationTestCase):
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_webhook_records()
 		verify.reset_signature_failures()
 		# two tests signing the same fixture in the same second share a signature
 		frappe.cache.delete_keys("wa:webhook:sig:")
@@ -115,10 +115,10 @@ class TestWebhooks(IntegrationTestCase):
 		self.addCleanup(enqueue.stop)
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_webhook_records()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_webhook_records():
 		delete_test_rows("WhatsApp Webhook Event")
 		delete_all("WhatsApp Webhook Event", {"event_id": ("in", TEST_EVENT_IDS)})
 		delete_test_rows("WhatsApp Inbound Message")
@@ -526,14 +526,14 @@ class TestWebhooks(IntegrationTestCase):
 		records the message once and not twice."""
 		real = handlers.handle_event
 
-		def half(*args, **kwargs):
+		def handle_then_fail(*args, **kwargs):
 			real(*args, **kwargs)
 			raise RuntimeError("after the insert")
 
 		with fake_provider():
 			headers, raw = signed(fixture("message.received"))
 			out = receiver.handle_webhook_request(headers, raw)
-			with patch.object(handlers, "handle_event", side_effect=half):
+			with patch.object(handlers, "handle_event", side_effect=handle_then_fail):
 				self.assertEqual(handlers.process_event(out.event), "Failed")
 			pmid = fixture("message.received")["provider_message_id"]
 			self.assertFalse(frappe.db.exists("WhatsApp Inbound Message", {"provider_message_id": pmid}))

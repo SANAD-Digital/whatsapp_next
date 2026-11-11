@@ -39,7 +39,7 @@ class TestWhatsAppNotificationAlert(IntegrationTestCase):
 		delete_all(DT, {"alert_name": ["like", "_wa_test%"]})
 		super().tearDown()
 
-	def _doc(self, name: str = "_wa_test alert", **values):
+	def _build_alert_doc(self, name: str = "_wa_test alert", **values):
 		payload = {
 			"doctype": DT,
 			"alert_name": name,
@@ -53,7 +53,7 @@ class TestWhatsAppNotificationAlert(IntegrationTestCase):
 		return frappe.get_doc(payload)
 
 	def _insert(self, name: str = "_wa_test alert", **values):
-		return self._doc(name, **values).insert(ignore_permissions=True)
+		return self._build_alert_doc(name, **values).insert(ignore_permissions=True)
 
 	def test_permission_matrix(self) -> None:
 		expected = {
@@ -111,20 +111,20 @@ class TestWhatsAppNotificationAlert(IntegrationTestCase):
 			self._insert(recipients=[])
 
 	def test_compute_next_run_daily(self) -> None:
-		doc = self._doc(notification_time="09:30:00")
+		doc = self._build_alert_doc(notification_time="09:30:00")
 		self.assertEqual(doc.compute_next_run(datetime(2026, 9, 22, 8, 0)), datetime(2026, 9, 22, 9, 30))
 		self.assertEqual(doc.compute_next_run(datetime(2026, 9, 22, 9, 30)), datetime(2026, 9, 23, 9, 30))
 
 	def test_compute_next_run_weekly(self) -> None:
 		# 2026-09-22 is a Tuesday.
-		doc = self._doc(periodicity="Weekly", day_of_week="Friday", notification_time="07:00:00")
+		doc = self._build_alert_doc(periodicity="Weekly", day_of_week="Friday", notification_time="07:00:00")
 		self.assertEqual(doc.compute_next_run(datetime(2026, 9, 22, 8, 0)), datetime(2026, 9, 25, 7, 0))
 		doc.day_of_week = "Tuesday"
 		self.assertEqual(doc.compute_next_run(datetime(2026, 9, 22, 6, 0)), datetime(2026, 9, 22, 7, 0))
 		self.assertEqual(doc.compute_next_run(datetime(2026, 9, 22, 7, 0)), datetime(2026, 9, 29, 7, 0))
 
 	def test_compute_next_run_monthly_quarterly_yearly(self) -> None:
-		doc = self._doc(periodicity="Monthly", day_of_month=5, notification_time="10:00:00")
+		doc = self._build_alert_doc(periodicity="Monthly", day_of_month=5, notification_time="10:00:00")
 		self.assertEqual(doc.compute_next_run(datetime(2026, 9, 22, 8, 0)), datetime(2026, 10, 5, 10, 0))
 		self.assertEqual(doc.compute_next_run(datetime(2026, 12, 6, 8, 0)), datetime(2027, 1, 5, 10, 0))
 		doc.periodicity = "Quarterly"

@@ -59,8 +59,10 @@ def has_credentials(settings=None) -> bool:
 	"""All three platform credentials are present and the site knows its platform address — the
 	effective one (the site's mode decides it, `registry.platform_base_url`): the
 	address is a default, never copied into Settings (D-117)."""
-	s = settings or _get_settings_doc()
-	return bool(registry.platform_base_url(s)) and all(has_secret(s, f) for f in REQUIRED_CREDENTIALS)
+	whatsapp_settings = settings or _get_settings_doc()
+	return bool(registry.platform_base_url(whatsapp_settings)) and all(
+		has_secret(whatsapp_settings, f) for f in REQUIRED_CREDENTIALS
+	)
 
 
 def test_connection(user: str | None = None) -> dict[str, Any]:
@@ -187,11 +189,11 @@ def _release_webhook() -> bool:
 	keys, before they are forgotten (best effort: a platform that cannot be reached never keeps the
 	site linked). Left behind, the account kept posting its messages here, signed with a secret the
 	site no longer holds. True when it was removed."""
-	s = _get_settings_doc()
-	if not (s.webhook_endpoint and has_credentials(s)):
+	whatsapp_settings = _get_settings_doc()
+	if not (whatsapp_settings.webhook_endpoint and has_credentials(whatsapp_settings)):
 		return False
 	try:
-		registry.get_provider().delete_webhook_endpoint(s.webhook_endpoint)
+		registry.get_provider().delete_webhook_endpoint(whatsapp_settings.webhook_endpoint)
 		return True
 	except Exception:
 		frappe.log_error(title="WhatsApp: webhook endpoint of the account left not removed")
@@ -659,9 +661,9 @@ def referral_coupon() -> dict[str, Any]:
 
 def get_onboarding_steps(settings=None) -> list[Step]:
 	"""The four onboarding steps with their current state (no provider call)."""
-	s = settings or _get_settings_doc()
+	whatsapp_settings = settings or _get_settings_doc()
 	connected = frappe.db.count("WhatsApp Device", {"status": "Connected"})
-	linked = has_credentials(s)
+	linked = has_credentials(whatsapp_settings)
 	return [
 		Step(
 			"credentials",
@@ -673,14 +675,14 @@ def get_onboarding_steps(settings=None) -> list[Step]:
 		# a connection test passed with keys that are gone since says nothing about now
 		Step(
 			"connection",
-			linked and s.connection_status == "OK",
-			_connection_detail(s) if linked else _("No account linked"),
+			linked and whatsapp_settings.connection_status == "OK",
+			_connection_detail(whatsapp_settings) if linked else _("No account linked"),
 		),
 		Step("device", connected > 0, _("{0} connected device(s)").format(connected)),
 		Step(
 			"webhook",
-			s.webhook_status == "Active",
-			_(s.webhook_status) if s.webhook_status else _("Not registered"),
+			whatsapp_settings.webhook_status == "Active",
+			_(whatsapp_settings.webhook_status) if whatsapp_settings.webhook_status else _("Not registered"),
 		),
 	]
 
@@ -697,13 +699,13 @@ def _connection_detail(s) -> str:
 
 def get_onboarding_status() -> dict[str, Any]:
 	"""`{setup_completed, setup_completed_at, steps[{key, done, detail}], redirect_enabled}`."""
-	s = _get_settings_doc()
+	whatsapp_settings = _get_settings_doc()
 	return {
-		"setup_completed": bool(cint(s.setup_completed)),
-		"setup_completed_at": s.setup_completed_at,
-		"steps": [step.__dict__ for step in get_onboarding_steps(s)],
-		"redirect_enabled": bool(cint(s.redirect_unregistered_to_wizard)),
-		"needs_setup": needs_setup(s),
+		"setup_completed": bool(cint(whatsapp_settings.setup_completed)),
+		"setup_completed_at": whatsapp_settings.setup_completed_at,
+		"steps": [step.__dict__ for step in get_onboarding_steps(whatsapp_settings)],
+		"redirect_enabled": bool(cint(whatsapp_settings.redirect_unregistered_to_wizard)),
+		"needs_setup": needs_setup(whatsapp_settings),
 		"can_setup": can_setup(),
 		"webhook_url": webhook_setup.receiver_url(),
 	}
@@ -718,9 +720,9 @@ def needs_setup(settings=None) -> bool:
 	"""The product is not usable yet (owner, 2026-10-19): the redirect is on and the site is not
 	signed in to its platform (no credentials — never registered, or signed out since), or the
 	wizard was never finished (`setup_completed`)."""
-	s = settings or _get_settings_doc()
-	return bool(cint(s.redirect_unregistered_to_wizard)) and (
-		not has_credentials(s) or not cint(s.setup_completed)
+	whatsapp_settings = settings or _get_settings_doc()
+	return bool(cint(whatsapp_settings.redirect_unregistered_to_wizard)) and (
+		not has_credentials(whatsapp_settings) or not cint(whatsapp_settings.setup_completed)
 	)
 
 
@@ -743,14 +745,14 @@ def should_redirect_to_wizard(user: str | None = None) -> bool:
 def complete_setup(user: str | None = None) -> bool:
 	"""Flag `setup_completed` once every step is done; otherwise `WAStateConflictError` naming
 	the first missing step."""
-	s = _get_settings_doc()
-	missing = [step for step in get_onboarding_steps(s) if not step.done]
+	whatsapp_settings = _get_settings_doc()
+	missing = [step for step in get_onboarding_steps(whatsapp_settings) if not step.done]
 	if missing:
 		frappe.throw(
 			_("Setup step {0} is not complete: {1}").format(missing[0].key, missing[0].detail or ""),
 			WAStateConflictError,
 		)
-	if not cint(s.setup_completed):
+	if not cint(whatsapp_settings.setup_completed):
 		frappe.db.set_single_value(
 			"WhatsApp Settings",
 			{"setup_completed": 1, "setup_completed_at": now_datetime()},

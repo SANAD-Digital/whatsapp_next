@@ -217,8 +217,8 @@ def _platform_value_to_date(value: Any) -> date | None:
 			return date.fromisoformat(value.strip())
 		except ValueError:
 			pass
-	dt = _platform_time_to_site_datetime(value)
-	return dt.date() if dt else None
+	site_datetime = _platform_time_to_site_datetime(value)
+	return site_datetime.date() if site_datetime else None
 
 
 NOT_ALLOWED_CODE = "RECIPIENT_NOT_ALLOWED"
@@ -455,20 +455,20 @@ class SndPlatformProvider(BaseProvider):
 		"""Subscription + wallet; uses `get_account_api` (A-01) when available, else the two legacy calls."""
 		try:
 			data = self._request("GET", "get_account_api", v1=True)
-			sub = data.get("subscription") or {}
+			subscription = data.get("subscription") or {}
 			link = data.get("link") or {}
 			return AccountInfo(
-				plan_code=sub.get("plan_code"),
-				plan_name=sub.get("plan_name") or sub.get("plan"),
-				status=sub.get("status"),
-				message_limit=int(sub.get("message_limit") or 0),
-				messages_used=int(sub.get("messages_used") or 0),
-				messages_remaining=int(sub.get("messages_remaining") or 0),
-				messages_per_minute=int(sub.get("messages_per_minute") or 0),
-				device_limit=int(sub.get("device_limit") or 0),
-				devices_used=int(sub.get("devices_used") or 0),
-				start_date=_platform_value_to_date(sub.get("start_date")),
-				end_date=_platform_value_to_date(sub.get("end_date")),
+				plan_code=subscription.get("plan_code"),
+				plan_name=subscription.get("plan_name") or subscription.get("plan"),
+				status=subscription.get("status"),
+				message_limit=int(subscription.get("message_limit") or 0),
+				messages_used=int(subscription.get("messages_used") or 0),
+				messages_remaining=int(subscription.get("messages_remaining") or 0),
+				messages_per_minute=int(subscription.get("messages_per_minute") or 0),
+				device_limit=int(subscription.get("device_limit") or 0),
+				devices_used=int(subscription.get("devices_used") or 0),
+				start_date=_platform_value_to_date(subscription.get("start_date")),
+				end_date=_platform_value_to_date(subscription.get("end_date")),
 				features=dict(data.get("features") or {}),
 				webhook_events=dict(data.get("webhook_events") or {}),
 				wallet_balance=(data.get("wallet") or {}).get("balance"),
@@ -477,25 +477,25 @@ class SndPlatformProvider(BaseProvider):
 			)
 		except (pex.NotFoundError, pex.NotSupportedError, pex.ValidationError):
 			pass
-		sub = self._request("GET", "get_subscription_status")
+		subscription = self._request("GET", "get_subscription_status")
 		wallet: dict = {}
 		try:
 			wallet = self._request("GET", "get_wallet_balance_api")
 		except pex.ProviderError:
 			wallet = {}
 		return AccountInfo(
-			plan_code=sub.get("plan_code"),
-			plan_name=sub.get("plan"),
-			status=sub.get("status"),
-			message_limit=int(sub.get("message_limit") or 0),
-			messages_used=int(sub.get("messages_used") or 0),
-			messages_remaining=int(sub.get("messages_remaining") or 0),
-			messages_per_minute=int(sub.get("messages_per_minute") or 0),
-			device_limit=int(sub.get("device_limit") or 0),
-			devices_used=int(sub.get("devices_used") or 0),
-			start_date=_platform_value_to_date(sub.get("start_date")),
-			end_date=_platform_value_to_date(sub.get("end_date")),
-			features=dict(sub.get("features") or {}),
+			plan_code=subscription.get("plan_code"),
+			plan_name=subscription.get("plan"),
+			status=subscription.get("status"),
+			message_limit=int(subscription.get("message_limit") or 0),
+			messages_used=int(subscription.get("messages_used") or 0),
+			messages_remaining=int(subscription.get("messages_remaining") or 0),
+			messages_per_minute=int(subscription.get("messages_per_minute") or 0),
+			device_limit=int(subscription.get("device_limit") or 0),
+			devices_used=int(subscription.get("devices_used") or 0),
+			start_date=_platform_value_to_date(subscription.get("start_date")),
+			end_date=_platform_value_to_date(subscription.get("end_date")),
+			features=dict(subscription.get("features") or {}),
 			wallet_balance=wallet.get("balance"),
 			wallet_currency=wallet.get("currency"),
 		)
@@ -896,16 +896,16 @@ class SndPlatformProvider(BaseProvider):
 			if message.reply_to:
 				payload["reply_to_message_id"] = message.reply_to
 		elif message.message_type in ("Document", "Image", "Video", "Audio", "Sticker"):
-			att = message.attachment
+			attachment = message.attachment
 			payload["caption"] = message.caption or message.body or ""
 			payload["media_type"] = message.message_type.lower()
-			if att:
-				payload["media_filename"] = att.file_name
-				payload["media_mime_type"] = att.mime_type
-				if att.content_b64:
-					payload["media_base64"] = att.content_b64
-				elif att.url:
-					payload["media_url"] = att.url
+			if attachment:
+				payload["media_filename"] = attachment.file_name
+				payload["media_mime_type"] = attachment.mime_type
+				if attachment.content_b64:
+					payload["media_base64"] = attachment.content_b64
+				elif attachment.url:
+					payload["media_url"] = attachment.url
 			payload["view_once"] = 1 if message.view_once else 0
 		elif message.message_type == "Location" and message.location:
 			payload.update(
@@ -1297,37 +1297,39 @@ class SndPlatformProvider(BaseProvider):
 		self, headers: Mapping[str, str], raw_body: bytes, secret: str, max_skew: int = DEFAULT_MAX_SKEW
 	) -> SignatureCheck:
 		"""Constant-time compare of `X-SND-Signature`; freshness of `X-SND-Timestamp` within `max_skew`."""
-		h = _ci_headers(headers)
-		signature = h.get(HEADER_SIGNATURE.lower(), "")
-		timestamp = h.get(HEADER_TIMESTAMP.lower(), "")
+		lowercase_headers = _ci_headers(headers)
+		signature = lowercase_headers.get(HEADER_SIGNATURE.lower(), "")
+		timestamp = lowercase_headers.get(HEADER_TIMESTAMP.lower(), "")
 		if not signature or not timestamp:
 			return SignatureCheck(valid=False, fresh=False, reason="missing headers")
 		if not secret:
 			return SignatureCheck(valid=False, fresh=False, reason="no secret")
 		try:
-			ts = int(float(timestamp))
+			timestamp_seconds = int(float(timestamp))
 			# the site's clock, like every other platform time (`fromtimestamp` alone is the OS's)
-			event_ts = _site_time(datetime.fromtimestamp(ts, timezone.utc))
+			event_timestamp = _site_time(datetime.fromtimestamp(timestamp_seconds, timezone.utc))
 		except (ValueError, OverflowError, OSError):
 			# "inf", "1e30", a year past 9999: garbage from the sender, not a server fault
 			return SignatureCheck(valid=False, fresh=False, reason="bad timestamp")
-		fresh = abs(int(time.time()) - ts) <= max_skew
+		fresh = abs(int(time.time()) - timestamp_seconds) <= max_skew
 		given = signature.strip().lower()
 		# a signature is 64 hex digits: anything else (non-ASCII included) is refused here, as
 		# bytes, instead of failing the compare and reaching the Error Log as a server fault
 		if not SIGNATURE_RE.fullmatch(given):
-			return SignatureCheck(valid=False, fresh=fresh, event_timestamp=event_ts, reason="signature")
+			return SignatureCheck(
+				valid=False, fresh=fresh, event_timestamp=event_timestamp, reason="signature"
+			)
 		expected = self.sign_webhook_body(secret, timestamp, raw_body)
 		valid = hmac.compare_digest(expected.encode(), given.encode())
 		reason = None if valid and fresh else ("stale" if valid else "signature")
-		return SignatureCheck(valid=valid, fresh=fresh, event_timestamp=event_ts, reason=reason)
+		return SignatureCheck(valid=valid, fresh=fresh, event_timestamp=event_timestamp, reason=reason)
 
 	def webhook_envelope(self, headers: Mapping[str, str]) -> WebhookEnvelope:
-		h = _ci_headers(headers)
+		lowercase_headers = _ci_headers(headers)
 		return WebhookEnvelope(
-			event_id=h.get(HEADER_EVENT_ID.lower()) or None,
-			event_name=h.get(HEADER_EVENT.lower()) or None,
-			signed=bool(h.get(HEADER_SIGNATURE.lower())),
+			event_id=lowercase_headers.get(HEADER_EVENT_ID.lower()) or None,
+			event_name=lowercase_headers.get(HEADER_EVENT.lower()) or None,
+			signed=bool(lowercase_headers.get(HEADER_SIGNATURE.lower())),
 		)
 
 	def replay_headers(self, event_name: str, event_id: str | None) -> dict[str, str]:
@@ -1335,18 +1337,18 @@ class SndPlatformProvider(BaseProvider):
 
 	def parse_webhook(self, headers: Mapping[str, str], body: dict) -> WebhookEvent:
 		"""Platform payload + headers → `WebhookEvent` (pure). Unknown events keep their name."""
-		h = _ci_headers(headers)
-		event_name = h.get(HEADER_EVENT.lower()) or str(body.get("event") or "")
+		lowercase_headers = _ci_headers(headers)
+		event_name = lowercase_headers.get(HEADER_EVENT.lower()) or str(body.get("event") or "")
 		if event_name == "message.status":
 			event_name = _status_alias(body)
-		event_id = h.get(HEADER_EVENT_ID.lower()) or str(body.get("event_id") or "")
-		ts_header = h.get(HEADER_TIMESTAMP.lower())
+		event_id = lowercase_headers.get(HEADER_EVENT_ID.lower()) or str(body.get("event_id") or "")
+		timestamp_header = lowercase_headers.get(HEADER_TIMESTAMP.lower())
 		# the most exact first: the gateway's own event time and the platform's Unix time are
 		# absolute; the signing time is when it was delivered; `occurred_at` has no zone at all
 		timestamp = (
 			_platform_time_to_site_datetime(body.get("timestamp"))
 			or _platform_time_to_site_datetime(body.get("occurred_at_ts"))
-			or _platform_time_to_site_datetime(ts_header)
+			or _platform_time_to_site_datetime(timestamp_header)
 			or _platform_time_to_site_datetime(body.get("occurred_at"))
 		)
 		platform_device = body.get("device") if isinstance(body.get("device"), str) else None
@@ -1583,9 +1585,9 @@ def _first_non_empty_value(*values):
 
 def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 	"""Best-effort extraction from the platform's `message.received` payload (D-023 enrichment)."""
-	msg = body.get("message") if isinstance(body.get("message"), dict) else {}
+	message = body.get("message") if isinstance(body.get("message"), dict) else {}
 	data = body.get("data") if isinstance(body.get("data"), dict) else {}
-	nested = msg or data or {}
+	nested = message or data or {}
 	# a reaction names two messages: its own (`reaction_message_id`) and the one reacted to
 	# (`message_id`); its sender is `reacted_by`
 	is_reaction = body.get("event") == "message.reaction" or bool(body.get("reaction_message_id"))
@@ -1621,9 +1623,9 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 	text = _first_non_empty_value(
 		body.get("text"),
 		body.get("body"),
-		msg.get("text") if isinstance(msg, dict) else None,
-		msg.get("body") if isinstance(msg, dict) else None,
-		msg.get("conversation") if isinstance(msg, dict) else None,
+		message.get("text") if isinstance(message, dict) else None,
+		message.get("body") if isinstance(message, dict) else None,
+		message.get("conversation") if isinstance(message, dict) else None,
 		body.get("message") if isinstance(body.get("message"), str) else None,
 		body.get("caption"),
 	)

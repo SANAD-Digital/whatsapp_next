@@ -138,10 +138,10 @@ MODES = {"open_24h": "Open 24 hours", "appointment_only": "By appointment only",
 def _minutes(value) -> str:
 	"""WhatsApp sends opening times as minutes after midnight."""
 	try:
-		m = int(value)
+		total_minutes = int(value)
 	except (TypeError, ValueError):
 		return str(value or "")
-	return f"{m // 60:02d}:{m % 60:02d}"
+	return f"{total_minutes // 60:02d}:{total_minutes % 60:02d}"
 
 
 def _format_business_hours(business: dict) -> str | None:
@@ -168,11 +168,13 @@ def _save_photo(key: str, url: str) -> str | None:
 	if parsed.scheme != "https" or not (parsed.hostname or "").endswith(PHOTO_HOST_SUFFIX):
 		return None
 	try:
-		with requests.get(url, timeout=20, stream=True, allow_redirects=False) as r:
-			if r.status_code != 200 or not (r.headers.get("Content-Type") or "").startswith("image/"):
+		with requests.get(url, timeout=20, stream=True, allow_redirects=False) as response:
+			if response.status_code != 200 or not (response.headers.get("Content-Type") or "").startswith(
+				"image/"
+			):
 				return None
 			chunks, total = [], 0
-			for chunk in r.iter_content(64 * 1024):
+			for chunk in response.iter_content(64 * 1024):
 				total += len(chunk)
 				if total > MAX_PHOTO_BYTES:
 					return None

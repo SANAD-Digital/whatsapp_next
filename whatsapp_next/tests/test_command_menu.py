@@ -16,11 +16,11 @@ class _FnResult:
 		self.data, self.error = {}, None
 
 
-def _text(body, key="result"):
+def _build_text_reply(body, key="result"):
 	return {"output_key": key, "message_type": "Text", "body": body, "attachment": None}
 
 
-def plan(interactive: bool) -> None:
+def set_plan_allows_interactive(interactive: bool) -> None:
 	"""The synced plan, with or without buttons and lists."""
 	frappe.db.set_single_value(
 		"WhatsApp Settings", "plan_features", frappe.as_json({"allow_interactive": interactive})
@@ -42,14 +42,14 @@ class TestCommandMenu(IntegrationTestCase):
 		frappe.db.set_single_value(
 			"WhatsApp Settings", {"enable_commands": 1, "main_menu_words": "القائمة\nmenu"}
 		)
-		self._mode("Buttons on the reply")
-		plan(True)
+		self._set_main_menu_mode("Buttons on the reply")
+		set_plan_allows_interactive(True)
 		self.phone = "+9677701" + frappe.generate_hash(length=5)[:4].translate(
 			str.maketrans("abcdef", "123456")
 		)
 		self.addCleanup(command_sessions.clear_question_session, self.device, self.phone)
 
-	def _mode(self, mode):
+	def _set_main_menu_mode(self, mode):
 		frappe.db.set_single_value("WhatsApp Settings", "main_menu_mode", mode)
 		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
@@ -68,13 +68,13 @@ class TestCommandMenu(IntegrationTestCase):
 		self.assertEqual(len(mine), len(every) - 1)
 
 	def test_off_changes_nothing(self):
-		self._mode("Off")
-		replies = [_text("done")]
+		self._set_main_menu_mode("Off")
+		replies = [_build_text_reply("done")]
 		self.assertEqual(command_menu.decorate(replies, "Executed"), replies)
 
 	def test_list_after_every_reply(self):
-		self._mode("List after every reply")
-		out = command_menu.decorate([_text("done")], "Executed")
+		self._set_main_menu_mode("List after every reply")
+		out = command_menu.decorate([_build_text_reply("done")], "Executed")
 		self.assertEqual([r["message_type"] for r in out], ["Text", "List"])
 		ids = [r["id"] for r in out[1]["interactive"]["sections"][0]["rows"]]
 		codes = frappe.get_all("WhatsApp Command", filters={"name": ("in", self.commands)}, pluck="code")
@@ -83,13 +83,13 @@ class TestCommandMenu(IntegrationTestCase):
 
 	def test_buttons_on_the_reply(self):
 		# more than three commands: one «Main menu» button on the reply itself
-		out = command_menu.decorate([_text("Balance: 10")], "Executed")
+		out = command_menu.decorate([_build_text_reply("Balance: 10")], "Executed")
 		self.assertEqual(len(out), 1)
 		self.assertEqual((out[0]["message_type"], out[0]["interactive"]["text"]), ("Buttons", "Balance: 10"))
 		self.assertEqual([b["id"] for b in out[0]["interactive"]["buttons"]], [command_menu.MENU_ID])
 		# three or fewer: the commands themselves
 		self._show_only(3)
-		out = command_menu.decorate([_text("Balance: 10")], "Executed")
+		out = command_menu.decorate([_build_text_reply("Balance: 10")], "Executed")
 		self.assertEqual(len(out[0]["interactive"]["buttons"]), 3)
 		# a file cannot carry buttons: a short buttons message follows it
 		file_reply = {
@@ -102,10 +102,10 @@ class TestCommandMenu(IntegrationTestCase):
 		self.assertEqual([r["message_type"] for r in out], ["Document", "Buttons"])
 
 	def test_no_menu_under_a_question(self):
-		replies = [_text("Choose a date", "prompt")]
+		replies = [_build_text_reply("Choose a date", "prompt")]
 		self.assertEqual(command_menu.decorate(replies, "Awaiting Input"), replies)
 
-	def _route(self, body, selected=None):
+	def _route_inbound_and_capture_replies(self, body, selected=None):
 		doc = frappe.get_doc(
 			{
 				"doctype": "WhatsApp Inbound Message",
@@ -134,7 +134,7 @@ class TestCommandMenu(IntegrationTestCase):
 
 	def test_menu_button_and_words_send_the_list(self):
 		for body, selected in (("القائمة الرئيسية", command_menu.MENU_ID), ("Menu", None)):
-			res, sent = self._route(body, selected)
+			res, sent = self._route_inbound_and_capture_replies(body, selected)
 			self.assertEqual(res.status, "Executed")
 			self.assertEqual([r["message_type"] for r in sent], ["List"])
 
@@ -162,9 +162,9 @@ class TestCommandMenu(IntegrationTestCase):
 			command_menu.save_items([{"command": second}])
 
 	def test_no_menu_without_the_plan(self):
-		plan(False)
-		replies = [_text("done")]
+		set_plan_allows_interactive(False)
+		replies = [_build_text_reply("done")]
 		self.assertEqual(command_menu.get_main_menu_mode(), "Off")
 		self.assertEqual(command_menu.decorate(replies, "Executed"), replies)
-		_res, sent = self._route("menu")
+		_res, sent = self._route_inbound_and_capture_replies("menu")
 		self.assertNotIn("List", [r["message_type"] for r in sent])

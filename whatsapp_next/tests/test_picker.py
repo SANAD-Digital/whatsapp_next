@@ -34,7 +34,7 @@ class TestPicker(IntegrationTestCase):
 		ensure_settings(default_device=cls.device)
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_campaigns_and_groups()
 		frappe.get_doc(
 			{
 				"doctype": "WhatsApp Contact Group",
@@ -46,10 +46,10 @@ class TestPicker(IntegrationTestCase):
 		).insert(ignore_permissions=True)
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_campaigns_and_groups()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_campaigns_and_groups():
 		delete_test_rows("WhatsApp Queue Item")
 		delete_test_rows("WhatsApp Log", {"source_type": "Campaign"})
 		delete_all("WhatsApp Campaign", {"campaign_name": ("like", "PickerTest%")})
@@ -113,11 +113,11 @@ class TestPicker(IntegrationTestCase):
 		import openpyxl
 
 		wb = openpyxl.Workbook()
-		ws = wb.active
-		ws.append(["الاسم", "رقم الجوال", "note"])
-		ws.append(["Ahmed", "0500000802", "x"])
-		ws.append(["Bad", "abc", ""])
-		ws.append([None, None, None])
+		worksheet = wb.active
+		worksheet.append(["الاسم", "رقم الجوال", "note"])
+		worksheet.append(["Ahmed", "0500000802", "x"])
+		worksheet.append(["Bad", "abc", ""])
+		worksheet.append([None, None, None])
 		buf = io.BytesIO()
 		wb.save(buf)
 		url = attachments.save_private_file(buf.getvalue(), "picker-test.xlsx")

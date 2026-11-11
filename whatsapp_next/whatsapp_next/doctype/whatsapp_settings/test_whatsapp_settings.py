@@ -27,7 +27,7 @@ class TestWhatsAppSettings(IntegrationTestCase):
 		super().setUpClass()
 		ensure_settings()
 
-	def _settings(self):
+	def _get_settings_doc(self):
 		return frappe.get_single(DOCTYPE)
 
 	def test_permission_matrix(self) -> None:
@@ -60,7 +60,7 @@ class TestWhatsAppSettings(IntegrationTestCase):
 
 		from whatsapp_next.providers import registry
 
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		previous = settings.platform_base_url
 		try:
 			# left empty: the site's mode decides, and nothing is read from the site config
@@ -99,70 +99,70 @@ class TestWhatsAppSettings(IntegrationTestCase):
 		self.assertEqual(REAL_REGION_FROM_SETTINGS(), expected)
 
 	def test_queue_bounds(self) -> None:
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.messages_per_minute = 100
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.plan_messages_per_minute = 10
 		settings.messages_per_minute = 20
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.retry_backoff_seconds = 10
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.request_timeout = 200
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
 
 	def test_provider_must_be_registered(self) -> None:
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.provider = "meta_cloud"
 		settings.save(ignore_permissions=True)
 		self.assertEqual(frappe.db.get_single_value(DOCTYPE, "provider"), "meta_cloud")
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.provider = "nope"
 		with self.assertRaises((WAValidationError, frappe.ValidationError)):
 			settings.save(ignore_permissions=True)
 
 	def test_command_service_user_rules(self) -> None:
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.enable_commands = 1
 		settings.command_service_user = None
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.enable_commands = 1
 		settings.command_service_user = "Administrator"
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.enable_commands = 1
 		settings.command_service_user = ensure_test_user("System Manager")
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.enable_commands = 1
 		settings.command_service_user = ensure_test_user("_none")
 		settings.save(ignore_permissions=True)
 		self.assertEqual(frappe.db.get_single_value(DOCTYPE, "enable_commands"), 1)
 
 	def test_picker_sources_unique_and_regular(self) -> None:
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.set("picker_sources", [])
 		settings.append("picker_sources", {"document_type": "Contact", "phone_source": "Field"})
 		settings.append("picker_sources", {"document_type": "Contact", "phone_source": "Field"})
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.set("picker_sources", [])
 		settings.append("picker_sources", {"document_type": "Contact Phone", "phone_source": "Field"})
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
-		settings = self._settings()
+		settings = self._get_settings_doc()
 		settings.set("picker_sources", [])
 		settings.append("picker_sources", {"document_type": "Contact", "phone_source": "Field"})
 		settings.save(ignore_permissions=True)
-		self.assertEqual(self._settings().picker_sources[0].label, "Contact")
+		self.assertEqual(self._get_settings_doc().picker_sources[0].label, "Contact")

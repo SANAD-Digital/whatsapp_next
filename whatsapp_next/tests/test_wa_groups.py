@@ -14,7 +14,7 @@ from whatsapp_next.services import wa_groups
 from whatsapp_next.tests.conftest_frappe import ensure_device
 
 
-def plan(groups: bool) -> None:
+def set_plan_allows_groups(groups: bool) -> None:
 	frappe.db.set_single_value("WhatsApp Settings", "plan_features", frappe.as_json({"allow_groups": groups}))
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
@@ -42,7 +42,7 @@ class TestWaGroups(IntegrationTestCase):
 			frappe.db.get_value("WhatsApp Device", {"status": "Connected", "disabled": 0}, "name")
 			or ensure_device()
 		)
-		plan(True)
+		set_plan_allows_groups(True)
 		self.provider = Provider()
 
 	def _create(self, **kw):
@@ -89,7 +89,7 @@ class TestWaGroups(IntegrationTestCase):
 	def test_needs_the_plan_and_members(self):
 		with self.assertRaises(WAValidationError):
 			self._create(members=["not a number"])
-		plan(False)
+		set_plan_allows_groups(False)
 		with self.assertRaises(WANotSupportedError):
 			self._create()
 

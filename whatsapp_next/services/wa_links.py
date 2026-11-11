@@ -61,11 +61,11 @@ def whatsapp_qr(text: str | None = None, device: str | None = None, size: int = 
 	"""Jinja: `{{ whatsapp_qr("كشف " ~ doc.customer) }}` → an `<img>` of the QR code, `size` px wide
 	(nothing when no device has a number, so a print never fails over it)."""
 	try:
-		src = qr_data_uri(text, device)
+		qr_data_uri_value = qr_data_uri(text, device)
 	except Exception:
 		return Markup("")
-	px = max(48, min(int(size or 120), 600))
+	image_width = max(48, min(int(size or 120), 600))
 	alt = escape(_("Scan to chat on WhatsApp"))
 	return Markup(
-		f'<img src="{src}" width="{px}" height="{px}" alt="{alt}" style="image-rendering: pixelated;">'
+		f'<img src="{qr_data_uri_value}" width="{image_width}" height="{image_width}" alt="{alt}" style="image-rendering: pixelated;">'
 	)

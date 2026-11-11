@@ -35,7 +35,7 @@ P1, P2, P3 = "+966500000301", "+966500000302", "+966500000303"
 BLACKLIST = "DispatchTest Blacklist"
 
 
-def _spec(**kw) -> OutboundSpec:
+def _build_outbound_spec(**kw) -> OutboundSpec:
 	base = {"phone": P1, "body": "dispatch-test hello", "source_type": "Quick Send"}
 	base.update(kw)
 	return OutboundSpec(**base)
@@ -67,17 +67,17 @@ class TestDispatch(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_messages_and_queue()
 		ensure_settings(global_blacklist_group=None, queue_paused=0, send_only_to_known_numbers=0)
 		delete_all("WhatsApp Contact Group", {"group_name": BLACKLIST})
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_messages_and_queue()
 		ensure_settings(queue_paused=0, send_only_to_known_numbers=0, messages_per_minute=20)
 
 	@staticmethod
-	def _clean():
+	def _delete_test_messages_and_queue():
 		delete_test_rows("WhatsApp Queue Item")
 		delete_all("WhatsApp Log", {"body": ("like", "dispatch-test%")})
 		delete_all("WhatsApp Inbound Message", {"body": ("like", "dispatch-test%")})
@@ -104,7 +104,7 @@ class TestDispatch(IntegrationTestCase):
 		# the base class rollback resurrects rows and pollutes later modules.
 		frappe.db.commit()
 
-	def _log(self, name):
+	def _get_outbound_log(self, name):
 		return frappe.db.get_value(
 			"WhatsApp Log",
 			name,
@@ -121,7 +121,7 @@ class TestDispatch(IntegrationTestCase):
 			as_dict=True,
 		)
 
-	def _item(self, name):
+	def _get_queue_item(self, name):
 		return frappe.db.get_value(
 			"WhatsApp Queue Item",
 			name,
@@ -142,27 +142,29 @@ class TestDispatch(IntegrationTestCase):
 
 	def test_create_outbound_validation(self):
 		with self.assertRaises(WAInvalidPhoneError):
-			dispatch.create_outbound(_spec(phone="abc"))
+			dispatch.create_outbound(_build_outbound_spec(phone="abc"))
 		with self.assertRaises(WAValidationError):
-			dispatch.create_outbound(_spec(body=""))
+			dispatch.create_outbound(_build_outbound_spec(body=""))
 		with self.assertRaises(WAValidationError):
-			dispatch.create_outbound(_spec(message_type="Image", attachment=None))
+			dispatch.create_outbound(_build_outbound_spec(message_type="Image", attachment=None))
 		with self.assertRaises(WAValidationError):
-			dispatch.create_outbound(_spec(message_type="Poll", poll_question="Q", poll_options="one"))
+			dispatch.create_outbound(
+				_build_outbound_spec(message_type="Poll", poll_question="Q", poll_options="one")
+			)
 		with self.assertRaises(WAValidationError):
-			dispatch.create_outbound(_spec(message_type="Location", location={"latitude": 1}))
+			dispatch.create_outbound(_build_outbound_spec(message_type="Location", location={"latitude": 1}))
 		g = frappe.get_doc("WhatsApp Contact Group", BLACKLIST)
 		g.append("members", {"phone": P2, "source_type": "Manual"})
 		g.save(ignore_permissions=True)
 		with self.assertRaises(WABlacklistedError):
-			dispatch.create_outbound(_spec(phone=P2))
+			dispatch.create_outbound(_build_outbound_spec(phone=P2))
 		ensure_settings(send_only_to_known_numbers=1)
 		with self.assertRaises(WAUnknownNumberPolicyError):
-			dispatch.create_outbound(_spec(phone=P3))
+			dispatch.create_outbound(_build_outbound_spec(phone=P3))
 		# campaigns and explicit skip bypass the policy; group JIDs are never subject to it
-		name = dispatch.create_outbound(_spec(phone=P3, skip_policy=True))
-		self.assertEqual(self._log(name).status, "Unsent")
-		grp = dispatch.create_outbound(_spec(phone=None, jid="120363000000000009@g.us"))
+		name = dispatch.create_outbound(_build_outbound_spec(phone=P3, skip_policy=True))
+		self.assertEqual(self._get_outbound_log(name).status, "Unsent")
+		grp = dispatch.create_outbound(_build_outbound_spec(phone=None, jid="120363000000000009@g.us"))
 		row = frappe.db.get_value("WhatsApp Log", grp, ["recipient_type", "jid", "phone_e164"], as_dict=True)
 		# for groups the controller stores the JID in `phone_e164` too (the Number key)
 		self.assertEqual(
@@ -179,7 +181,7 @@ class TestDispatch(IntegrationTestCase):
 		if pymupdf is None:
 			self.skipTest("PyMuPDF is not installed")
 
-		def pdf(pages: int) -> str:
+		def save_pdf_with_pages(pages: int) -> str:
 			with pymupdf.open() as doc:
 				for i in range(pages):
 					doc.new_page().insert_text((72, 72), f"page {i + 1}")
@@ -197,10 +199,10 @@ class TestDispatch(IntegrationTestCase):
 		self.addCleanup(cleanup)
 		fields = ["message_type", "attachment", "file_name", "mime_type", "caption"]
 
-		def sent(name):
+		def get_outbound_message_fields(name):
 			return frappe.db.get_value("WhatsApp Log", name, fields, as_dict=True)
 
-		one, two = pdf(1), pdf(2)
+		one, two = save_pdf_with_pages(1), save_pdf_with_pages(2)
 		spec = dict(
 			message_type="Document",
 			caption="Invoice",
@@ -208,16 +210,22 @@ class TestDispatch(IntegrationTestCase):
 			reference_name="System Manager",
 		)
 		ensure_settings(single_page_pdf_as_image=1)
-		row = sent(dispatch.create_outbound(_spec(attachment=one, **spec)))
+		row = get_outbound_message_fields(
+			dispatch.create_outbound(_build_outbound_spec(attachment=one, **spec))
+		)
 		self.assertEqual(
 			(row.message_type, row.mime_type, row.file_name), ("Image", "image/png", "wa-test-pages-1.png")
 		)
 		self.assertTrue(attachments.as_bytes(row.attachment).startswith(b"\x89PNG"))
 		self.assertEqual(row.caption, "Invoice")
-		row = sent(dispatch.create_outbound(_spec(attachment=two, **spec)))
+		row = get_outbound_message_fields(
+			dispatch.create_outbound(_build_outbound_spec(attachment=two, **spec))
+		)
 		self.assertEqual((row.message_type, row.attachment), ("Document", two))
 		ensure_settings(single_page_pdf_as_image=0)
-		row = sent(dispatch.create_outbound(_spec(attachment=one, **spec)))
+		row = get_outbound_message_fields(
+			dispatch.create_outbound(_build_outbound_spec(attachment=one, **spec))
+		)
 		self.assertEqual((row.message_type, row.attachment), ("Document", one))
 		ensure_settings(single_page_pdf_as_image=1)
 
@@ -232,7 +240,7 @@ class TestDispatch(IntegrationTestCase):
 		).insert(ignore_permissions=True)
 		try:
 			name = dispatch.create_outbound(
-				_spec(
+				_build_outbound_spec(
 					body=None,
 					template=tpl.name,
 					template_context={"recipient": {"display_name": "Ali"}},
@@ -242,7 +250,7 @@ class TestDispatch(IntegrationTestCase):
 			self.assertEqual(frappe.db.get_value("WhatsApp Log", name, "body"), "dispatch-test Hi Ali")
 			self.assertEqual(frappe.db.get_value("WhatsApp Template", tpl.name, "use_count"), 1)
 			poll = dispatch.create_outbound(
-				_spec(
+				_build_outbound_spec(
 					message_type="Poll",
 					poll_question="dispatch-test?",
 					poll_options="a, b",
@@ -250,12 +258,12 @@ class TestDispatch(IntegrationTestCase):
 				)
 			)
 			self.assertEqual(frappe.db.get_value("WhatsApp Log", poll, "poll_options"), '["a", "b"]')
-			notif = dispatch.create_outbound(_spec(source_type="Notification"))
+			notif = dispatch.create_outbound(_build_outbound_spec(source_type="Notification"))
 			items = dispatch.enqueue([name, poll, notif, name])  # duplicate ignored
 			self.assertEqual(len(items), 3)
-			self.assertEqual(self._item(items[0]).priority, 1)
-			self.assertEqual(self._item(items[2]).priority, 3)
-			log = self._log(name)
+			self.assertEqual(self._get_queue_item(items[0]).priority, 1)
+			self.assertEqual(self._get_queue_item(items[2]).priority, 3)
+			log = self._get_outbound_log(name)
 			self.assertEqual((log.status, log.queue_item), ("Queued", items[0]))
 			self.assertIsNotNone(log.queued_at)
 			self.assertEqual(dispatch.enqueue([name]), [])  # already queued
@@ -271,7 +279,7 @@ class TestDispatch(IntegrationTestCase):
 		frappe.flags.wa_kick_dispatch_in_test = True
 		try:
 			with patch.object(frappe, "enqueue") as enqueue:
-				now_name = dispatch.create_outbound(_spec(body="dispatch-test now"))
+				now_name = dispatch.create_outbound(_build_outbound_spec(body="dispatch-test now"))
 				dispatch.enqueue([now_name])
 				device = frappe.db.get_value("WhatsApp Log", now_name, "device")
 				self.assertEqual(enqueue.call_count, 1)
@@ -282,7 +290,7 @@ class TestDispatch(IntegrationTestCase):
 				self.assertTrue(kwargs["deduplicate"] and kwargs["enqueue_after_commit"])
 
 				enqueue.reset_mock()
-				later = dispatch.create_outbound(_spec(body="dispatch-test later"))
+				later = dispatch.create_outbound(_build_outbound_spec(body="dispatch-test later"))
 				dispatch.enqueue([later], scheduled_at=add_to_date(now_datetime(), hours=1))
 				enqueue.assert_not_called()
 		finally:
@@ -294,7 +302,7 @@ class TestDispatch(IntegrationTestCase):
 		frappe.flags.wa_kick_dispatch_in_test = True
 		try:
 			with patch.object(frappe, "enqueue") as enqueue:
-				first = dispatch.create_and_enqueue(_spec(body="dispatch-test first"))
+				first = dispatch.create_and_enqueue(_build_outbound_spec(body="dispatch-test first"))
 				device = frappe.db.get_value("WhatsApp Log", first[0], "device")
 				enqueue.reset_mock()
 				dispatch._kick_followup(device, {"claimed": 0})  # sent nothing: the tick's business
@@ -306,7 +314,7 @@ class TestDispatch(IntegrationTestCase):
 				self.assertEqual((kwargs["device"], kwargs["job_id"]), (device, f"wa-dispatch-{device}-next"))
 				self.assertTrue(kwargs["deduplicate"] and kwargs["enqueue_after_commit"])
 				delete_test_rows("WhatsApp Queue Item")
-				later = dispatch.create_outbound(_spec(body="dispatch-test later"))
+				later = dispatch.create_outbound(_build_outbound_spec(body="dispatch-test later"))
 				dispatch.enqueue([later], scheduled_at=add_to_date(now_datetime(), hours=1))
 				enqueue.reset_mock()
 				dispatch._kick_followup(device, {"claimed": 1})  # nothing due now
@@ -315,16 +323,16 @@ class TestDispatch(IntegrationTestCase):
 			frappe.flags.wa_kick_dispatch_in_test = False
 
 	def test_claim_orders_and_gates(self):
-		low = dispatch.create_and_enqueue(_spec(source_type="Notification"))
-		high = dispatch.create_and_enqueue(_spec(phone=P2))
+		low = dispatch.create_and_enqueue(_build_outbound_spec(source_type="Notification"))
+		high = dispatch.create_and_enqueue(_build_outbound_spec(phone=P2))
 		future = dispatch.create_and_enqueue(
-			_spec(phone=P3, scheduled_at=add_to_date(now_datetime(), hours=1))
+			_build_outbound_spec(phone=P3, scheduled_at=add_to_date(now_datetime(), hours=1))
 		)
 		claimed = dispatch.claim_batch(self.device, 10)
 		self.assertEqual([c.outbound_message for c in claimed], [high[0], low[0]])
-		self.assertEqual(self._item(high[1]).status, "Sending")
-		self.assertEqual(self._log(high[0]).status, "Sending")
-		self.assertEqual(self._item(future[1]).status, "Queued")
+		self.assertEqual(self._get_queue_item(high[1]).status, "Sending")
+		self.assertEqual(self._get_outbound_log(high[0]).status, "Sending")
+		self.assertEqual(self._get_queue_item(future[1]).status, "Queued")
 		self.assertEqual(dispatch.claim_batch(self.device, 10), [])  # nothing left due
 		self.assertEqual(dispatch.claim_batch(self.device, 0), [])
 		# a retry scheduled in the future is not claimable
@@ -339,7 +347,7 @@ class TestDispatch(IntegrationTestCase):
 	# -- batch outcomes -----------------------------------------------------------------
 
 	def _queued(self, n=2):
-		return [dispatch.create_and_enqueue(_spec(phone=p)) for p in (P1, P2, P3)[:n]]
+		return [dispatch.create_and_enqueue(_build_outbound_spec(phone=p)) for p in (P1, P2, P3)[:n]]
 
 	def test_automatic_attempts_stop_at_three(self):
 		"""Whatever a row or Settings says, the dispatcher gives up after the third try."""
@@ -354,7 +362,7 @@ class TestDispatch(IntegrationTestCase):
 		self.assertEqual(
 			dispatch._retry_later(row, "gateway timeout", "timeout", at=now_datetime()), "Dead Letter"
 		)
-		self.assertEqual(self._item(item).status, "Dead Letter")
+		self.assertEqual(self._get_queue_item(item).status, "Dead Letter")
 		with self.assertRaises(WAValidationError):
 			ensure_settings(max_attempts=5)
 
@@ -365,8 +373,8 @@ class TestDispatch(IntegrationTestCase):
 			self.assertEqual((counts["claimed"], counts["accepted"]), (2, 2))
 			self.assertEqual(fp.calls[-1][0], "send_batch")
 			for out, item in rows:
-				self.assertEqual(self._item(item).status, "Completed")
-				log = self._log(out)
+				self.assertEqual(self._get_queue_item(item).status, "Completed")
+				log = self._get_outbound_log(out)
 				self.assertEqual(log.status, "Sending")
 				self.assertTrue(log.platform_queue_id.startswith("MQ-"))
 			# the second tick has nothing to do
@@ -376,8 +384,8 @@ class TestDispatch(IntegrationTestCase):
 			fp.batch_mode = "held"
 			counts = dispatch.dispatch_device_batch(self.device)
 			self.assertEqual(counts["held"], 1)
-			self.assertEqual(self._log(held[0]).status, "Held")
-			self.assertEqual(self._item(held[1]).status, "Completed")
+			self.assertEqual(self._get_outbound_log(held[0]).status, "Held")
+			self.assertEqual(self._get_queue_item(held[1]).status, "Completed")
 
 	def test_batch_hard_error_dead_letters(self):
 		out, item = self._queued(1)[0]
@@ -385,17 +393,21 @@ class TestDispatch(IntegrationTestCase):
 			fp.batch_mode = "error"
 			counts = dispatch.dispatch_device_batch(self.device)
 		self.assertEqual(counts["dead"], 1)
-		qi, log = self._item(item), self._log(out)
+		qi, log = self._get_queue_item(item), self._get_outbound_log(out)
 		self.assertEqual((qi.status, qi.last_error_code), ("Dead Letter", "invalid_phone"))
 		self.assertEqual((log.status, log.error_code, log.attempts), ("Failed", "invalid_phone", 1))
 		# manager retry
 		self.assertEqual(dispatch.retry_dead_letter([item]), 1)
 		self.assertEqual(
-			(self._item(item).status, self._item(item).attempts, self._log(out).status),
+			(
+				self._get_queue_item(item).status,
+				self._get_queue_item(item).attempts,
+				self._get_outbound_log(out).status,
+			),
 			("Queued", 0, "Queued"),
 		)
 		# the give-up stamp goes with it: a row back in the queue has not completed anything
-		self.assertIsNone(self._item(item).completed_at)
+		self.assertIsNone(self._get_queue_item(item).completed_at)
 		# a second click (or a second manager) finds nothing left to retry
 		self.assertEqual(dispatch.retry_dead_letter([item]), 0)
 
@@ -405,10 +417,10 @@ class TestDispatch(IntegrationTestCase):
 			fp.batch_mode = "transient"
 			counts = dispatch.dispatch_device_batch(self.device)
 		self.assertEqual(counts["call_failure"], 1)
-		qi = self._item(item)
+		qi = self._get_queue_item(item)
 		self.assertEqual((qi.status, qi.attempts, qi.last_error_code), ("Queued", 0, "timeout"))
 		self.assertGreater(qi.next_attempt_at, now_datetime())
-		self.assertEqual(self._log(out).status, "Queued")
+		self.assertEqual(self._get_outbound_log(out).status, "Queued")
 		# per-message transient errors count attempts; the third one dead-letters
 		with status_writer():
 			frappe.db.set_value("WhatsApp Queue Item", item, {"attempts": 2, "next_attempt_at": None})
@@ -427,7 +439,7 @@ class TestDispatch(IntegrationTestCase):
 			)
 			counts = dispatch.dispatch_device_batch(self.device)
 		self.assertEqual(counts["dead"], 1)
-		self.assertEqual(self._item(item).status, "Dead Letter")
+		self.assertEqual(self._get_queue_item(item).status, "Dead Letter")
 
 	def test_batch_auth_failure_marks_settings(self):
 		_out, item = self._queued(1)[0]
@@ -435,7 +447,7 @@ class TestDispatch(IntegrationTestCase):
 			fp.batch_mode = "auth"
 			counts = dispatch.dispatch_device_batch(self.device)
 		self.assertEqual(counts["error_code"], "auth")
-		self.assertEqual(self._item(item).status, "Queued")
+		self.assertEqual(self._get_queue_item(item).status, "Queued")
 		self.assertEqual(frappe.db.get_single_value("WhatsApp Settings", "connection_status"), "Failed")
 		ensure_settings(connection_status="Untested")
 
@@ -445,16 +457,16 @@ class TestDispatch(IntegrationTestCase):
 		"""Live E2E 2026-10-01: `message.sent` and `message.delivered` landed 100 ms apart on two
 		workers, both read `Sending`, and the later write put a delivered message back to `Sent`.
 		The status is read with `FOR UPDATE`, so the second receipt waits and sees the first."""
-		out = dispatch.create_outbound(_spec())
+		out = dispatch.create_outbound(_build_outbound_spec())
 		seen = []
 		real = frappe.db.get_value
 
-		def spy(doctype, *args, **kwargs):
+		def record_status_read_locks(doctype, *args, **kwargs):
 			if doctype == "WhatsApp Log" and "status" in (args[1] if len(args) > 1 else []):
 				seen.append(bool(kwargs.get("for_update")))
 			return real(doctype, *args, **kwargs)
 
-		with patch.object(frappe.db, "get_value", side_effect=spy):
+		with patch.object(frappe.db, "get_value", side_effect=record_status_read_locks):
 			self.assertTrue(dispatch.apply_status(out, "Delivered"))
 			self.assertFalse(dispatch.apply_status(out, "Sent"))  # the overtaken receipt
 		self.assertEqual(seen, [True, True])
@@ -474,20 +486,24 @@ class TestDispatch(IntegrationTestCase):
 			pluck="content",
 		)
 		try:
-			out = dispatch.create_outbound(_spec(reference_doctype="ToDo", reference_name=todo.name))
+			out = dispatch.create_outbound(
+				_build_outbound_spec(reference_doctype="ToDo", reference_name=todo.name)
+			)
 			dispatch.apply_status(out, "Sent", provider_message_id="pm-comment")
 			dispatch.apply_status(out, "Delivered")
 			dispatch.apply_status(out, "Read")
 			self.assertEqual(len(comments()), 1)
 			self.assertIn(out, comments()[0])
 
-			failed = dispatch.create_outbound(_spec(reference_doctype="ToDo", reference_name=todo.name))
+			failed = dispatch.create_outbound(
+				_build_outbound_spec(reference_doctype="ToDo", reference_name=todo.name)
+			)
 			dispatch.apply_status(failed, "Failed", error_code="x", reason="number is not on WhatsApp")
 			self.assertEqual(len(comments()), 2)
 			self.assertTrue(any("number is not on WhatsApp" in c for c in comments()))
 
 			test = dispatch.create_outbound(
-				_spec(reference_doctype="ToDo", reference_name=todo.name, is_test=True)
+				_build_outbound_spec(reference_doctype="ToDo", reference_name=todo.name, is_test=True)
 			)
 			dispatch.apply_status(test, "Sent", provider_message_id="pm-comment-test")
 			self.assertEqual(len(comments()), 2)
@@ -516,7 +532,7 @@ class TestDispatch(IntegrationTestCase):
 		try:
 			ensure_settings(enable_commands=0, command_service_user=None)
 			out = dispatch.create_outbound(
-				_spec(
+				_build_outbound_spec(
 					phone=P1, body="Your invoice is paid", reference_doctype="ToDo", reference_name=todo.name
 				)
 			)
@@ -535,7 +551,9 @@ class TestDispatch(IntegrationTestCase):
 			user = ff.ensure_service_user()
 			ensure_settings(command_service_user=user)
 			named = dispatch.create_outbound(
-				_spec(phone=P2, body="Second", reference_doctype="ToDo", reference_name=todo.name)
+				_build_outbound_spec(
+					phone=P2, body="Second", reference_doctype="ToDo", reference_name=todo.name
+				)
 			)
 			dispatch.apply_status(named, "Sent", provider_message_id="pm-named-2")
 			second = rows()[-1]
@@ -564,7 +582,7 @@ class TestDispatch(IntegrationTestCase):
 		)
 		try:
 			ok, _item = dispatch.create_and_enqueue(
-				_spec(phone=P1, reference_doctype="ToDo", reference_name=todo.name)
+				_build_outbound_spec(phone=P1, reference_doctype="ToDo", reference_name=todo.name)
 			)
 			with fake_provider():
 				self.assertEqual(dispatch.dispatch_device_batch(self.device)["accepted"], 1)
@@ -574,12 +592,12 @@ class TestDispatch(IntegrationTestCase):
 			self.assertIn(ok, comments()[0])
 
 			bad, item = dispatch.create_and_enqueue(
-				_spec(phone=P2, reference_doctype="ToDo", reference_name=todo.name)
+				_build_outbound_spec(phone=P2, reference_doctype="ToDo", reference_name=todo.name)
 			)
 			with fake_provider() as fp:
 				fp.batch_mode = "error"
 				self.assertEqual(dispatch.dispatch_device_batch(self.device)["dead"], 1)
-			self.assertEqual(self._item(item).status, "Dead Letter")
+			self.assertEqual(self._get_queue_item(item).status, "Dead Letter")
 			self.assertEqual(len(comments()), 2)
 			failed = [c for c in comments() if bad in c]
 			self.assertEqual(len(failed), 1)
@@ -594,34 +612,38 @@ class TestDispatch(IntegrationTestCase):
 		"""The provider message id of a poll is the poll's id: stored on `Sent`, so the campaign's
 		poll results find the polls that went out (nothing wrote it before; results read "sent 0")."""
 		out = dispatch.create_outbound(
-			_spec(message_type="Poll", body=None, poll_question="dispatch-test?", poll_options=["a", "b"])
+			_build_outbound_spec(
+				message_type="Poll", body=None, poll_question="dispatch-test?", poll_options=["a", "b"]
+			)
 		)
 		self.assertTrue(dispatch.apply_status(out, "Sent", provider_message_id="poll-pm-1"))
 		self.assertEqual(frappe.db.get_value("WhatsApp Log", out, "poll_id"), "poll-pm-1")
-		text = dispatch.create_outbound(_spec())
+		text = dispatch.create_outbound(_build_outbound_spec())
 		dispatch.apply_status(text, "Sent", provider_message_id="pm-text")
 		self.assertFalse(frappe.db.get_value("WhatsApp Log", text, "poll_id"))
 
 	def test_apply_status_forward_only(self):
-		out = dispatch.create_outbound(_spec())
+		out = dispatch.create_outbound(_build_outbound_spec())
 		self.assertTrue(dispatch.apply_status(out, "Sent", provider_message_id="pm-1"))
 		self.assertTrue(dispatch.apply_status(out, "Read"))
 		self.assertFalse(dispatch.apply_status(out, "Delivered"))  # backwards
-		self.assertEqual(self._log(out).status, "Read")
+		self.assertEqual(self._get_outbound_log(out).status, "Read")
 		self.assertTrue(
 			dispatch.apply_status(out, "Failed", error_code="platform_rejected", reason="late failure")
 		)
 		self.assertFalse(dispatch.apply_status(out, "Sent"))  # final
-		self.assertEqual(self._log(out).error_code, "platform_rejected")
-		held = dispatch.create_outbound(_spec(phone=P2))
+		self.assertEqual(self._get_outbound_log(out).error_code, "platform_rejected")
+		held = dispatch.create_outbound(_build_outbound_spec(phone=P2))
 		dispatch.apply_status(held, "Held", reason="quota")
-		self.assertEqual(self._log(held).held_reason, "quota")
+		self.assertEqual(self._get_outbound_log(held).held_reason, "quota")
 		dispatch.apply_status(held, "Sent")
-		self.assertEqual((self._log(held).status, self._log(held).held_reason), ("Sent", None))
+		self.assertEqual(
+			(self._get_outbound_log(held).status, self._get_outbound_log(held).held_reason), ("Sent", None)
+		)
 		self.assertFalse(dispatch.apply_status("no-such-row", "Sent"))
 
 	def test_a_read_that_overtakes_delivered_fills_delivered_at(self):
-		out = dispatch.create_outbound(_spec())
+		out = dispatch.create_outbound(_build_outbound_spec())
 		dispatch.apply_status(out, "Sent", provider_message_id="pm-read")
 		self.assertTrue(dispatch.apply_status(out, "Read"))
 		self.assertFalse(dispatch.apply_status(out, "Delivered"))  # backwards, but not lost:
@@ -631,7 +653,7 @@ class TestDispatch(IntegrationTestCase):
 	def test_a_repeated_receipt_keeps_the_first_time(self):
 		"""The platform retries a receipt under a new event id: the second copy changes nothing,
 		and a `delivered` that arrives with no `sent` before it still says when it was sent."""
-		out = dispatch.create_outbound(_spec())
+		out = dispatch.create_outbound(_build_outbound_spec())
 		first = add_to_date(now_datetime(), minutes=-5)
 		self.assertTrue(dispatch.apply_status(out, "Delivered", at=first, provider_message_id="pm-rep"))
 		self.assertFalse(
@@ -660,7 +682,7 @@ class TestDispatch(IntegrationTestCase):
 				out, "Failed", error_code="recipient_not_registered", reason="Personal ID is Not Registered"
 			)
 		)
-		row = self._item(item)
+		row = self._get_queue_item(item)
 		self.assertEqual(
 			(row.status, row.last_error_code, row.dead_letter_reason),
 			("Dead Letter", "recipient_not_registered", "Personal ID is Not Registered"),
@@ -670,7 +692,7 @@ class TestDispatch(IntegrationTestCase):
 	def test_status_of_a_campaign_message_recounts_its_campaign(self):
 		"""The hand-off counts rows still `Sending`; the platform's answer must count them again."""
 		refresh = "whatsapp_next.services.campaign_runner.refresh_counters"
-		out = dispatch.create_outbound(_spec())
+		out = dispatch.create_outbound(_build_outbound_spec())
 		frappe.db.set_value("WhatsApp Log", out, "campaign", "WA-CAMP-TEST-CNT", update_modified=False)
 		with patch.object(frappe, "enqueue") as enq:
 			self.assertTrue(dispatch.apply_status(out, "Sent", provider_message_id="pm-cnt"))
@@ -678,7 +700,7 @@ class TestDispatch(IntegrationTestCase):
 		self.assertEqual(len(calls), 1)
 		self.assertEqual(calls[0].kwargs["campaign"], "WA-CAMP-TEST-CNT")
 		self.assertTrue(calls[0].kwargs["enqueue_after_commit"])
-		plain = dispatch.create_outbound(_spec(phone=P2))
+		plain = dispatch.create_outbound(_build_outbound_spec(phone=P2))
 		with patch.object(frappe, "enqueue") as enq:
 			dispatch.apply_status(plain, "Sent")
 		self.assertFalse([c for c in enq.call_args_list if c.args and c.args[0] == refresh])
@@ -700,30 +722,33 @@ class TestDispatch(IntegrationTestCase):
 				}
 			).insert(ignore_permissions=True)
 		try:
-			out = dispatch.create_outbound(_spec(phone=P3, source_type="Command Reply", skip_policy=True))
+			out = dispatch.create_outbound(
+				_build_outbound_spec(phone=P3, source_type="Command Reply", skip_policy=True)
+			)
 			row = frappe.db.get_value("WhatsApp Log", out, ["display_name", "contact"], as_dict=True)
 			self.assertEqual((row.display_name, row.contact), ("Dispatch Named Contact", contact))
-			given = dispatch.create_outbound(_spec(phone=P3, display_name="Given Name"))
+			given = dispatch.create_outbound(_build_outbound_spec(phone=P3, display_name="Given Name"))
 			self.assertEqual(frappe.db.get_value("WhatsApp Log", given, "display_name"), "Given Name")
 		finally:
 			delete_all("WhatsApp Number", {"name": P3})
 			delete_all("Contact", {"first_name": "Dispatch Named Contact"})
 
 	def test_send_test_message(self):
-		out = dispatch.create_outbound(_spec(is_test=True))
+		out = dispatch.create_outbound(_build_outbound_spec(is_test=True))
 		with fake_provider():
 			result = dispatch.send_test_message(out)
 		self.assertTrue(result.ok)
-		log = self._log(out)
+		log = self._get_outbound_log(out)
 		self.assertEqual((log.status, log.attempts), ("Sent", 1))
 		self.assertTrue(log.provider_message_id.startswith("pm-"))
-		out2 = dispatch.create_outbound(_spec(is_test=True, phone=P2))
+		out2 = dispatch.create_outbound(_build_outbound_spec(is_test=True, phone=P2))
 		with fake_provider() as fp:
 			fp.send_mode = "rejected"
 			result = dispatch.send_test_message(out2)
 		self.assertFalse(result.ok)
 		self.assertEqual(
-			(self._log(out2).status, self._log(out2).error_code), ("Failed", "insufficient_balance")
+			(self._get_outbound_log(out2).status, self._get_outbound_log(out2).error_code),
+			("Failed", "insufficient_balance"),
 		)
 
 	# -- queue management ------------------------------------------------------------
@@ -732,16 +757,18 @@ class TestDispatch(IntegrationTestCase):
 		(_o1, i1), (o2, i2) = self._queued(2)
 		with as_user("WhatsApp Manager"):
 			self.assertEqual(dispatch.pause_items([i1, i2], reason="hold"), 2)
-			self.assertEqual(self._item(i1).status, "Paused")
+			self.assertEqual(self._get_queue_item(i1).status, "Paused")
 			self.assertEqual(dispatch.claim_batch(self.device, 10), [])
 			self.assertEqual(dispatch.resume_items([i1]), 1)
-			self.assertEqual(self._item(i1).status, "Queued")
+			self.assertEqual(self._get_queue_item(i1).status, "Queued")
 			claimed = dispatch.claim_batch(self.device, 10)
 			self.assertEqual([c.name for c in claimed], [i1])
 			with self.assertRaises(WAStateConflictError):
 				dispatch.delete_items([i1, i2], reason="x")
 			self.assertEqual(dispatch.delete_items([i2], reason="no longer needed"), 1)
-			self.assertEqual((self._item(i2).status, self._log(o2).status), ("Deleted", "Cancelled"))
+			self.assertEqual(
+				(self._get_queue_item(i2).status, self._get_outbound_log(o2).status), ("Deleted", "Cancelled")
+			)
 			self.assertEqual(frappe.db.count("WhatsApp Queue Item", {"name": i2}), 1)  # never removed
 		actions = [
 			r.action
@@ -787,17 +814,22 @@ class TestDispatch(IntegrationTestCase):
 			fp.statuses.pop(o2)  # unknown to the platform
 			counts = reconcile.reconcile_handed_over()
 			self.assertEqual((counts["resolved"], counts["requeued"]), (1, 1))
-			self.assertEqual((self._log(o1).status, self._log(o1).provider_message_id), ("Sent", "pm-9"))
-			self.assertEqual((self._log(o2).status, self._item(i2).status), ("Queued", "Queued"))
+			self.assertEqual(
+				(self._get_outbound_log(o1).status, self._get_outbound_log(o1).provider_message_id),
+				("Sent", "pm-9"),
+			)
+			self.assertEqual(
+				(self._get_outbound_log(o2).status, self._get_queue_item(i2).status), ("Queued", "Queued")
+			)
 			# second unknown → Failed
 			dispatch.dispatch_device_batch(self.device)
 			frappe.db.set_value("WhatsApp Log", o2, "modified", old, update_modified=False)
 			fp.statuses.pop(o2, None)
 			counts = reconcile.reconcile_handed_over()
 			self.assertEqual(counts["failed_unknown"], 1)
-			self.assertEqual(self._log(o2).status, "Failed")
+			self.assertEqual(self._get_outbound_log(o2).status, "Failed")
 		# stale claim
-		o3, i3 = dispatch.create_and_enqueue(_spec(phone=P3))
+		o3, i3 = dispatch.create_and_enqueue(_build_outbound_spec(phone=P3))
 		dispatch.claim_batch(self.device, 10)
 		frappe.db.set_value(
 			"WhatsApp Queue Item",
@@ -807,7 +839,9 @@ class TestDispatch(IntegrationTestCase):
 			update_modified=False,
 		)
 		self.assertEqual(reconcile.requeue_stale_claims(), 1)
-		self.assertEqual((self._item(i3).status, self._log(o3).status), ("Queued", "Queued"))
+		self.assertEqual(
+			(self._get_queue_item(i3).status, self._get_outbound_log(o3).status), ("Queued", "Queued")
+		)
 		# coherence: drift fixed from the queue item
 		with status_writer():
 			frappe.db.set_value("WhatsApp Log", o3, "status", "Sending")
@@ -826,7 +860,7 @@ class TestDispatch(IntegrationTestCase):
 		)
 		try:
 			out, item = dispatch.create_and_enqueue(
-				_spec(phone=P3, reference_doctype="ToDo", reference_name=todo.name)
+				_build_outbound_spec(phone=P3, reference_doctype="ToDo", reference_name=todo.name)
 			)
 			with status_writer():
 				frappe.db.set_value("WhatsApp Queue Item", item, "status", "Dead Letter")
@@ -850,10 +884,10 @@ class TestDispatch(IntegrationTestCase):
 	# -- quick send ------------------------------------------------------------------
 
 	def test_quick_send_compose_and_helpers(self):
-		_out, item = quick_send.compose(_spec())
-		self.assertEqual(self._item(item).priority, 1)
+		_out, item = quick_send.compose(_build_outbound_spec())
+		self.assertEqual(self._get_queue_item(item).priority, 1)
 		with self.assertRaises(WAValidationError):
-			quick_send.compose(_spec(source_type="Campaign"))
+			quick_send.compose(_build_outbound_spec(source_type="Campaign"))
 		ensure_settings(queue_paused=1)
 		self.assertEqual(quick_send.warnings_for(self.device), ["queue_paused"])
 		ensure_settings(queue_paused=0)

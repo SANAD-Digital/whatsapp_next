@@ -23,7 +23,7 @@ class TestApiContacts(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ensure_settings()
-		cls._clean()
+		cls._delete_test_contacts_and_numbers()
 		if not frappe.db.exists("WhatsApp Contact Group", BLACKLIST):
 			frappe.get_doc(
 				{
@@ -39,20 +39,20 @@ class TestApiContacts(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_contacts_and_numbers()
 		ensure_settings(global_blacklist_group=None)
 		delete_all("WhatsApp Contact Group", {"group_name": BLACKLIST})
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_contacts_and_numbers()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_contacts_and_numbers():
 		delete_all("WhatsApp Number", {"phone_e164": ("in", [P1, P2, P3])})
 		delete_all("Contact", {"first_name": ("like", f"{PREFIX}%")})
 
-	def _seed(self) -> str:
+	def _create_contact_with_number(self) -> str:
 		with as_user("System Manager"):
 			name = api.create_contact(payload={"first_name": f"{PREFIX} A", "phone_nos": [{"phone": P1}]})[
 				"name"
@@ -93,7 +93,7 @@ class TestApiContacts(IntegrationTestCase):
 			with self.assertRaises(WAValidationError):
 				api.update_contact(name=name, payload={"owner": "x"})
 			self.assertEqual(api.get_contact_numbers(contact=name), [])
-		seeded = self._seed()
+		seeded = self._create_contact_with_number()
 		with as_user("WhatsApp Contact User"):
 			numbers = api.get_contact_numbers(contact=seeded)
 			self.assertEqual((numbers[0]["phone_e164"], numbers[0]["outbound_count"]), (P1, 2))
@@ -102,7 +102,7 @@ class TestApiContacts(IntegrationTestCase):
 			self.assertEqual(listed["page_length"], 200)
 
 	def test_search_party_and_blacklist(self):
-		name = self._seed()
+		name = self._create_contact_with_number()
 		with as_user("WhatsApp Contact User"):
 			rows = api.search_party(party_type="Customer", txt="", page_length=3)
 			for r in rows:
@@ -117,7 +117,7 @@ class TestApiContacts(IntegrationTestCase):
 
 	def test_stats_and_link_filters(self):
 		"""The screen's own numbers, and the two filters the list answers in the query."""
-		name = self._seed()
+		name = self._create_contact_with_number()
 		with as_user("System Manager"):
 			before = api.get_stats()
 			self.assertGreaterEqual(before["total"], 1)
@@ -148,7 +148,7 @@ class TestApiContacts(IntegrationTestCase):
 		"""Audit rows of another DocType that shares the contact's name stay out of its timeline."""
 		from whatsapp_next.services import audit
 
-		name = self._seed()
+		name = self._create_contact_with_number()
 		audit.record_audit_entry("Number Linked", reference=("WhatsApp Number", P1), target=("Contact", name))
 		stranger = frappe.get_doc(
 			{
@@ -173,7 +173,7 @@ class TestApiContacts(IntegrationTestCase):
 	def test_link_many(self):
 		if not self.customer:
 			self.skipTest("no Customer on this site")
-		a = self._seed()
+		a = self._create_contact_with_number()
 		with as_user("WhatsApp Contact User"):
 			b = api.create_contact(payload={"first_name": f"{PREFIX} B"})["name"]
 			res = api.link_many(

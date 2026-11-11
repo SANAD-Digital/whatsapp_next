@@ -203,8 +203,8 @@ def process_event(webhook_event: str) -> str:
 
 
 def _parse_try_count_from_error(error: str | None) -> int:
-	m = _TRY_RE.match(error or "")
-	return cint(m.group(1)) if m else 0
+	try_count_match = _TRY_RE.match(error or "")
+	return cint(try_count_match.group(1)) if try_count_match else 0
 
 
 STUCK_MINUTES = 10
@@ -230,12 +230,12 @@ def reprocess_failed(limit: int = 100) -> int:
 		order_by="received_at asc",
 		limit=cint(limit) or 100,
 	)
-	n = 0
+	reprocessed_count = 0
 	for r in rows:
 		if _parse_try_count_from_error(r.error) >= MAX_TRIES:
 			continue
 		with status_writer():
 			frappe.db.set_value("WhatsApp Webhook Event", r.name, "status", "Received", update_modified=False)
 		process_event(r.name)
-		n += 1
-	return n
+		reprocessed_count += 1
+	return reprocessed_count

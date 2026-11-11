@@ -206,7 +206,7 @@ def pause_campaign(campaign: str, user: str | None = None, reason: str | None = 
 		frappe.throw(_("Only a running campaign can be paused"), WAStateConflictError)
 	if frappe.db.get_value("WhatsApp Campaign", campaign, "status") == "Queued":
 		set_status(campaign, "Running")
-	n = dispatch.pause_items(
+	paused_count = dispatch.pause_items(
 		{"campaign": campaign}, user=user, reason=reason or f"campaign {campaign} paused"
 	)
 	set_status(
@@ -224,21 +224,25 @@ def pause_campaign(campaign: str, user: str | None = None, reason: str | None = 
 		update_modified=False,
 	)
 	audit.record_audit_entry(
-		"Campaign Paused", reference=("WhatsApp Campaign", campaign), user=user, reason=reason, count=n
+		"Campaign Paused",
+		reference=("WhatsApp Campaign", campaign),
+		user=user,
+		reason=reason,
+		count=paused_count,
 	)
-	return n
+	return paused_count
 
 
 def resume_campaign(campaign: str, user: str | None = None) -> int:
 	"""Resume a `Paused` campaign: its queue rows go back to `Queued`; audited. Returns the rows resumed."""
 	if frappe.db.get_value("WhatsApp Campaign", campaign, "status") != "Paused":
 		frappe.throw(_("Campaign is not paused"), WAStateConflictError)
-	n = dispatch.resume_items({"campaign": campaign}, user=user)
+	resumed_count = dispatch.resume_items({"campaign": campaign}, user=user)
 	set_status(campaign, "Running", paused_at=None, paused_by=None, pause_reason=None)
 	audit.record_audit_entry(
-		"Campaign Resumed", reference=("WhatsApp Campaign", campaign), user=user, count=n
+		"Campaign Resumed", reference=("WhatsApp Campaign", campaign), user=user, count=resumed_count
 	)
-	return n
+	return resumed_count
 
 
 def cancel_campaign(campaign: str, user: str | None = None, reason: str | None = None) -> int:
@@ -246,7 +250,7 @@ def cancel_campaign(campaign: str, user: str | None = None, reason: str | None =
 	status = frappe.db.get_value("WhatsApp Campaign", campaign, "status")
 	if status in TERMINAL:
 		frappe.throw(_("Campaign {0} is already {1}").format(campaign, _(status)), WAStateConflictError)
-	n = dispatch.delete_items(
+	cancelled_count = dispatch.delete_items(
 		{"campaign": campaign}, user=user, reason=reason or f"campaign {campaign} cancelled"
 	)
 	set_status(
@@ -266,10 +270,14 @@ def cancel_campaign(campaign: str, user: str | None = None, reason: str | None =
 			update_modified=False,
 		)
 	audit.record_audit_entry(
-		"Campaign Cancelled", reference=("WhatsApp Campaign", campaign), user=user, reason=reason, count=n
+		"Campaign Cancelled",
+		reference=("WhatsApp Campaign", campaign),
+		user=user,
+		reason=reason,
+		count=cancelled_count,
 	)
 	refresh_counters(campaign)
-	return n
+	return cancelled_count
 
 
 # ---- materialization ---------------------------------------------------------------------
@@ -294,7 +302,7 @@ def _render_for(source: str | None, recipient, campaign_doc) -> str | None:
 	text as written when it does not render, `None` when there is none."""
 	if not (source or "").strip():
 		return None
-	ctx = templates.context_for(
+	template_context = templates.context_for(
 		None,
 		None,
 		{"campaign": frappe._dict(name=campaign_doc.name, campaign_name=campaign_doc.campaign_name)},
@@ -312,8 +320,8 @@ def _render_for(source: str | None, recipient, campaign_doc) -> str | None:
 		and recipient.source_name
 		and frappe.db.exists(recipient.source_doctype, recipient.source_name)
 	):
-		ctx["doc"] = frappe.get_doc(recipient.source_doctype, recipient.source_name)
-	return templates.render_text(source, ctx, fallback=source)
+		template_context["doc"] = frappe.get_doc(recipient.source_doctype, recipient.source_name)
+	return templates.render_text(source, template_context, fallback=source)
 
 
 def _recipient_attachment(msg, recipient, campaign_doc) -> dict[str, Any]:
@@ -534,20 +542,20 @@ def retried_failures(campaigns: list[str]) -> dict[str, list[str]]:
 	message again to people who had it (live business test 2026-10-01)."""
 	if not campaigns:
 		return {}
-	L = frappe.qb.DocType("WhatsApp Log")
-	N = frappe.qb.DocType("WhatsApp Log").as_("later")
+	log_table = frappe.qb.DocType("WhatsApp Log")
+	later_log_table = frappe.qb.DocType("WhatsApp Log").as_("later")
 	rows = (
-		frappe.qb.from_(L)
-		.join(N)
+		frappe.qb.from_(log_table)
+		.join(later_log_table)
 		.on(
-			(N.campaign == L.campaign)
-			& (N.campaign_recipient == L.campaign_recipient)
-			& (N.campaign_message_idx == L.campaign_message_idx)
-			& (N.creation > L.creation)
+			(later_log_table.campaign == log_table.campaign)
+			& (later_log_table.campaign_recipient == log_table.campaign_recipient)
+			& (later_log_table.campaign_message_idx == log_table.campaign_message_idx)
+			& (later_log_table.creation > log_table.creation)
 		)
-		.select(L.campaign, L.name)
+		.select(log_table.campaign, log_table.name)
 		.distinct()
-		.where(L.campaign.isin(list(campaigns)) & (L.status == "Failed"))
+		.where(log_table.campaign.isin(list(campaigns)) & (log_table.status == "Failed"))
 		.run(as_dict=True)
 	)
 	out: dict[str, list[str]] = {}
@@ -565,32 +573,32 @@ def counters_for_many(campaigns: list[str]) -> dict[str, Counters]:
 	"""`counters_for` of several campaigns from one grouped query (the list's live strips)."""
 	if not campaigns:
 		return {}
-	L = frappe.qb.DocType("WhatsApp Log")
+	log_table = frappe.qb.DocType("WhatsApp Log")
 	rows = (
-		frappe.qb.from_(L)
-		.select(L.campaign, L.status, Count("*").as_("n"))
-		.where(L.campaign.isin(list(campaigns)))
-		.groupby(L.campaign, L.status)
+		frappe.qb.from_(log_table)
+		.select(log_table.campaign, log_table.status, Count("*").as_("n"))
+		.where(log_table.campaign.isin(list(campaigns)))
+		.groupby(log_table.campaign, log_table.status)
 		.run(as_dict=True)
 	)
 	out: dict[str, Counters] = {}
 	for r in rows:
-		c = out.setdefault(r.campaign, Counters())
-		n = cint(r.n)
-		c.total += n
+		campaign_counters = out.setdefault(r.campaign, Counters())
+		message_count = cint(r.n)
+		campaign_counters.total += message_count
 		if r.status in OPEN_OUTBOUND:
-			c.queued += n
-			c.open += n
+			campaign_counters.queued += message_count
+			campaign_counters.open += message_count
 		elif r.status == "Sent":
-			c.sent += n
+			campaign_counters.sent += message_count
 		elif r.status == "Delivered":
-			c.delivered += n
+			campaign_counters.delivered += message_count
 		elif r.status == "Read":
-			c.read += n
+			campaign_counters.read += message_count
 		elif r.status == "Failed":
-			c.failed += n
+			campaign_counters.failed += message_count
 		elif r.status == "Cancelled":
-			c.cancelled += n
+			campaign_counters.cancelled += message_count
 	# a failure that was sent again is not a message of its own any more
 	for campaign, names in retried_failures(list(out)).items():
 		out[campaign].failed -= len(names)
@@ -601,16 +609,16 @@ def counters_for_many(campaigns: list[str]) -> dict[str, Counters]:
 def refresh_counters(campaign: str) -> Counters:
 	"""Job (`short`, `wa-camp-cnt-{name}`): grouped count → campaign counters and recipient
 	statuses; then `finalize_if_done`."""
-	c = counters_for(campaign)
-	L = frappe.qb.DocType("WhatsApp Log")
+	campaign_counters = counters_for(campaign)
+	log_table = frappe.qb.DocType("WhatsApp Log")
 	last_row = (
-		frappe.qb.from_(L)
-		.select(Max(L.sent_at).as_("last"), Min(L.sent_at).as_("first"))
-		.where((L.campaign == campaign) & L.status.isin(["Sent", "Delivered", "Read"]))
+		frappe.qb.from_(log_table)
+		.select(Max(log_table.sent_at).as_("last"), Min(log_table.sent_at).as_("first"))
+		.where((log_table.campaign == campaign) & log_table.status.isin(["Sent", "Delivered", "Read"]))
 		.run(as_dict=True)
 	)
 	last = last_row[0].last if last_row else None
-	values = {**c.as_values(), "last_message_at": last}
+	values = {**campaign_counters.as_values(), "last_message_at": last}
 	if last_row and last_row[0].first:
 		# `materialize` stamps this when the rows are created (it is also its "already built" mark);
 		# once a message has really left, it is that message's time — a campaign whose first message
@@ -618,9 +626,9 @@ def refresh_counters(campaign: str) -> Counters:
 		values["first_message_at"] = last_row[0].first
 	frappe.db.set_value("WhatsApp Campaign", campaign, values, update_modified=False)
 	_sync_recipient_statuses(campaign)
-	_publish(campaign, frappe.db.get_value("WhatsApp Campaign", campaign, "status"), c)
-	finalize_if_done(campaign, counters=c)
-	return c
+	_publish(campaign, frappe.db.get_value("WhatsApp Campaign", campaign, "status"), campaign_counters)
+	finalize_if_done(campaign, counters=campaign_counters)
+	return campaign_counters
 
 
 def _sync_recipient_statuses(campaign: str) -> None:
@@ -648,8 +656,8 @@ def finalize_if_done(campaign: str, counters: Counters | None = None) -> bool:
 	status = frappe.db.get_value("WhatsApp Campaign", campaign, "status")
 	if status not in ("Running", "Queued"):
 		return False
-	c = counters or counters_for(campaign)
-	if c.open:
+	campaign_counters = counters or counters_for(campaign)
+	if campaign_counters.open:
 		return False
 	recipients = {
 		r.status: cint(r.n)
@@ -665,12 +673,12 @@ def finalize_if_done(campaign: str, counters: Counters | None = None) -> bool:
 	# No message at all is final only once the audience was worked through: every recipient set
 	# aside by the unknown-number policy, or none of their messages could be created. Without this
 	# such a campaign stayed `Running` for ever. Before materialization the recipients are `Pending`.
-	if c.total == 0 and (status != "Running" or not any(recipients.values())):
+	if campaign_counters.total == 0 and (status != "Running" or not any(recipients.values())):
 		return False
-	failed = c.failed or (recipients.get("Failed", 0) if c.total == 0 else 0)
+	failed = campaign_counters.failed or (recipients.get("Failed", 0) if campaign_counters.total == 0 else 0)
 	final = "Completed" if failed == 0 else "Partially Failed"
 	# the closing counts go down with the status: a closed campaign never shows stale numbers
-	set_status(campaign, final, ended_at=now_datetime(), **c.as_values())
+	set_status(campaign, final, ended_at=now_datetime(), **campaign_counters.as_values())
 	return True
 
 
@@ -728,7 +736,7 @@ def progress(campaign: str) -> dict[str, Any]:
 	row = frappe.db.get_value("WhatsApp Campaign", campaign, list(PROGRESS_FIELDS), as_dict=True)
 	if not row:
 		frappe.throw(_("WhatsApp Campaign {0} not found").format(campaign), WAValidationError)
-	c = counters_for(campaign)
+	campaign_counters = counters_for(campaign)
 	rate = cint(row.messages_per_minute) or cint(
 		frappe.get_cached_doc("WhatsApp Settings").messages_per_minute
 	)
@@ -737,7 +745,7 @@ def progress(campaign: str) -> dict[str, Any]:
 		"WhatsApp Log",
 		{"campaign": campaign, "status": ("in", ["Sent", "Delivered", "Read"]), "sent_at": (">=", since)},
 	)
-	done = c.total - c.open
+	done = campaign_counters.total - campaign_counters.open
 	recent = frappe.get_all(
 		"WhatsApp Log",
 		filters={"campaign": campaign},
@@ -758,12 +766,12 @@ def progress(campaign: str) -> dict[str, Any]:
 	)
 	return {
 		**row,
-		"counters": dict(c.__dict__),
+		"counters": dict(campaign_counters.__dict__),
 		"rates": {
 			"messages_per_minute": rate,
 			"sent_last_minute": cint(sent_last_minute),
-			"percent": round(done * 100 / c.total, 1) if c.total else 0.0,
-			"eta_seconds": int(c.open * 60 / rate) if rate and c.open else 0,
+			"percent": round(done * 100 / campaign_counters.total, 1) if campaign_counters.total else 0.0,
+			"eta_seconds": int(campaign_counters.open * 60 / rate) if rate and campaign_counters.open else 0,
 		},
 		"recent": recent,
 	}
@@ -778,7 +786,7 @@ def preview_message(campaign: str, idx: int, recipient_row: str | None = None) -
 	idx = cint(idx)
 	if idx < 1 or idx > len(messages):
 		frappe.throw(_("Campaign has no message {0}").format(idx), WAValidationError)
-	msg = messages[idx - 1]
+	campaign_message = messages[idx - 1]
 	recipient = None
 	if recipient_row:
 		recipient = next((r for r in doc.get("recipients") or [] if r.name == recipient_row), None)
@@ -792,27 +800,30 @@ def preview_message(campaign: str, idx: int, recipient_row: str | None = None) -
 			source_doctype=None,
 			source_name=None,
 		)
-	source = msg.body or (
-		frappe.db.get_value("WhatsApp Template", msg.template, "body") if msg.template else None
+	source = campaign_message.body or (
+		frappe.db.get_value("WhatsApp Template", campaign_message.template, "body")
+		if campaign_message.template
+		else None
 	)
 	attachment_name = None
-	if msg.attachment:
+	if campaign_message.attachment:
 		attachment_name = (
-			frappe.db.get_value("File", {"file_url": msg.attachment}, "file_name") or msg.attachment
+			frappe.db.get_value("File", {"file_url": campaign_message.attachment}, "file_name")
+			or campaign_message.attachment
 		)
-	elif msg.message_type == "Document" and msg.print_format:
+	elif campaign_message.message_type == "Document" and campaign_message.print_format:
 		attachment_name = templates.render_text(
-			msg.file_name_template,
+			campaign_message.file_name_template,
 			{"doc": frappe._dict(name=recipient.source_name), "recipient": recipient},
-			fallback=recipient.source_name or msg.print_format,
+			fallback=recipient.source_name or campaign_message.print_format,
 		)
 	return {
 		"idx": idx,
-		"message_type": msg.message_type,
-		"body": _render_message_body(msg, recipient, doc),
-		"caption": _render_caption(msg, recipient, doc),
+		"message_type": campaign_message.message_type,
+		"body": _render_message_body(campaign_message, recipient, doc),
+		"caption": _render_caption(campaign_message, recipient, doc),
 		"attachment_name": attachment_name,
-		"errors": templates.compile_check(source) + templates.compile_check(msg.caption),
+		"errors": templates.compile_check(source) + templates.compile_check(campaign_message.caption),
 	}
 
 
@@ -844,20 +855,22 @@ def poll_results(campaign: str, *, refresh: bool = False) -> dict[str, Any]:
 		},
 		fields=["poll_id", "provider_message_id", "campaign_message_idx"],
 	)
-	ids_by_idx: dict[int, list[str]] = {}
+	poll_ids_by_message: dict[int, list[str]] = {}
 	for r in rows:
 		# WhatsApp's own message id is the poll's id at the gateway; `poll_id` can hold a stand-in the
 		# platform made up when a send answer carried none (and rows sent before it was stored have none)
 		poll_id = r.provider_message_id or r.poll_id
 		if poll_id:
-			ids_by_idx.setdefault(cint(r.campaign_message_idx) or 1, []).append(poll_id)
+			poll_ids_by_message.setdefault(cint(r.campaign_message_idx) or 1, []).append(poll_id)
 	for idx, msg in poll_messages.items():
 		options = polls.parse_options(msg.poll_options)
-		ids = ids_by_idx.get(idx, [])
-		res = (
+		ids = poll_ids_by_message.get(idx, [])
+		message_poll_results = (
 			polls.fetch_results(platform_device, ids, options) if ids else polls.PollResults(options=options)
 		)
-		out["results"].append({"idx": idx, "question": msg.poll_question, "sent": len(ids), **res.as_dict()})
+		out["results"].append(
+			{"idx": idx, "question": msg.poll_question, "sent": len(ids), **message_poll_results.as_dict()}
+		)
 	frappe.cache.set_value(key, out, expires_in_sec=POLL_CACHE_SECONDS)
 	return out
 
@@ -956,8 +969,8 @@ def readiness(campaign: str) -> dict[str, Any]:
 			bad_variables.append({"idx": i, "errors": problems})
 
 	by_source: dict[str, int] = {}
-	for r in active:
-		by_source[r.source_type or "Manual"] = by_source.get(r.source_type or "Manual", 0) + 1
+	for recipient in active:
+		by_source[recipient.source_type or "Manual"] = by_source.get(recipient.source_type or "Manual", 0) + 1
 	excluded = frappe.db.count(
 		"WhatsApp Campaign Recipient",
 		{
@@ -996,16 +1009,16 @@ def readiness(campaign: str) -> dict[str, Any]:
 def failures(campaign: str) -> dict[str, Any]:
 	"""Where the campaign's failures are concentrated: one row per `error_code` with its share and
 	whether the dispatcher counts that code as retryable (`services/errors.RETRYABLE`)."""
-	L = frappe.qb.DocType("WhatsApp Log")
+	log_table = frappe.qb.DocType("WhatsApp Log")
 	query = (
-		frappe.qb.from_(L)
-		.select(L.error_code, Count("*").as_("n"))
-		.where((L.campaign == campaign) & (L.status == "Failed"))
-		.groupby(L.error_code)
+		frappe.qb.from_(log_table)
+		.select(log_table.error_code, Count("*").as_("n"))
+		.where((log_table.campaign == campaign) & (log_table.status == "Failed"))
+		.groupby(log_table.error_code)
 	)
 	retried = retried_failures([campaign]).get(campaign) or []
 	if retried:  # sent again since: no longer a failure to act on
-		query = query.where(L.name.notin(retried))
+		query = query.where(log_table.name.notin(retried))
 	grouped = query.run(as_dict=True)
 	total = sum(cint(r["n"]) for r in grouped)
 	rows: list[dict[str, Any]] = []
@@ -1045,22 +1058,24 @@ def failures(campaign: str) -> dict[str, Any]:
 def message_stats(campaign: str) -> dict[str, Any]:
 	"""Each message of the campaign with what became of it — the counts of its own outbound rows,
 	so a campaign that fails on its third message says so instead of averaging it away."""
-	L = frappe.qb.DocType("WhatsApp Log")
+	log_table = frappe.qb.DocType("WhatsApp Log")
 	grouped = (
-		frappe.qb.from_(L)
-		.select(L.campaign_message_idx, L.status, Count("*").as_("n"))
-		.where(L.campaign == campaign)
-		.groupby(L.campaign_message_idx, L.status)
+		frappe.qb.from_(log_table)
+		.select(log_table.campaign_message_idx, log_table.status, Count("*").as_("n"))
+		.where(log_table.campaign == campaign)
+		.groupby(log_table.campaign_message_idx, log_table.status)
 		.run(as_dict=True)
 	)
-	by_idx: dict[int, dict[str, int]] = {}
-	for r in grouped:
-		by_idx.setdefault(cint(r["campaign_message_idx"]) or 1, {})[r["status"]] = cint(r["n"])
+	status_counts_by_message: dict[int, dict[str, int]] = {}
+	for count_row in grouped:
+		status_counts_by_message.setdefault(cint(count_row["campaign_message_idx"]) or 1, {})[
+			count_row["status"]
+		] = cint(count_row["n"])
 
 	doc = _get_campaign_doc(campaign)
 	rows = []
 	for i, m in enumerate(doc.get("messages") or [], start=1):
-		counts = by_idx.get(i, {})
+		counts = status_counts_by_message.get(i, {})
 		rows.append(
 			{
 				"idx": i,
@@ -1204,25 +1219,30 @@ def overview(days: int = 30) -> dict[str, Any]:
 	since = add_to_date(now_datetime(), days=-window)
 
 	states: dict[str, int] = dict.fromkeys(STATUSES, 0)
-	C = frappe.qb.DocType("WhatsApp Campaign")
-	for row in frappe.qb.from_(C).select(C.status, Count("*").as_("n")).groupby(C.status).run(as_dict=True):
+	campaign_table = frappe.qb.DocType("WhatsApp Campaign")
+	for row in (
+		frappe.qb.from_(campaign_table)
+		.select(campaign_table.status, Count("*").as_("n"))
+		.groupby(campaign_table.status)
+		.run(as_dict=True)
+	):
 		states[row["status"]] = cint(row["n"])
 
 	# The recipients of the active campaigns still waiting for a message. Counted on the recipient
 	# rows: the campaign counters count *messages* (recipients × messages) in disjoint buckets, so
 	# `total_recipients - sent_count - failed_count` mixed units and counted every delivered or read
 	# recipient as still in flight.
-	R = frappe.qb.DocType("WhatsApp Campaign Recipient")
+	recipient_table = frappe.qb.DocType("WhatsApp Campaign Recipient")
 	in_flight = cint(
 		(
-			frappe.qb.from_(R)
-			.join(C)
-			.on(R.parent == C.name)
+			frappe.qb.from_(recipient_table)
+			.join(campaign_table)
+			.on(recipient_table.parent == campaign_table.name)
 			.select(Count("*"))
 			.where(
-				(R.parenttype == "WhatsApp Campaign")
-				& C.status.isin(["Running", "Queued", "Paused"])
-				& R.status.isin(["Pending", "Queued"])
+				(recipient_table.parenttype == "WhatsApp Campaign")
+				& campaign_table.status.isin(["Running", "Queued", "Paused"])
+				& recipient_table.status.isin(["Pending", "Queued"])
 			)
 		).run()[0][0]
 	)
@@ -1232,15 +1252,15 @@ def overview(days: int = 30) -> dict[str, Any]:
 	# `sent` is everything that left, `delivered` everything that arrived (read included).
 	# summed in the database: one row, however many campaigns the window holds
 	totals_row = (
-		frappe.qb.from_(C)
+		frappe.qb.from_(campaign_table)
 		.select(
-			Sum(C.total_recipients).as_("recipients"),
-			Sum(C.sent_count).as_("sent"),
-			Sum(C.delivered_count).as_("delivered"),
-			Sum(C.read_count).as_("read"),
-			Sum(C.failed_count).as_("failed"),
+			Sum(campaign_table.total_recipients).as_("recipients"),
+			Sum(campaign_table.sent_count).as_("sent"),
+			Sum(campaign_table.delivered_count).as_("delivered"),
+			Sum(campaign_table.read_count).as_("read"),
+			Sum(campaign_table.failed_count).as_("failed"),
 		)
-		.where(C.started_at >= since)
+		.where(campaign_table.started_at >= since)
 	).run(as_dict=True)[0]
 	sent, delivered, read = (cint(totals_row[k]) for k in ("sent", "delivered", "read"))
 	totals = {
@@ -1252,12 +1272,14 @@ def overview(days: int = 30) -> dict[str, Any]:
 	}
 
 	# what campaign sending actually achieved in the last hour, not the rate someone configured
-	L = frappe.qb.DocType("WhatsApp Log")
+	log_table = frappe.qb.DocType("WhatsApp Log")
 	sent_last_hour = cint(
 		(
-			frappe.qb.from_(L)
+			frappe.qb.from_(log_table)
 			.select(Count("*"))
-			.where(L.campaign.notnull() & (L.sent_at >= add_to_date(now_datetime(), minutes=-60)))
+			.where(
+				log_table.campaign.notnull() & (log_table.sent_at >= add_to_date(now_datetime(), minutes=-60))
+			)
 		).run()[0][0]
 	)
 

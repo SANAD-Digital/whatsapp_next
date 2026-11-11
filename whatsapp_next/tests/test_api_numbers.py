@@ -36,17 +36,17 @@ class TestApiNumbers(IntegrationTestCase):
 		ensure_settings()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_numbers_and_contacts()
 		for key, display in ((N1, f"{PREFIX} Push"), (N2, None), (N3, None), (GROUP, "ApiTest Group")):
 			frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": key, "display_name": display}).insert(
 				ignore_permissions=True
 			)
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_numbers_and_contacts()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_numbers_and_contacts():
 		delete_all("WhatsApp Audit Log", {"reference_name": ("in", [N1, N2, N3, GROUP])})
 		delete_all("WhatsApp Number", {"name": ("in", [N1, N2, N3, GROUP])})
 		delete_all("Contact", {"first_name": ("like", f"{PREFIX}%")})

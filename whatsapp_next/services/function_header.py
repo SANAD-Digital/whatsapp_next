@@ -53,14 +53,14 @@ def header_block(script: str | None) -> list[tuple[int, str]]:
 	lines: list[tuple[int, str]] = []
 	inside = found = ended = False
 	for line_no, raw in enumerate((script or "").splitlines(), start=1):
-		st = raw.strip()
-		if not st.startswith("#"):
+		stripped_line = raw.strip()
+		if not stripped_line.startswith("#"):
 			if inside:
 				raise HeaderError(
 					_("A line inside the header is not a comment") + _format_line_number_suffix(line_no)
 				)
 			continue
-		text = st.lstrip("#").strip()
+		text = stripped_line.lstrip("#").strip()
 		if END in text:
 			if not inside:
 				raise HeaderError(_("Header end without a beginning") + _format_line_number_suffix(line_no))
@@ -119,12 +119,14 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 			if chunk.startswith(" "):
 				chunk = chunk[1:]
 			param, lang = current
-			p = by_name[param]
+			param_spec = by_name[param]
 			if lang:
-				before = p["defaults_by_lang"].get(lang)
-				p["defaults_by_lang"][lang] = chunk if before is None else before + "\n" + chunk
+				before = param_spec["defaults_by_lang"].get(lang)
+				param_spec["defaults_by_lang"][lang] = chunk if before is None else before + "\n" + chunk
 			else:
-				p["default"] = chunk if p["default"] is None else p["default"] + "\n" + chunk
+				param_spec["default"] = (
+					chunk if param_spec["default"] is None else param_spec["default"] + "\n" + chunk
+				)
 			continue
 		current = None
 		if not text.startswith("@"):
@@ -169,42 +171,42 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 				raise HeaderError(
 					_("Parameter «{0}» is declared twice").format(name) + _format_line_number_suffix(line_no)
 				)
-			opts = _parse_header_options(options, line_no)
+			parsed_options = _parse_header_options(options, line_no)
 			ftype, _sep, ftarget = fieldtype.partition(":")
 			if ftype not in FIELDTYPES:
 				raise HeaderError(
 					_("Unknown field type «{0}»").format(ftype) + _format_line_number_suffix(line_no)
 				)
-			source = opts.get("source", "command")
+			source = parsed_options.get("source", "command")
 			if source not in SOURCES:
 				raise HeaderError(_("source is sender or command") + _format_line_number_suffix(line_no))
 			dep = None
-			if opts.get("depends_on"):
-				dp, colon, dv = opts["depends_on"].partition(":")
+			if parsed_options.get("depends_on"):
+				depends_on_param, colon, depends_on_value = parsed_options["depends_on"].partition(":")
 				if not colon:
 					raise HeaderError(
 						_("depends_on takes <parameter>:<value>") + _format_line_number_suffix(line_no)
 					)
-				if dp.strip() not in by_name:
+				if depends_on_param.strip() not in by_name:
 					raise HeaderError(
 						_("depends_on names a parameter not declared before it")
 						+ _format_line_number_suffix(line_no)
 					)
-				dep = {"param": dp.strip(), "value": dv.strip().lower()}
-			p = {
+				dep = {"param": depends_on_param.strip(), "value": depends_on_value.strip().lower()}
+			param_spec = {
 				"name": name,
 				"fieldtype": ftype,
 				"options": ftarget or None,
 				"required": required == "required",
 				"source": source,
-				"default": opts.get("default"),
+				"default": parsed_options.get("default"),
 				"defaults_by_lang": {},
 				"label": label,
 				"select_options": None,
 				"depends_on": dep,
 			}
-			spec["params"].append(p)
-			by_name[name] = p
+			spec["params"].append(param_spec)
+			by_name[name] = param_spec
 		elif tag == "options":
 			param, _bar, values = value.partition("|")
 			if param.strip() not in by_name:
@@ -213,7 +215,7 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 				)
 			by_name[param.strip()]["select_options"] = [o.strip() for o in values.split(",") if o.strip()]
 		elif tag == "default":
-			param, _sp, lang = value.partition(" ")
+			param, _space, lang = value.partition(" ")
 			if param not in by_name:
 				raise HeaderError(
 					_("@default for a parameter not declared") + _format_line_number_suffix(line_no)
@@ -239,8 +241,8 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 					_("@reply takes key | text/report | options | title")
 					+ _format_line_number_suffix(line_no)
 				)
-			opts = _parse_header_options(cols[2], line_no)
-			if cols[1] == "report" and not opts.get("report"):
+			parsed_options = _parse_header_options(cols[2], line_no)
+			if cols[1] == "report" and not parsed_options.get("report"):
 				raise HeaderError(
 					_("A report reply needs report=<report name>") + _format_line_number_suffix(line_no)
 				)
@@ -248,8 +250,8 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 				{
 					"key": cols[0],
 					"type": cols[1],
-					"report_name": opts.get("report"),
-					"format": opts.get("format") or ("PDF" if cols[1] == "report" else None),
+					"report_name": parsed_options.get("report"),
+					"format": parsed_options.get("format") or ("PDF" if cols[1] == "report" else None),
 					"label": cols[3],
 				}
 			)
@@ -258,9 +260,9 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 
 	if not spec["function"]:
 		raise HeaderError(_("The header has no @function"))
-	for p in spec["params"]:
-		if p["fieldtype"] == "Select" and not p["select_options"]:
-			raise HeaderError(_("Parameter «{0}» is a Select without @options").format(p["name"]))
+	for param_spec in spec["params"]:
+		if param_spec["fieldtype"] == "Select" and not param_spec["select_options"]:
+			raise HeaderError(_("Parameter «{0}» is a Select without @options").format(param_spec["name"]))
 	keys = [r["key"] for r in spec["replies"]]
 	if len(keys) != len(set(keys)):
 		raise HeaderError(_("A @reply key is declared twice"))
@@ -330,32 +332,36 @@ def vars_for(spec: dict[str, Any], template_param: str) -> list[dict[str, Any]]:
 
 def resolve_date(value: Any):
 	"""A date or a date word: today, yesterday, week_start, month_start, year_start, ±Nd."""
-	v = str(value).strip().lower()
+	date_word = str(value).strip().lower()
 	today = getdate(nowdate())
-	if v in ("today", "اليوم"):
+	if date_word in ("today", "اليوم"):
 		return today
-	if v in ("yesterday", "أمس", "امس"):
+	if date_word in ("yesterday", "أمس", "امس"):
 		return add_days(today, -1)
-	if v == "week_start":
+	if date_word == "week_start":
 		return add_days(today, -((today.weekday() - 5) % 7))
-	if v == "month_start":
+	if date_word == "month_start":
 		return get_first_day(today)
-	if v == "year_start":
+	if date_word == "year_start":
 		return get_year_start(today)
-	if v.endswith("d") and v[:-1].lstrip("-").isdigit():
-		return add_days(today, int(v[:-1]))
+	if date_word.endswith("d") and date_word[:-1].lstrip("-").isdigit():
+		return add_days(today, int(date_word[:-1]))
 	return getdate(value)
 
 
 def current_fiscal_year(company: str | None) -> str | None:
 	"""The fiscal year today falls in, for `company` (a year with no companies is everyone's)."""
-	fy = frappe.qb.DocType("Fiscal Year")
+	fiscal_year_table = frappe.qb.DocType("Fiscal Year")
 	today = getdate(nowdate())
 	rows = (
-		frappe.qb.from_(fy)
-		.select(fy.name)
-		.where((fy.disabled == 0) & (fy.year_start_date <= today) & (fy.year_end_date >= today))
-		.orderby(fy.year_start_date, order=frappe.qb.desc)
+		frappe.qb.from_(fiscal_year_table)
+		.select(fiscal_year_table.name)
+		.where(
+			(fiscal_year_table.disabled == 0)
+			& (fiscal_year_table.year_start_date <= today)
+			& (fiscal_year_table.year_end_date >= today)
+		)
+		.orderby(fiscal_year_table.year_start_date, order=frappe.qb.desc)
 		.run(as_dict=True)
 	)
 	for row in rows:

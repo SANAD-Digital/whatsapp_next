@@ -168,9 +168,9 @@ def decode_cursor(cursor: str | dt.datetime | None) -> tuple[dt.datetime, str | 
 	if isinstance(cursor, dt.datetime):
 		return cursor, None
 	text = str(cursor)
-	ts, _sep, name = text.partition("|")
+	timestamp_text, _sep, name = text.partition("|")
 	try:
-		parsed = get_datetime(ts)
+		parsed = get_datetime(timestamp_text)
 	except Exception:
 		parsed = None
 	if not isinstance(parsed, dt.datetime):
@@ -277,58 +277,58 @@ def _key_condition_outbound(L, keys: list[str]):
 	# `phone_e164` is indexed; the JID branch only matters for group/LID keys.
 	e164 = [k for k in keys if not is_group_or_lid(k)]
 	jids = [k for k in keys if is_group_or_lid(k)]
-	cond = None
+	key_condition = None
 	if e164:
-		cond = L.phone_e164.isin(e164)
+		key_condition = L.phone_e164.isin(e164)
 	if jids:
-		c = L.jid.isin(jids)
-		cond = c if cond is None else (cond | c)
+		jid_condition = L.jid.isin(jids)
+		key_condition = jid_condition if key_condition is None else (key_condition | jid_condition)
 	# The indexed columns only narrow the scan; the row belongs to a key only when its key
 	# expression is that key (a group row can carry a member's number in `phone_e164`).
-	return None if cond is None else cond & _outbound_key(L).isin(keys)
+	return None if key_condition is None else key_condition & _outbound_key(L).isin(keys)
 
 
 def _key_condition_inbound(I, keys: list[str]):
 	e164 = [k for k in keys if not is_group_or_lid(k)]
 	jids = [k for k in keys if is_group_or_lid(k)]
-	cond = None
+	key_condition = None
 	if e164:
-		cond = I.phone_e164.isin(e164)
+		key_condition = I.phone_e164.isin(e164)
 	if jids:
-		c = I.chat_jid.isin(jids) | I.sender_jid.isin(jids)
-		cond = c if cond is None else (cond | c)
+		jid_condition = I.chat_jid.isin(jids) | I.sender_jid.isin(jids)
+		key_condition = jid_condition if key_condition is None else (key_condition | jid_condition)
 	# A member's message in a group matches `phone_e164` / `sender_jid` but is the group's
 	# (keyed by `chat_jid`), and a LID sender with a known number is keyed by that number: without
 	# this, a person's 1:1 thread showed their group messages and a LID key's aggregate overwrote
 	# the number's counters and last direction.
-	return None if cond is None else cond & _inbound_key(I).isin(keys)
+	return None if key_condition is None else key_condition & _inbound_key(I).isin(keys)
 
 
-def _apply_filters(q, table, ts_col, key_cond, filters: dict[str, Any]):
-	"""Shared WHERE for both branches. `key_cond` is the branch-specific key predicate."""
-	if key_cond is not None:
-		q = q.where(key_cond)
+def _apply_filters(query, table, timestamp_column, key_condition, filters: dict[str, Any]):
+	"""Shared WHERE for both branches. `key_condition` is the branch-specific key predicate."""
+	if key_condition is not None:
+		query = query.where(key_condition)
 	if filters.get("device"):
-		dev = filters["device"]
-		q = q.where(
-			table.device.isin(list(dev)) if isinstance(dev, list | tuple | set) else table.device == dev
+		devices = filters["device"]
+		query = query.where(
+			table.device.isin(list(devices)) if isinstance(devices, list | tuple | set) else table.device == devices
 		)
 	if filters.get("contact"):
-		q = q.where(table.contact == filters["contact"])
+		query = query.where(table.contact == filters["contact"])
 	if filters.get("message_type"):
-		q = q.where(table.message_type == filters["message_type"])
+		query = query.where(table.message_type == filters["message_type"])
 	if filters.get("from"):
-		q = q.where(ts_col >= get_datetime(filters["from"]))
+		query = query.where(timestamp_column >= get_datetime(filters["from"]))
 	if filters.get("to"):
-		q = q.where(ts_col <= get_datetime(filters["to"]))
+		query = query.where(timestamp_column <= get_datetime(filters["to"]))
 	before = decode_cursor(filters.get("before"))
 	if before:
-		b_ts, b_name = before
-		if b_name:
-			q = q.where((ts_col < b_ts) | ((ts_col == b_ts) & (table.name < b_name)))
+		before_timestamp, before_name = before
+		if before_name:
+			query = query.where((timestamp_column < before_timestamp) | ((timestamp_column == before_timestamp) & (table.name < before_name)))
 		else:
-			q = q.where(ts_col < b_ts)
-	return q
+			query = query.where(timestamp_column < before_timestamp)
+	return query
 
 
 def _build_messages_union_query(
@@ -342,24 +342,30 @@ def _build_messages_union_query(
 
 	`filters["direction"]` restricts to one branch (then no union is built at all — a plain
 	query on that table — so callers still get one statement)."""
-	L = frappe.qb.DocType("WhatsApp Log")
-	I = frappe.qb.DocType("WhatsApp Inbound Message")
+	log_table = frappe.qb.DocType("WhatsApp Log")
+	inbound_message_table = frappe.qb.DocType("WhatsApp Inbound Message")
 	direction = filters.get("direction")
 	branches = []
 	for T, d, ts_col, build, key_cond_for in (
-		(L, OUTBOUND, L.creation, _outbound_branch, _key_condition_outbound),
-		(I, INBOUND, I.received_at, _inbound_branch, _key_condition_inbound),
+		(log_table, OUTBOUND, log_table.creation, _outbound_branch, _key_condition_outbound),
+		(
+			inbound_message_table,
+			INBOUND,
+			inbound_message_table.received_at,
+			_inbound_branch,
+			_key_condition_inbound,
+		),
 	):
 		if direction not in (None, "", d):
 			continue
-		cond = key_cond_for(T, keys) if keys else None
-		if keys and cond is None:
+		key_condition = key_cond_for(T, keys) if keys else None
+		if keys and key_condition is None:
 			continue  # every requested key is of a kind this branch cannot hold
-		q = _apply_filters(build(T), T, ts_col, cond, filters)
+		branch_query = _apply_filters(build(T), T, ts_col, key_condition, filters)
 		if limit:
 			# Per-branch ORDER/LIMIT lets each side stop at `limit` rows before the union.
-			q = q.orderby(ts_col, order=order).orderby(T.name, order=order).limit(limit)
-		branches.append(q)
+			branch_query = branch_query.orderby(ts_col, order=order).orderby(T.name, order=order).limit(limit)
+		branches.append(branch_query)
 	if not branches:
 		return None
 	query = branches[0]
@@ -443,27 +449,30 @@ def iter_keys_since(
 	# First pass: strictly after the watermark; later passes: keyset after the last (creation, name).
 	cursor: tuple[dt.datetime, str | None] | None = (get_datetime(watermark), None) if watermark else None
 	batch = max(1, int(batch))
-	L = frappe.qb.DocType("WhatsApp Log")
-	I = frappe.qb.DocType("WhatsApp Inbound Message")
+	log_table = frappe.qb.DocType("WhatsApp Log")
+	inbound_message_table = frappe.qb.DocType("WhatsApp Inbound Message")
 	while True:
 		branches = []
-		for T in (L, I):
-			q = (
+		for T in (log_table, inbound_message_table):
+			branch_query = (
 				frappe.qb.from_(T)
 				.select(
-					(_outbound_key(T) if T is L else _inbound_key(T)).as_("key"),
+					(_outbound_key(T) if T is log_table else _inbound_key(T)).as_("key"),
 					T.creation.as_("creation"),
 					T.name.as_("name"),
 				)
 				.where(T.creation <= upper)
 			)
 			if cursor:
-				c_ts, c_name = cursor
+				cursor_timestamp, c_name = cursor
 				if c_name:
-					q = q.where((T.creation > c_ts) | ((T.creation == c_ts) & (T.name > c_name)))
+					branch_query = branch_query.where(
+						(T.creation > cursor_timestamp)
+						| ((T.creation == cursor_timestamp) & (T.name > c_name))
+					)
 				else:
-					q = q.where(T.creation > c_ts)
-			branches.append(q.orderby(T.creation).orderby(T.name).limit(batch))
+					branch_query = branch_query.where(T.creation > cursor_timestamp)
+			branches.append(branch_query.orderby(T.creation).orderby(T.name).limit(batch))
 		query = (branches[0] * branches[1]).orderby(Field("creation")).orderby(Field("name")).limit(batch)
 		rows = query.run(as_dict=True)
 		if not rows:
@@ -484,15 +493,29 @@ def _split_keys_into_chunks(values: Iterable[str]) -> Iterator[list[str]]:
 def known_keys(keys: Iterable[str]) -> set[str]:
 	"""Subset of `keys` that has at least one message in either direction (picker `known_count`)."""
 	found: set[str] = set()
-	L = frappe.qb.DocType("WhatsApp Log")
-	I = frappe.qb.DocType("WhatsApp Inbound Message")
+	log_table = frappe.qb.DocType("WhatsApp Log")
+	inbound_message_table = frappe.qb.DocType("WhatsApp Inbound Message")
 	for chunk in _split_keys_into_chunks(keys):
-		cond = _key_condition_outbound(L, chunk)
-		if cond is not None:
-			found |= {r[0] for r in frappe.qb.from_(L).select(_outbound_key(L)).distinct().where(cond).run()}
-		cond = _key_condition_inbound(I, chunk)
-		if cond is not None:
-			found |= {r[0] for r in frappe.qb.from_(I).select(_inbound_key(I)).distinct().where(cond).run()}
+		key_condition = _key_condition_outbound(log_table, chunk)
+		if key_condition is not None:
+			found |= {
+				r[0]
+				for r in frappe.qb.from_(log_table)
+				.select(_outbound_key(log_table))
+				.distinct()
+				.where(key_condition)
+				.run()
+			}
+		key_condition = _key_condition_inbound(inbound_message_table, chunk)
+		if key_condition is not None:
+			found |= {
+				r[0]
+				for r in frappe.qb.from_(inbound_message_table)
+				.select(_inbound_key(inbound_message_table))
+				.distinct()
+				.where(key_condition)
+				.run()
+			}
 	return found & {k for k in keys if k}
 
 
@@ -500,17 +523,22 @@ def stats_by_key(keys: Iterable[str]) -> dict[str, KeyStats]:
 	"""Grouped COUNT/MIN/MAX per key and direction, joined in Python, plus the latest row's
 	device / display name (backend-plan §10 `refresh_keys`). Keys without messages are absent."""
 	out: dict[str, KeyStats] = {}
-	L = frappe.qb.DocType("WhatsApp Log")
-	I = frappe.qb.DocType("WhatsApp Inbound Message")
+	log_table = frappe.qb.DocType("WhatsApp Log")
+	inbound_message_table = frappe.qb.DocType("WhatsApp Inbound Message")
 	for chunk in _split_keys_into_chunks(keys):
 		latest: dict[str, tuple[dt.datetime, str]] = {}  # key -> (max_ts, direction)
 		for T, direction, ts_col, cond in (
-			(L, OUTBOUND, L.creation, _key_condition_outbound(L, chunk)),
-			(I, INBOUND, I.received_at, _key_condition_inbound(I, chunk)),
+			(log_table, OUTBOUND, log_table.creation, _key_condition_outbound(log_table, chunk)),
+			(
+				inbound_message_table,
+				INBOUND,
+				inbound_message_table.received_at,
+				_key_condition_inbound(inbound_message_table, chunk),
+			),
 		):
 			if cond is None:
 				continue
-			key_expr = _outbound_key(T) if T is L else _inbound_key(T)
+			key_expr = _outbound_key(T) if T is log_table else _inbound_key(T)
 			grouped = (
 				frappe.qb.from_(T)
 				.select(
@@ -524,27 +552,33 @@ def stats_by_key(keys: Iterable[str]) -> dict[str, KeyStats]:
 				.run(as_dict=True)
 			)
 			maxima: dict[str, dt.datetime] = {}
-			for g in grouped:
-				if not g["key"]:
+			for grouped_row in grouped:
+				if not grouped_row["key"]:
 					continue
-				s = out.setdefault(g["key"], KeyStats())
+				key_stats = out.setdefault(grouped_row["key"], KeyStats())
 				if direction == OUTBOUND:
-					s.outbound_count = int(g["n"])
+					key_stats.outbound_count = int(grouped_row["n"])
 				else:
-					s.inbound_count = int(g["n"])
-				first, last = get_datetime(g["first"]), get_datetime(g["last"])
-				s.first_seen = first if s.first_seen is None or first < s.first_seen else s.first_seen
-				s.last_seen = last if s.last_seen is None or last > s.last_seen else s.last_seen
-				maxima[g["key"]] = last
-				if g["key"] not in latest or last >= latest[g["key"]][0]:
-					latest[g["key"]] = (last, direction)
+					key_stats.inbound_count = int(grouped_row["n"])
+				first, last = get_datetime(grouped_row["first"]), get_datetime(grouped_row["last"])
+				key_stats.first_seen = (
+					first
+					if key_stats.first_seen is None or first < key_stats.first_seen
+					else key_stats.first_seen
+				)
+				key_stats.last_seen = (
+					last if key_stats.last_seen is None or last > key_stats.last_seen else key_stats.last_seen
+				)
+				maxima[grouped_row["key"]] = last
+				if grouped_row["key"] not in latest or last >= latest[grouped_row["key"]][0]:
+					latest[grouped_row["key"]] = (last, direction)
 			if not maxima:
 				continue
 			# Detail rows for the latest message per key: device + display name. A group's
 			# conversation is named after the group, not after whoever wrote last in it.
 			name_expr = (
 				Case().when(T.is_group == 1, Coalesce(T.group_name, T.display_name)).else_(T.display_name)
-				if T is I and _has_group_name()
+				if T is inbound_message_table and _has_group_name()
 				else T.display_name
 			)
 			detail = (
@@ -559,17 +593,17 @@ def stats_by_key(keys: Iterable[str]) -> dict[str, KeyStats]:
 				.run(as_dict=True)
 			)
 			for d in detail:
-				k = d["key"]
-				if k in maxima and get_datetime(d["ts"]) == maxima[k]:
-					s = out[k]
-					if latest.get(k, (None, None))[1] == direction:
-						s.last_device = d["device"] or s.last_device
+				key = d["key"]
+				if key in maxima and get_datetime(d["ts"]) == maxima[key]:
+					key_stats = out[key]
+					if latest.get(key, (None, None))[1] == direction:
+						key_stats.last_device = d["device"] or key_stats.last_device
 					if direction == INBOUND and d["display_name"]:
-						s.display_name = d["display_name"]
-					elif direction == OUTBOUND and d["display_name"] and not s.display_name:
-						s.display_name = d["display_name"]
-		for k, (_ts, direction) in latest.items():
-			out[k].last_direction = direction
+						key_stats.display_name = d["display_name"]
+					elif direction == OUTBOUND and d["display_name"] and not key_stats.display_name:
+						key_stats.display_name = d["display_name"]
+		for key, (_ts, direction) in latest.items():
+			out[key].last_direction = direction
 	return out
 
 
@@ -585,19 +619,19 @@ def device_stats(device: str, days: int = 30) -> DeviceStats:
 	"""Counts for one device card over the last `days` (backend-plan §3 / 09 row 3)."""
 	days = max(1, int(days or 30))
 	since = add_days(now_datetime(), -days)
-	L = frappe.qb.DocType("WhatsApp Log")
-	I = frappe.qb.DocType("WhatsApp Inbound Message")
+	log_table = frappe.qb.DocType("WhatsApp Log")
+	inbound_message_table = frappe.qb.DocType("WhatsApp Inbound Message")
 	out_rows = (
-		frappe.qb.from_(L)
-		.select(L.status.as_("status"), Count("*").as_("n"), Max(L.creation).as_("last"))
-		.where((L.device == device) & (L.creation >= since))
-		.groupby(L.status)
+		frappe.qb.from_(log_table)
+		.select(log_table.status.as_("status"), Count("*").as_("n"), Max(log_table.creation).as_("last"))
+		.where((log_table.device == device) & (log_table.creation >= since))
+		.groupby(log_table.status)
 		.run(as_dict=True)
 	)
 	in_row = (
-		frappe.qb.from_(I)
-		.select(Count("*").as_("n"), Max(I.received_at).as_("last"))
-		.where((I.device == device) & (I.received_at >= since))
+		frappe.qb.from_(inbound_message_table)
+		.select(Count("*").as_("n"), Max(inbound_message_table.received_at).as_("last"))
+		.where((inbound_message_table.device == device) & (inbound_message_table.received_at >= since))
 		.run(as_dict=True)
 	)[0]
 	outbound = sum(int(r["n"]) for r in out_rows)

@@ -236,12 +236,12 @@ def _phone_from_field(doc, fieldname: str | None) -> tuple[str | None, str | Non
 			meta = frappe.get_meta(target)
 			for f in ("mobile_no", "phone", "whatsapp_no", "contact_mobile", "phone_no"):
 				if meta.has_field(f):
-					v = frappe.db.get_value(target, value, f)
-					if v and normalize_phone_to_e164(v):
-						return normalize_phone_to_e164(v), None
+					linked_phone = frappe.db.get_value(target, value, f)
+					if linked_phone and normalize_phone_to_e164(linked_phone):
+						return normalize_phone_to_e164(linked_phone), None
 			if meta.has_field("contact"):
-				c = frappe.db.get_value(target, value, "contact")
-				return _contact_primary_phone(c), c
+				linked_contact = frappe.db.get_value(target, value, "contact")
+				return _contact_primary_phone(linked_contact), linked_contact
 		return None, None
 	return normalize_phone_to_e164(str(value)), None
 
@@ -363,8 +363,10 @@ def send_for_document(notification: str, doctype: str, name: str, doc_event: str
 	doc.flags.in_wa_notification = True
 	if not evaluate(notif, doc, doc_event):
 		return {"sent": 0, "skipped": 1, "error": None}
-	ctx = templates.context_for(doctype, name, {"event": doc_event, "notification": notif.name}, doc=doc)
-	body, render_error = _render_notification_body(notif, ctx)
+	template_context = templates.context_for(
+		doctype, name, {"event": doc_event, "notification": notif.name}, doc=doc
+	)
+	body, render_error = _render_notification_body(notif, template_context)
 	if render_error or not (body or "").strip():
 		_record_error(notification, f"template: {render_error or 'empty body'}")
 		return {"sent": 0, "skipped": 1, "error": render_error or "empty body"}
@@ -379,8 +381,8 @@ def send_for_document(notification: str, doctype: str, name: str, doc_event: str
 	outbounds: list[str] = []
 	for r in recipients:
 		# rendered for each recipient: `{{ recipient.display_name }}` is theirs, as the preview shows
-		ctx["recipient"] = recipient_context(r.phone_e164, r.display_name, r.contact)
-		text, render_error = _render_notification_body(notif, ctx)
+		template_context["recipient"] = recipient_context(r.phone_e164, r.display_name, r.contact)
+		text, render_error = _render_notification_body(notif, template_context)
 		if render_error or not (text or "").strip():
 			last_error = f"template: {render_error or 'empty body'}"
 			continue
@@ -488,13 +490,13 @@ def preview_for_document(notification: str, reference_name: str) -> dict[str, An
 	# error an earlier real send left there is not this record's)
 	meets = evaluate(notif, doc, notif.event, errors)
 	recipients = resolve_recipients(notif, doc, errors)
-	ctx = templates.context_for(
+	template_context = templates.context_for(
 		notif.document_type, reference_name, {"event": notif.event, "notification": notif.name}, doc=doc
 	)
 	if recipients:  # render as the job would for the first recipient
 		first = recipients[0]
-		ctx["recipient"] = recipient_context(first.phone_e164, first.display_name, first.contact)
-	body, render_error = _render_notification_body(notif, ctx)
+		template_context["recipient"] = recipient_context(first.phone_e164, first.display_name, first.contact)
+	body, render_error = _render_notification_body(notif, template_context)
 	if render_error:
 		errors.append(f"template: {render_error}")
 	return {
@@ -541,7 +543,7 @@ def documents_due(notification) -> list[str]:
 
 
 def _trigger(events: tuple[str, ...]) -> int:
-	n = 0
+	queued_count = 0
 	for row in frappe.get_all(
 		"WhatsApp Notification", filters={"enabled": 1, "event": ("in", list(events))}, pluck="name"
 	):
@@ -558,8 +560,8 @@ def _trigger(events: tuple[str, ...]) -> int:
 				deduplicate=True,
 				timeout=120,
 			)
-			n += 1
-	return n
+			queued_count += 1
+	return queued_count
 
 
 def trigger_daily() -> int:

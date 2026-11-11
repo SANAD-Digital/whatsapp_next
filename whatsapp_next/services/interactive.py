@@ -25,9 +25,9 @@ MAX_SHORT = 60
 
 def _make_unique_option_id(text: str, used: set[str]) -> str:
 	base = re.sub(r"\s+", "_", cstr(text).strip().lower())[:40] or "option"
-	slug, n = base, 2
+	slug, suffix_number = base, 2
 	while slug in used:
-		slug, n = f"{base}_{n}", n + 1
+		slug, suffix_number = f"{base}_{suffix_number}", suffix_number + 1
 	used.add(slug)
 	return slug
 
@@ -76,29 +76,31 @@ def normalize_interactive_definition(
 	used: set[str] = set()
 	if message_type == "Buttons":
 		buttons = []
-		for b in data.get("buttons") or []:
-			b = b if isinstance(b, dict) else {"text": b}
-			kind = cstr(b.get("type") or "reply").strip().lower()
+		for button_definition in data.get("buttons") or []:
+			button_definition = (
+				button_definition if isinstance(button_definition, dict) else {"text": button_definition}
+			)
+			kind = cstr(button_definition.get("type") or "reply").strip().lower()
 			if kind not in BUTTON_TYPES:
 				frappe.throw(_("Unknown button type {0}").format(kind), WAValidationError)
-			label = _validate_short_text(b.get("text"), _("Button"))
+			label = _validate_short_text(button_definition.get("text"), _("Button"))
 			if not label:
 				continue
 			button = {
 				"type": kind,
 				"text": label,
-				"id": cstr(b.get("id")).strip() or _make_unique_option_id(label, used),
+				"id": cstr(button_definition.get("id")).strip() or _make_unique_option_id(label, used),
 			}
 			if kind == "url":
-				button["url"] = cstr(b.get("url")).strip()
+				button["url"] = cstr(button_definition.get("url")).strip()
 				if not button["url"].startswith(("https://", "http://")):
 					frappe.throw(_("Button {0} needs a web address").format(label), WAValidationError)
 			elif kind == "call":
-				button["phone"] = cstr(b.get("phone")).strip()
+				button["phone"] = cstr(button_definition.get("phone")).strip()
 				if not button["phone"]:
 					frappe.throw(_("Button {0} needs a phone number").format(label), WAValidationError)
 			elif kind == "copy":
-				button["code"] = cstr(b.get("code")).strip()
+				button["code"] = cstr(button_definition.get("code")).strip()
 				if not button["code"]:
 					frappe.throw(_("Button {0} needs the text to copy").format(label), WAValidationError)
 			buttons.append(button)
@@ -107,23 +109,32 @@ def normalize_interactive_definition(
 		out["buttons"] = buttons
 	else:
 		sections, rows_total = [], 0
-		for s in data.get("sections") or []:
-			s = s if isinstance(s, dict) else {}
+		for section_definition in data.get("sections") or []:
+			section_definition = section_definition if isinstance(section_definition, dict) else {}
 			rows = []
-			for r in s.get("rows") or []:
-				r = r if isinstance(r, dict) else {"title": r}
-				title = _validate_short_text(r.get("title"), _("Option"))
+			for row_definition in section_definition.get("rows") or []:
+				row_definition = (
+					row_definition if isinstance(row_definition, dict) else {"title": row_definition}
+				)
+				title = _validate_short_text(row_definition.get("title"), _("Option"))
 				if not title:
 					continue
 				rows.append(
 					{
-						"id": cstr(r.get("id")).strip() or _make_unique_option_id(title, used),
+						"id": cstr(row_definition.get("id")).strip() or _make_unique_option_id(title, used),
 						"title": title,
-						"description": _validate_short_text(r.get("description"), _("Description")),
+						"description": _validate_short_text(
+							row_definition.get("description"), _("Description")
+						),
 					}
 				)
 			if rows:
-				sections.append({"title": _validate_short_text(s.get("title"), _("Section")), "rows": rows})
+				sections.append(
+					{
+						"title": _validate_short_text(section_definition.get("title"), _("Section")),
+						"rows": rows,
+					}
+				)
 				rows_total += len(rows)
 		if not 1 <= rows_total <= MAX_ROWS:
 			frappe.throw(_("A list needs 1 to {0} options").format(MAX_ROWS), WAValidationError)

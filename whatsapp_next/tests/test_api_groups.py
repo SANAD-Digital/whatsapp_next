@@ -16,19 +16,19 @@ RENAMED = "ApiTest Editor Group Renamed"
 P1, P2, P3 = "+966500930501", "+966500930502", "+966500930503"
 
 
-def _row(phone, name, source_type="Manual"):
+def _build_member_row(phone, name, source_type="Manual"):
 	return {"phone": phone, "phone_e164": phone, "display_name": name, "source_type": source_type}
 
 
 class TestApiGroups(IntegrationTestCase):
 	def setUp(self):
-		self._clean()
+		self._delete_test_groups()
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_groups()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_groups():
 		for name in (GROUP, RENAMED):
 			delete_all("WhatsApp Audit Log", {"reference_name": name})
 			delete_all("WhatsApp Contact Group", {"group_name": name})
@@ -50,7 +50,7 @@ class TestApiGroups(IntegrationTestCase):
 				"group_name": GROUP,
 				"kind": "Marketing",
 				"description": "d",
-				"add": [_row(P1, "One"), _row(P2, "Two")],
+				"add": [_build_member_row(P1, "One"), _build_member_row(P2, "Two")],
 			}
 		)
 		self.assertEqual(r["name"], GROUP)
@@ -67,7 +67,11 @@ class TestApiGroups(IntegrationTestCase):
 
 	def test_edit_fields_and_members_then_rename(self):
 		api.save_editor(
-			payload={"group_name": GROUP, "kind": "Marketing", "add": [_row(P1, "One"), _row(P2, "Two")]}
+			payload={
+				"group_name": GROUP,
+				"kind": "Marketing",
+				"add": [_build_member_row(P1, "One"), _build_member_row(P2, "Two")],
+			}
 		)
 		opened = api.get_editor(name=GROUP)["group"]
 		r = api.save_editor(
@@ -76,7 +80,7 @@ class TestApiGroups(IntegrationTestCase):
 				"modified": opened["modified"],
 				"group_name": RENAMED,
 				"kind": "Professional",
-				"add": [_row(P3, "Three"), _row(P1, "One again")],
+				"add": [_build_member_row(P3, "Three"), _build_member_row(P1, "One again")],
 				"remove": [P2],
 			}
 		)

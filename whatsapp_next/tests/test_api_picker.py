@@ -38,12 +38,12 @@ class TestApiPicker(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_campaigns_and_group()
 		delete_all("Contact", {"first_name": CONTACT})
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_campaigns_and_group()
 		frappe.get_doc(
 			{
 				"doctype": "WhatsApp Contact Group",
@@ -55,7 +55,7 @@ class TestApiPicker(IntegrationTestCase):
 		).insert(ignore_permissions=True)
 
 	@staticmethod
-	def _clean():
+	def _delete_test_campaigns_and_group():
 		campaigns = frappe.get_all(
 			"WhatsApp Campaign", filters={"campaign_name": ("like", "ApiTest Picker%")}, pluck="name"
 		)

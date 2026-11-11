@@ -19,7 +19,9 @@ GROUP = "120363000000000501@g.us"
 TAG = "nm-test"
 
 
-def _out(device, phone=K1, jid=None, recipient_type="Individual", ts=None, display_name=None, skip_hook=True):
+def _insert_outbound_log(
+	device, phone=K1, jid=None, recipient_type="Individual", ts=None, display_name=None, skip_hook=True
+):
 	with status_writer():
 		doc = frappe.get_doc(
 			{
@@ -42,7 +44,7 @@ def _out(device, phone=K1, jid=None, recipient_type="Individual", ts=None, displ
 	return doc.name
 
 
-def _in(device, phone=K1, chat_jid=None, sender_jid=None, ts=None, display_name=None):
+def _insert_inbound_message(device, phone=K1, chat_jid=None, sender_jid=None, ts=None, display_name=None):
 	ts = ts or now_datetime()
 	doc = frappe.get_doc(
 		{
@@ -97,28 +99,30 @@ class TestNumbersMaterializer(IntegrationTestCase):
 		cls.device = ensure_device("Numbers Device", "WAD-TEST-NM01", phone="+966500000021")
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_messages_and_numbers()
 		self.t0 = add_to_date(now_datetime(), minutes=-30)
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_messages_and_numbers()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_messages_and_numbers():
 		delete_all("WhatsApp Log", {"body": ("like", f"{TAG}%")})
 		delete_all("WhatsApp Inbound Message", {"body": ("like", f"{TAG}%")})
 		delete_all("WhatsApp Number", {"name": ("in", [K1, K2, K3, GROUP])})
 		ensure_settings(numbers_watermark=None)
 
-	def _t(self, m):
+	def _minutes_after_start(self, m):
 		return add_to_date(self.t0, minutes=m)
 
 	def test_refresh_keys_insert_update_and_idempotent(self):
 		contact = ensure_contact("NM Test Contact", K1)
-		_out(self.device, ts=self._t(1))
-		_out(self.device, ts=self._t(2))
-		_in(self.device, ts=self._t(3), display_name="Push K1")
-		_in(self.device, phone=K2, ts=self._t(4), display_name="Push K2")
+		_insert_outbound_log(self.device, ts=self._minutes_after_start(1))
+		_insert_outbound_log(self.device, ts=self._minutes_after_start(2))
+		_insert_inbound_message(self.device, ts=self._minutes_after_start(3), display_name="Push K1")
+		_insert_inbound_message(
+			self.device, phone=K2, ts=self._minutes_after_start(4), display_name="Push K2"
+		)
 		stats = nm.refresh_keys([K1, K2, K3, "garbage", GROUP])
 		self.assertEqual((stats.inserted, stats.updated, stats.invalid, stats.visited), (2, 0, 1, 4))
 		rows = _numbers()
@@ -138,21 +142,21 @@ class TestNumbersMaterializer(IntegrationTestCase):
 		self.assertEqual((stats.inserted, stats.updated, stats.unchanged), (0, 0, 2))
 		self.assertEqual({k: v.modified for k, v in _numbers().items()}, before)
 		# a new message → counters reassigned (not incremented twice)
-		_out(self.device, phone=K2, ts=self._t(5))
+		_insert_outbound_log(self.device, phone=K2, ts=self._minutes_after_start(5))
 		nm.refresh_keys([K2])
 		nm.refresh_keys([K2])
 		r2 = _numbers()[K2]
 		self.assertEqual((r2.outbound_count, r2.inbound_count, r2.last_direction), (1, 1, "Outbound"))
 
 	def test_upsert_from_message_and_hook(self):
-		name = _out(self.device, phone=K3, ts=self._t(1))
+		name = _insert_outbound_log(self.device, phone=K3, ts=self._minutes_after_start(1))
 		nm.upsert_from_message("WhatsApp Log", name)
 		self.assertEqual(_numbers()[K3].outbound_count, 1)
 		self.assertEqual(nm.upsert_from_message("WhatsApp Log", "no-such-row").visited, 0)
 		# the after_insert hook enqueues after commit (deduplicated per key) unless the flag is set
 		with patch.object(frappe.db, "after_commit") as after_commit:
-			_out(self.device, phone=K3, ts=self._t(2), skip_hook=False)
-			_out(self.device, phone=K3, ts=self._t(3), skip_hook=True)
+			_insert_outbound_log(self.device, phone=K3, ts=self._minutes_after_start(2), skip_hook=False)
+			_insert_outbound_log(self.device, phone=K3, ts=self._minutes_after_start(3), skip_hook=True)
 		callbacks = [
 			c.args[0]
 			for c in after_commit.add.call_args_list
@@ -172,18 +176,24 @@ class TestNumbersMaterializer(IntegrationTestCase):
 		"""A queued job reads the new row too (skip); a running one may not have (follow-up)."""
 		from rq.job import JobStatus
 
-		def job(status):
+		def make_fake_job(status):
 			j = MagicMock()
 			j.get_status.return_value = status
 			return j
 
 		base = nm._job_id(K1)
 		for jobs, expected in (
-			({base: job(JobStatus.QUEUED)}, "skip"),
-			({base: job(JobStatus.FINISHED)}, base),
-			({base: job(JobStatus.STARTED)}, base + "-next"),
-			({base: job(JobStatus.STARTED), base + "-next": job(JobStatus.QUEUED)}, "skip"),
-			({base: job(JobStatus.STARTED), base + "-next": job(JobStatus.STARTED)}, None),
+			({base: make_fake_job(JobStatus.QUEUED)}, "skip"),
+			({base: make_fake_job(JobStatus.FINISHED)}, base),
+			({base: make_fake_job(JobStatus.STARTED)}, base + "-next"),
+			(
+				{base: make_fake_job(JobStatus.STARTED), base + "-next": make_fake_job(JobStatus.QUEUED)},
+				"skip",
+			),
+			(
+				{base: make_fake_job(JobStatus.STARTED), base + "-next": make_fake_job(JobStatus.STARTED)},
+				None,
+			),
 		):
 			with (
 				patch("frappe.utils.background_jobs.get_job", side_effect=jobs.get),
@@ -197,8 +207,16 @@ class TestNumbersMaterializer(IntegrationTestCase):
 			self.assertEqual(enq.call_args.kwargs["deduplicate"], expected is not None)
 
 	def test_group_rows_and_display_name(self):
-		_out(self.device, phone=None, jid=GROUP, recipient_type="Group", ts=self._t(1))
-		_in(self.device, phone=None, chat_jid=GROUP, sender_jid="966500000501@s.whatsapp.net", ts=self._t(2))
+		_insert_outbound_log(
+			self.device, phone=None, jid=GROUP, recipient_type="Group", ts=self._minutes_after_start(1)
+		)
+		_insert_inbound_message(
+			self.device,
+			phone=None,
+			chat_jid=GROUP,
+			sender_jid="966500000501@s.whatsapp.net",
+			ts=self._minutes_after_start(2),
+		)
 		nm.refresh_keys([GROUP])
 		g = _numbers()[GROUP]
 		self.assertEqual(
@@ -243,8 +261,8 @@ class TestNumbersMaterializer(IntegrationTestCase):
 		)
 
 	def test_nightly_watermark_and_idempotency(self):
-		_out(self.device, ts=self._t(1))
-		_in(self.device, phone=K2, ts=self._t(2))
+		_insert_outbound_log(self.device, ts=self._minutes_after_start(1))
+		_insert_inbound_message(self.device, phone=K2, ts=self._minutes_after_start(2))
 		with patch.object(frappe.db, "commit"):  # keep the test transaction
 			first = nm.nightly_reconcile()
 		self.assertGreaterEqual(first["inserted"], 2)
@@ -256,7 +274,9 @@ class TestNumbersMaterializer(IntegrationTestCase):
 		self.assertEqual((second["inserted"], second["updated"]), (0, 0))
 		self.assertEqual(_numbers(), snapshot)
 		# a message newer than the watermark is picked up by the next incremental run
-		_out(self.device, phone=K3)  # created now: after the last watermark, before the next upper
+		_insert_outbound_log(
+			self.device, phone=K3
+		)  # created now: after the last watermark, before the next upper
 		with patch.object(frappe.db, "commit"):
 			third = nm.nightly_reconcile()
 		self.assertEqual(third["inserted"], 1)

@@ -13,7 +13,7 @@ from whatsapp_next.exceptions import WANotSupportedError, WAStateConflictError, 
 from whatsapp_next.services import status_posts
 
 
-def plan(on: bool) -> None:
+def set_plan_allows_status(on: bool) -> None:
 	frappe.db.set_single_value("WhatsApp Settings", "plan_features", frappe.as_json({"allow_status": on}))
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
@@ -23,7 +23,7 @@ class TestStatusPosts(IntegrationTestCase):
 		self.device = frappe.db.get_value("WhatsApp Device", {"status": "Connected"}, "name")
 		if not self.device:
 			self.skipTest("needs a connected device")
-		plan(True)
+		set_plan_allows_status(True)
 		self.provider = MagicMock()
 		self.provider.post_status.return_value = "STATUS-1"
 		self.provider.get_status_views.return_value = {
@@ -37,7 +37,7 @@ class TestStatusPosts(IntegrationTestCase):
 		self.commits = self.commit.start()
 		self.addCleanup(self.commit.stop)
 
-	def _post(self, **values):
+	def _insert_status_post(self, **values):
 		return frappe.get_doc(
 			{
 				"doctype": "WhatsApp Status Post",
@@ -52,7 +52,7 @@ class TestStatusPosts(IntegrationTestCase):
 		).insert(ignore_permissions=True)
 
 	def test_post_now_sends_the_styled_text_and_reads_views(self):
-		doc = self._post()
+		doc = self._insert_status_post()
 		self.assertEqual(status_posts.post_now(doc.name), "STATUS-1")
 		payload = self.provider.post_status.call_args.args[1]
 		self.assertEqual(
@@ -72,7 +72,7 @@ class TestStatusPosts(IntegrationTestCase):
 		"""A failed post keeps `Failed` and its reason: both are committed before the error goes up,
 		since the request's rollback took them away. A post being posted is refused a second time;
 		one left in `Posting` by a run that died is taken again after a few minutes."""
-		doc = self._post()
+		doc = self._insert_status_post()
 		self.provider.post_status.side_effect = RuntimeError("gateway down")
 		with self.assertRaises(RuntimeError):
 			status_posts.post_now(doc.name)
@@ -96,7 +96,7 @@ class TestStatusPosts(IntegrationTestCase):
 		self.provider.post_status.assert_called_once()
 
 	def test_due_posts_go_out_and_a_daily_one_queues_its_next(self):
-		doc = self._post(repeat="Daily")
+		doc = self._insert_status_post(repeat="Daily")
 		status_posts.schedule(doc.name, add_to_date(now_datetime(), minutes=5))
 		frappe.db.set_value(
 			"WhatsApp Status Post", doc.name, "scheduled_at", add_to_date(now_datetime(), minutes=-1)
@@ -112,9 +112,9 @@ class TestStatusPosts(IntegrationTestCase):
 		self.assertTrue(nxt[0].scheduled_at > now_datetime())
 
 	def test_rules(self):
-		doc = self._post()
+		doc = self._insert_status_post()
 		with self.assertRaises(WAValidationError):
 			status_posts.schedule(doc.name, add_to_date(now_datetime(), minutes=-5))
-		plan(False)
+		set_plan_allows_status(False)
 		with self.assertRaises(WANotSupportedError):
 			status_posts.post_now(doc.name)

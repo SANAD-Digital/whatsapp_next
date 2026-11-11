@@ -127,22 +127,26 @@ def get_activity(name: str) -> list[dict[str, Any]]:
 	— never the IP address, never another record's rows. P: Contact User | Contact read."""
 	permissions.require("read")
 	phones = permissions.contact_phones(name)
-	A = frappe.qb.DocType("WhatsApp Audit Log")
+	audit_log_table = frappe.qb.DocType("WhatsApp Audit Log")
 	# each name is matched with its DocType: a Customer or a group that happens to share the
 	# contact's name must not bring its own rows into this contact's timeline
-	scope = ((A.reference_doctype == "Contact") & (A.reference_name == name)) | (
-		(A.target_doctype == "Contact") & (A.target_name == name)
+	scope = ((audit_log_table.reference_doctype == "Contact") & (audit_log_table.reference_name == name)) | (
+		(audit_log_table.target_doctype == "Contact") & (audit_log_table.target_name == name)
 	)
 	if phones:
-		scope |= (A.reference_doctype == "WhatsApp Number") & A.reference_name.isin(phones)
+		scope |= (
+			audit_log_table.reference_doctype == "WhatsApp Number"
+		) & audit_log_table.reference_name.isin(phones)
 		# a block / unblock is written on the blacklist group, with the number as its target
-		scope |= (A.target_doctype == "WhatsApp Number") & A.target_name.isin(phones)
+		scope |= (audit_log_table.target_doctype == "WhatsApp Number") & audit_log_table.target_name.isin(
+			phones
+		)
 	rows = (
-		frappe.qb.from_(A)
-		.select(*[getattr(A, f) for f in ACTIVITY_FIELDS])
+		frappe.qb.from_(audit_log_table)
+		.select(*[getattr(audit_log_table, f) for f in ACTIVITY_FIELDS])
 		.where(scope)
-		.orderby(A.timestamp, order=Order.desc)
-		.orderby(A.name, order=Order.desc)
+		.orderby(audit_log_table.timestamp, order=Order.desc)
+		.orderby(audit_log_table.name, order=Order.desc)
 		.limit(ACTIVITY_LIMIT)
 		.run(as_dict=True)
 	)

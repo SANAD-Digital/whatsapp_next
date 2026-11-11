@@ -76,10 +76,17 @@ def check_numbers_on_whatsapp(
 		chunk = missing[start : start + BATCH]
 		answered = {r.phone_e164: r for r in provider.check_numbers(platform_device, chunk)}
 		for key in chunk:
-			r = answered.get(key)
-			on = bool(r and r.on_whatsapp)
-			_remember(key, on, r.jid if r else None, r.verified_name if r else None, now, device)
-			out[key] = on
+			number_answer = answered.get(key)
+			is_on_whatsapp = bool(number_answer and number_answer.on_whatsapp)
+			_remember(
+				key,
+				is_on_whatsapp,
+				number_answer.jid if number_answer else None,
+				number_answer.verified_name if number_answer else None,
+				now,
+				device,
+			)
+			out[key] = is_on_whatsapp
 	return out
 
 

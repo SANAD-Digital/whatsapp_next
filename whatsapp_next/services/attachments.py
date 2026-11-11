@@ -110,8 +110,8 @@ def as_bytes(file_url: str | None) -> bytes:
 	# the stored file is always read from disk in binary mode.
 	try:
 		doc.validate_file_url()
-		with open(doc.get_full_path(), "rb") as fh:
-			content = fh.read()
+		with open(doc.get_full_path(), "rb") as file_handle:
+			content = file_handle.read()
 	except Exception as exc:
 		frappe.throw(_("Cannot read file {0}: {1}").format(file_url, cstr(exc)[:200]), WAFileError)
 	if isinstance(content, str):
@@ -257,16 +257,18 @@ def page_options(print_format: str | None) -> dict[str, str]:
 	`landscape`. `{}` when it sets none, and Print Settings decides as before."""
 	if not print_format or not frappe.db.exists("Print Format", print_format):
 		return {}
-	pf = frappe.get_cached_doc("Print Format", print_format)
-	paper = pf.get("paper_size")
+	print_format_doc = frappe.get_cached_doc("Print Format", print_format)
+	paper = print_format_doc.get("paper_size")
 	if paper in _RECEIPT_WIDTHS:
 		return {"page-size": "Custom", "page-width": _RECEIPT_WIDTHS[paper], "page-height": "297mm"}
 	if paper and paper.lower() in _PAGE_NAMES:
 		return {"page-size": _PAGE_NAMES[paper.lower()]}
-	if builder := _builder_page(pf.get("format_data")):
+	if builder := _builder_page(print_format_doc.get("format_data")):
 		return builder
 	size = None
-	for rule in _PAGE_RULE.findall(f"{pf.get('css') or ''}\n{pf.get('html') or ''}"):
+	for rule in _PAGE_RULE.findall(
+		f"{print_format_doc.get('css') or ''}\n{print_format_doc.get('html') or ''}"
+	):
 		for value in _PAGE_SIZE.findall(rule):
 			size = value.strip()  # the last one wins, as in CSS
 	if not size:

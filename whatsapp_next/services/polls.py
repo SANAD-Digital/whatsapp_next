@@ -67,25 +67,27 @@ def parse_options(value: Any) -> list[str]:
 
 def validate(question: str | None, options: Any, allow_multiple: Any = False) -> Poll:
 	"""Validate and build the provider `Poll` (question required, 2–12 options ≤ 100 chars)."""
-	q = cstr(question).strip()
-	if not q:
+	cleaned_question = cstr(question).strip()
+	if not cleaned_question:
 		frappe.throw(_("Poll question is required"), WAValidationError)
-	if len(q) > MAX_QUESTION_LENGTH:
+	if len(cleaned_question) > MAX_QUESTION_LENGTH:
 		frappe.throw(
 			_("Poll question is longer than {0} characters").format(MAX_QUESTION_LENGTH), WAValidationError
 		)
-	opts = parse_options(options)
-	if len(opts) < MIN_OPTIONS:
+	parsed_options = parse_options(options)
+	if len(parsed_options) < MIN_OPTIONS:
 		frappe.throw(_("A poll needs at least {0} distinct options").format(MIN_OPTIONS), WAValidationError)
-	if len(opts) > MAX_OPTIONS:
+	if len(parsed_options) > MAX_OPTIONS:
 		frappe.throw(_("A poll can have at most {0} options").format(MAX_OPTIONS), WAValidationError)
-	too_long = [o for o in opts if len(o) > MAX_OPTION_LENGTH]
+	too_long = [o for o in parsed_options if len(o) > MAX_OPTION_LENGTH]
 	if too_long:
 		frappe.throw(
 			_("Poll option is longer than {0} characters: {1}").format(MAX_OPTION_LENGTH, too_long[0][:30]),
 			WAValidationError,
 		)
-	return Poll(question=q, options=tuple(opts), allow_multiple=bool(cint(allow_multiple)))
+	return Poll(
+		question=cleaned_question, options=tuple(parsed_options), allow_multiple=bool(cint(allow_multiple))
+	)
 
 
 def to_json(options: Any) -> str:
@@ -123,10 +125,10 @@ def _option_id(record: dict) -> str:
 
 def _has_vote(record: dict) -> bool:
 	for key, value in (record or {}).items():
-		n = _norm_key(key)
-		if n in _TRUTHY_KEYS and cstr(value).strip().lower() in {"1", "true", "yes"}:
+		normalized_key = _norm_key(key)
+		if normalized_key in _TRUTHY_KEYS and cstr(value).strip().lower() in {"1", "true", "yes"}:
 			return True
-		if n in _COUNT_KEYS or n in _LIST_KEYS:
+		if normalized_key in _COUNT_KEYS or normalized_key in _LIST_KEYS:
 			if isinstance(value, list | tuple | dict):
 				if len(value) > 0:
 					return True
@@ -169,10 +171,10 @@ def extract_selected(payload: Any, options: list[str] | tuple[str, ...] | None =
 			if (label or oid) and (_has_vote(value) or (parent_key in _VOTE_CONTAINER_KEYS and explicit_ref)):
 				tokens.append(label or oid)
 			for key, nested in value.items():
-				n = _norm_key(key)
-				if n in _EXPLICIT_KEYS:
+				normalized_key = _norm_key(key)
+				if normalized_key in _EXPLICIT_KEYS:
 					add_explicit(nested)
-				collect_voted_options(nested, n)
+				collect_voted_options(nested, normalized_key)
 		elif isinstance(value, list | tuple):
 			for nested in value:
 				collect_voted_options(nested, parent_key)
@@ -245,8 +247,8 @@ def fetch_results(
 			selected = extract_selected(raw, options)
 			if selected:
 				result.responses += 1
-			for s in selected:
-				result.counts[s] = result.counts.get(s, 0) + 1
+			for selected_option in selected:
+				result.counts[selected_option] = result.counts.get(selected_option, 0) + 1
 			result.by_poll_id[poll_id] = {"selected": selected, "error": None, "raw": raw}
 	return result
 
@@ -263,8 +265,8 @@ def _same_number(a: Any, b: Any) -> bool:
 	"""Two numbers compared the app's one way (`services.phone.normalize`, E.164)."""
 	from whatsapp_next.services.phone import normalize_phone_to_e164
 
-	na, nb = normalize_phone_to_e164(cstr(a)), normalize_phone_to_e164(cstr(b))
-	return bool(na) and na == nb
+	first_e164, second_e164 = normalize_phone_to_e164(cstr(a)), normalize_phone_to_e164(cstr(b))
+	return bool(first_e164) and first_e164 == second_e164
 
 
 def summary_for_log(name: str) -> dict[str, Any]:

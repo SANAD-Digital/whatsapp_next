@@ -34,6 +34,12 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
   `FilterBar.set` → `set_filter_value`, `Stepper.go` / `next` / `back` → `go_to_step` /
   `go_to_next_step` / `go_to_previous_step`; `whatsapp_next.fmt` → `whatsapp_next.message_formatters`.
   Another app that called the old kit names calls the new ones.
+- **Short variables say what they hold** (same rule). Inside the Python functions: 270 one-letter
+  and abbreviated locals (`s` → `settings`, `p` → `inbound_payload`, `ctx` → `template_context`,
+  query-builder tables `L` / `Q` → `log_table` / `queue_table` …); inside the JavaScript functions:
+  500 (`d` → `draft`, `lv` → `listview`, `n` → `selected_count` …). The test helpers too
+  (`_clean` → `_delete_test_campaigns`, `_t` → `_minutes_after_start` …). Parameters other code
+  passes by name (`at=`, the API's `idx`) keep their names.
 - **Removed** the unused kit components `MetaDialog` and `TreeGroupBy`, and dead code across the
   app; duplicated code folded into shared helpers (see TECH_DEBT.md, 2026-11-11).
 

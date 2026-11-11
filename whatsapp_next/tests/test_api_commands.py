@@ -40,16 +40,16 @@ class TestApiCommands(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_commands()
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_commands()
 		ff.ensure_function(FUNCTION)
 		cr.clear_map()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_commands():
 		delete_all("WhatsApp Inbound Message", {"phone_e164": SENDER})
 		delete_all("WhatsApp Command", {"code": ("like", "apitest%")})
 		delete_all(

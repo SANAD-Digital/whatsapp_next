@@ -15,7 +15,7 @@ from whatsapp_next.services import dispatch, interactive
 from whatsapp_next.tests.conftest_frappe import ensure_device
 
 
-def plan(interactive: bool) -> None:
+def set_plan_allows_interactive(interactive: bool) -> None:
 	"""The synced plan, with or without buttons and lists."""
 	frappe.db.set_single_value(
 		"WhatsApp Settings", "plan_features", frappe.as_json({"allow_interactive": interactive})
@@ -25,7 +25,7 @@ def plan(interactive: bool) -> None:
 
 class TestInteractive(IntegrationTestCase):
 	def setUp(self):
-		plan(True)
+		set_plan_allows_interactive(True)
 
 	def test_buttons_are_validated_and_given_ids(self):
 		d = interactive.normalize_interactive_definition(
@@ -94,7 +94,7 @@ class TestInteractive(IntegrationTestCase):
 
 	def test_a_plan_without_buttons_and_lists_refuses_them(self):
 		device = frappe.db.get_value("WhatsApp Device", {}, "name") or ensure_device()
-		plan(False)
+		set_plan_allows_interactive(False)
 		with self.assertRaises(WANotSupportedError):
 			dispatch.create_outbound(
 				dispatch.OutboundSpec(

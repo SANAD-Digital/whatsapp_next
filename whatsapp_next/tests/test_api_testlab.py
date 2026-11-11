@@ -108,7 +108,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	# ---- helpers ----------------------------------------------------------------------------
 
-	def _run(self, targets=(P1,), **kwargs) -> dict:
+	def _start_test_run(self, targets=(P1,), **kwargs) -> dict:
 		return api.start_run(device=self.device, targets=list(targets), **kwargs)
 
 	@staticmethod
@@ -118,7 +118,7 @@ class TestApiTestLab(IntegrationTestCase):
 		data["last_send"] = 0.0
 		frappe.cache.set_value(testlab.RUN_KEY.format(run), data, expires_in_sec=testlab.RUN_TTL)
 
-	def _log(self, name: str):
+	def _read_log_fields(self, name: str):
 		return frappe.db.get_value(
 			"WhatsApp Log",
 			name,
@@ -252,21 +252,23 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_start_run_validates_targets_and_limits(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run(targets=["0500930101", P1, P2], cap=5, pacing=4)
+			run = self._start_test_run(targets=["0500930101", P1, P2], cap=5, pacing=4)
 			self.assertEqual(run["targets"], [P1, P2])  # normalised, duplicates dropped
 			self.assertEqual((run["cap"], run["pacing"], run["used"]), (5, 4, 0))
 			with self.assertRaises(WAInvalidPhoneError):
-				self._run(targets=["abc"])
+				self._start_test_run(targets=["abc"])
 			with self.assertRaises(WAInvalidPhoneError):
-				self._run(targets=["120363000000930101@g.us"])  # a group is not a test target
+				self._start_test_run(targets=["120363000000930101@g.us"])  # a group is not a test target
 			with self.assertRaises(WAValidationError):
-				self._run(targets=[])
+				self._start_test_run(targets=[])
 			with self.assertRaises(WAValidationError):
-				self._run(targets=[f"+96650093{n:04d}" for n in range(200, 200 + testlab.MAX_TARGETS + 1)])
+				self._start_test_run(
+					targets=[f"+96650093{n:04d}" for n in range(200, 200 + testlab.MAX_TARGETS + 1)]
+				)
 			with self.assertRaises(WAValidationError):
-				self._run(cap=testlab.CAP_MAX + 1)
+				self._start_test_run(cap=testlab.CAP_MAX + 1)
 			with self.assertRaises(WAValidationError):
-				self._run(pacing=testlab.PACING_MIN - 1)
+				self._start_test_run(pacing=testlab.PACING_MIN - 1)
 			with self.assertRaises(WAValidationError):
 				api.start_run(device="No Such ApiTest Device", targets=[P1])
 		# the service clamps as well, whatever the caller passes
@@ -275,11 +277,11 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_quick_text_is_a_marked_test_through_the_queue(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			step = api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} hello"})
 		self.assertTrue(step["ok"], step)
 		self.assertEqual((step["count"], step["dry"]), (1, False))
-		log = self._log(step["outbounds"][0])
+		log = self._read_log_fields(step["outbounds"][0])
 		self.assertEqual(
 			(log.phone_e164, log.is_test, log.source_type, log.status), (P1, 1, "Quick Send", "Queued")
 		)
@@ -298,7 +300,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_only_the_runs_own_numbers(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			with self.assertRaises(WAPermissionError):
 				api.run_check(run=run["id"], kind="quick_text", target=P2, params={"body": f"{TAG} x"})
 			with self.assertRaises(WAPermissionError):
@@ -311,7 +313,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_only_the_user_who_started_the_run_adds_to_it(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 		with as_user("System Manager"):
 			with self.assertRaises(WAPermissionError):
 				api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} x"})
@@ -320,7 +322,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_pacing_is_enforced_on_the_server(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run(pacing=30)
+			run = self._start_test_run(pacing=30)
 			first = api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} one"})
 			self.assertTrue(first["ok"])
 			held = api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} two"})
@@ -334,7 +336,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_cap_is_enforced_on_the_server(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run(cap=1)
+			run = self._start_test_run(cap=1)
 			api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} one"})
 			self._rewind(run["id"])
 			with self.assertRaises(WAValidationError):
@@ -349,7 +351,7 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_a_refused_check_is_a_failed_step_not_an_error(self):
 		before = len(frappe.local.message_log or [])
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			step = api.run_check(
 				run=run["id"], kind="template", target=P1, params={"template": "No Such ApiTest Template"}
 			)
@@ -383,7 +385,7 @@ class TestApiTestLab(IntegrationTestCase):
 			frappe.throw("PDF rendering failed", frappe.ValidationError)
 
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			with (
 				patch.dict(testlab._HANDLERS, {"template": commits_then_fails}),
 				patch.object(frappe.db, "rollback", side_effect=rollback),
@@ -397,7 +399,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_template_over_a_real_record(self):
 		with as_user("System Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			shown = api.preview(
 				kind="template", params={"template": TEMPLATE, "reference_name": self.todo}, target=P1
 			)
@@ -410,7 +412,7 @@ class TestApiTestLab(IntegrationTestCase):
 				params={"template": TEMPLATE, "reference_name": self.todo},
 			)
 		self.assertTrue(step["ok"], step)
-		log = self._log(step["outbounds"][0])
+		log = self._read_log_fields(step["outbounds"][0])
 		self.assertEqual(
 			(log.body, log.is_test, log.template, log.reference_name),
 			(f"{TAG} tpl ApiTest lab todo", 1, TEMPLATE, self.todo),
@@ -432,7 +434,7 @@ class TestApiTestLab(IntegrationTestCase):
 		try:
 			with as_user("WhatsApp Manager"):
 				self.assertFalse(frappe.has_permission("User", "read", "Administrator"))
-				run = self._run()
+				run = self._start_test_run()
 				step = api.run_check(
 					run=run["id"],
 					kind="template",
@@ -449,7 +451,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_notification_goes_to_the_target_not_to_its_recipients(self):
 		with as_user("System Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			shown = api.preview(
 				kind="notification", params={"notification": NOTIFICATION, "reference_name": self.todo}
 			)
@@ -462,13 +464,13 @@ class TestApiTestLab(IntegrationTestCase):
 				params={"notification": NOTIFICATION, "reference_name": self.todo},
 			)
 		self.assertTrue(step["ok"], step)
-		log = self._log(step["outbounds"][0])
+		log = self._read_log_fields(step["outbounds"][0])
 		self.assertEqual((log.phone_e164, log.is_test, log.source_type), (P1, 1, "Notification"))
 		self.assertFalse(frappe.db.exists("WhatsApp Log", {"device": self.device, "phone_e164": P3}))
 
 	def test_real_recipients_must_be_confirmed(self):
 		with as_user("System Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			step = api.run_check(
 				run=run["id"],
 				kind="notification",
@@ -491,17 +493,17 @@ class TestApiTestLab(IntegrationTestCase):
 		self.assertTrue(step["ok"], step)
 		self.assertEqual(step["count"], 1)
 		# the record's own recipient, and real traffic: not marked as a test
-		log = self._log(step["real"][0])
+		log = self._read_log_fields(step["real"][0])
 		self.assertEqual((log.phone_e164, log.is_test), (P3, 0))
 
 	def test_image_uses_the_apps_sample_file(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			step = api.run_check(
 				run=run["id"], kind="quick_image", target=P1, params={"body": f"{TAG} image"}
 			)
 		self.assertTrue(step["ok"], step)
-		log = self._log(step["outbounds"][0])
+		log = self._read_log_fields(step["outbounds"][0])
 		self.assertEqual((log.message_type, log.is_test), ("Image", 1))
 		self.assertEqual(log.attachment, testlab.sample_file("image"))  # one File, reused
 		self.assertTrue(testlab.sample_file("document").endswith(".pdf"))
@@ -563,7 +565,7 @@ class TestApiTestLab(IntegrationTestCase):
 				as_user("WhatsApp Manager"),
 				patch.object(testlab.simulator, "simulate_inbound", return_value=sim),
 			):
-				run = self._run()
+				run = self._start_test_run()
 				step = api.run_check(
 					run=run["id"], kind="command", target=P1, params={"text": "balance", "send_reply": 1}
 				)
@@ -574,7 +576,7 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_command_dry_run_stores_and_sends_nothing(self):
 		inbound = frappe.db.count("WhatsApp Inbound Message", {"device": self.device})
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			step = api.run_check(
 				run=run["id"], kind="command", target=P1, params={"text": "apitest-lab-no-such-word"}
 			)
@@ -589,7 +591,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_campaign_goes_through_bulk_send(self):
 		with as_user("WhatsApp Manager"), patch.object(frappe, "enqueue") as enqueue:
-			run = self._run(targets=[P1, P2], pacing=10)
+			run = self._start_test_run(targets=[P1, P2], pacing=10)
 			step = api.run_check(run=run["id"], kind="campaign", params={"body": f"{TAG} campaign"})
 			self.assertTrue(step["ok"], step)
 			self.assertEqual(step["count"], 2)
@@ -611,7 +613,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_scheduled_campaign(self):
 		with as_user("WhatsApp Manager"), patch.object(frappe, "enqueue"):
-			run = self._run()
+			run = self._start_test_run()
 			step = api.run_check(
 				run=run["id"],
 				kind="campaign",
@@ -628,7 +630,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_status_follows_a_message_to_its_receipt(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			step = api.run_check(
 				run=run["id"],
 				kind="quick_text",
@@ -668,7 +670,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_a_failed_message_fails_its_step_and_history_lists_the_run(self):
 		with as_user("WhatsApp Manager"):
-			run = self._run()
+			run = self._start_test_run()
 			step = api.run_check(
 				run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} broken"}
 			)
@@ -690,7 +692,7 @@ class TestApiTestLab(IntegrationTestCase):
 		"""`clear-cache` and migrate empty the cache: the run is read back from its audit rows —
 		numbers masked, nothing can be added — and its messages are still followed."""
 		with as_user("WhatsApp Manager"):
-			run = self._run(cap=7, pacing=5)
+			run = self._start_test_run(cap=7, pacing=5)
 			step = api.run_check(
 				run=run["id"],
 				kind="quick_text",

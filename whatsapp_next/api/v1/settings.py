@@ -326,22 +326,22 @@ def list_webhook_events_available() -> list[dict[str, Any]]:
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
 def list_audit_log(filters: dict | None = None, page: int = 1, page_length: int = 20) -> dict[str, Any]:
 	"""Audit rows newest first; `filters{action, user, from, to}`."""
-	f = filters or {}
-	unknown = sorted(set(f) - {"action", "user", "from", "to"})
+	requested_filters = filters or {}
+	unknown = sorted(set(requested_filters) - {"action", "user", "from", "to"})
 	if unknown:
 		frappe.throw(_("Unknown filters: {0}").format(", ".join(unknown)), WAValidationError)
 	query: list[list[Any]] = []
-	if f.get("action"):
-		query.append(["action", "=", f["action"]])
-	if f.get("user"):
-		query.append(["user", "=", f["user"]])
+	if requested_filters.get("action"):
+		query.append(["action", "=", requested_filters["action"]])
+	if requested_filters.get("user"):
+		query.append(["user", "=", requested_filters["user"]])
 	# `from` / `to` are days and `timestamp` a date-time: the period runs from the start of `from`
 	# to the end of `to` (a bare `<= to` stopped at its midnight and dropped the whole last day)
 	try:
-		if f.get("from"):
-			query.append(["timestamp", ">=", get_datetime(getdate(f["from"]))])
-		if f.get("to"):
-			query.append(["timestamp", "<", get_datetime(add_days(getdate(f["to"]), 1))])
+		if requested_filters.get("from"):
+			query.append(["timestamp", ">=", get_datetime(getdate(requested_filters["from"]))])
+		if requested_filters.get("to"):
+			query.append(["timestamp", "<", get_datetime(add_days(getdate(requested_filters["to"]), 1))])
 	except Exception:
 		frappe.throw(_("from and to must be dates"), WAValidationError)
 	start, length = paginate(page, page_length)

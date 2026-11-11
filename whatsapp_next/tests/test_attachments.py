@@ -218,31 +218,33 @@ class TestAttachments(IntegrationTestCase):
 		"Paper size" (Frappe 16) or a CSS `@page { size }` — is handed to it (owner, 2026-11-10)."""
 		from unittest.mock import patch
 
-		def fmt(**values):
+		def make_print_format(**values):
 			return frappe._dict({"paper_size": None, "format_data": None, "css": "", "html": "", **values})
 
 		cases = [
-			(fmt(paper_size="A5"), {"page-size": "A5"}),
+			(make_print_format(paper_size="A5"), {"page-size": "A5"}),
 			# the Frappe 16 builder keeps the paper size in the layout
 			(
-				fmt(format_data='{"page": {"size": "A5", "orientation": "Landscape"}, "sections": []}'),
+				make_print_format(
+					format_data='{"page": {"size": "A5", "orientation": "Landscape"}, "sections": []}'
+				),
 				{"page-size": "A5", "orientation": "Landscape"},
 			),
-			(fmt(format_data='[{"fieldname": "x"}]'), {}),
+			(make_print_format(format_data='[{"fieldname": "x"}]'), {}),
 			(
-				fmt(paper_size="Receipt 80 mm"),
+				make_print_format(paper_size="Receipt 80 mm"),
 				{"page-size": "Custom", "page-width": "80mm", "page-height": "297mm"},
 			),
 			(
-				fmt(css="@page { margin: 0; size: a5 landscape; }"),
+				make_print_format(css="@page { margin: 0; size: a5 landscape; }"),
 				{"page-size": "A5", "orientation": "Landscape"},
 			),
 			(
-				fmt(html="<style>@page{size:148mm 210mm}</style><p>x</p>"),
+				make_print_format(html="<style>@page{size:148mm 210mm}</style><p>x</p>"),
 				{"page-size": "Custom", "page-width": "148mm", "page-height": "210mm"},
 			),
-			(fmt(css="@page { size: auto; }"), {}),
-			(fmt(css=".print-format { color: red; }"), {}),
+			(make_print_format(css="@page { size: auto; }"), {}),
+			(make_print_format(css=".print-format { color: red; }"), {}),
 		]
 		with patch.object(frappe.db, "exists", return_value=True):
 			for doc, expected in cases:

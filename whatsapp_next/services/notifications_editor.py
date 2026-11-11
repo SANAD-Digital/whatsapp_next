@@ -105,8 +105,8 @@ def templates_for(document_type: str | None = None) -> list[dict[str, Any]]:
 		if not r.reference_doctype or not document_type or r.reference_doctype == document_type
 	]
 	rows.sort(key=lambda r: 0 if document_type and r.reference_doctype == document_type else 1)
-	for r in rows:
-		r.body = (r.body or "")[:280]
+	for template_row in rows:
+		template_row.body = (template_row.body or "")[:280]
 	return rows
 
 
@@ -153,8 +153,10 @@ def get_notification_editor_data(name: str | None = None) -> dict[str, Any]:
 		fields=["name", "device_name", "phone_e164", "status", "is_default"],
 		order_by="is_default desc, device_name asc",
 	)
-	me = frappe.db.get_value("User", frappe.session.user, ["mobile_no", "phone"], as_dict=True) or {}
-	dt = notification.get("document_type")
+	session_user_phones = (
+		frappe.db.get_value("User", frappe.session.user, ["mobile_no", "phone"], as_dict=True) or {}
+	)
+	document_type = notification.get("document_type")
 	return {
 		"notification": notification,
 		"stats": stats,
@@ -166,10 +168,13 @@ def get_notification_editor_data(name: str | None = None) -> dict[str, Any]:
 			"method": list(ALLOWED_METHODS),
 		},
 		"devices": devices,
-		"templates": templates_for(dt),
-		"fields": notifications.document_fields(dt) if dt and frappe.db.exists("DocType", dt) else None,
+		"templates": templates_for(document_type),
+		"fields": notifications.document_fields(document_type)
+		if document_type and frappe.db.exists("DocType", document_type)
+		else None,
 		"me": {
-			"phone": normalize_phone_to_e164(me.get("mobile_no")) or normalize_phone_to_e164(me.get("phone"))
+			"phone": normalize_phone_to_e164(session_user_phones.get("mobile_no"))
+			or normalize_phone_to_e164(session_user_phones.get("phone"))
 		},
 		"can_write": bool(frappe.has_permission(DOCTYPE, "write")),
 		"can_delete": bool(name and frappe.has_permission(DOCTYPE, "delete", name)),
@@ -237,18 +242,18 @@ def _find_first_validation_problem(doc) -> str | None:
 
 def _document(doc, reference_name: str | None):
 	"""The record the draft is tried on — the one asked for (read-checked), else the latest."""
-	dt = doc.document_type
-	if not dt or not frappe.db.exists("DocType", dt):
+	document_type = doc.document_type
+	if not document_type or not frappe.db.exists("DocType", document_type):
 		return None
 	if not reference_name:
-		if not frappe.has_permission(dt, "read"):
+		if not frappe.has_permission(document_type, "read"):
 			return None
-		rows = frappe.get_list(dt, fields=["name"], order_by="modified desc", limit_page_length=1)
+		rows = frappe.get_list(document_type, fields=["name"], order_by="modified desc", limit_page_length=1)
 		reference_name = rows[0].name if rows else None
-	if not reference_name or not frappe.db.exists(dt, reference_name):
+	if not reference_name or not frappe.db.exists(document_type, reference_name):
 		return None
-	frappe.has_permission(dt, "read", reference_name, throw=True)
-	return frappe.get_doc(dt, reference_name)
+	frappe.has_permission(document_type, "read", reference_name, throw=True)
+	return frappe.get_doc(document_type, reference_name)
 
 
 def _render_draft_notification_for_record(notif, doc) -> dict[str, Any]:
@@ -258,15 +263,15 @@ def _render_draft_notification_for_record(notif, doc) -> dict[str, Any]:
 	try:
 		meets = notifications.evaluate(notif, doc, notif.event, problems)
 		recipients = notifications.resolve_recipients(notif, doc, problems)
-		ctx = templates.context_for(
+		template_context = templates.context_for(
 			doc.doctype, doc.name, {"event": notif.event, "notification": notif.name}, doc=doc
 		)
 		if recipients:
 			first = recipients[0]
-			ctx["recipient"] = notifications.recipient_context(
+			template_context["recipient"] = notifications.recipient_context(
 				first.phone_e164, first.display_name, first.contact
 			)
-		body, error = notifications._render_notification_body(notif, ctx)
+		body, error = notifications._render_notification_body(notif, template_context)
 	finally:
 		if frappe.local.message_log:
 			del frappe.local.message_log[queued:]
@@ -319,8 +324,12 @@ def preview_notification_draft(payload: dict, reference_name: str | None = None)
 		"recipients": [],
 		"recipients_count": 0,
 	}
-	dt = notif.document_type
-	if dt and frappe.db.exists("DocType", dt) and not frappe.has_permission(dt, "read"):
+	document_type = notif.document_type
+	if (
+		document_type
+		and frappe.db.exists("DocType", document_type)
+		and not frappe.has_permission(document_type, "read")
+	):
 		# the preview is a read of a record: say so instead of failing the whole window
 		out["no_access"] = True
 		return out
@@ -330,20 +339,20 @@ def preview_notification_draft(payload: dict, reference_name: str | None = None)
 	# evaluate under a name no row has: `_record_error` writes on the notification by name, and a
 	# preview must leave the saved one's error fields (and a new one's missing name) alone
 	notif.name = f"__draft__{notif.name or 'new'}"
-	r = _render_draft_notification_for_record(notif, doc)
+	draft_result = _render_draft_notification_for_record(notif, doc)
 	out.update(
 		{
 			"reference_name": doc.name,
-			"meets_condition": r["meets"],
-			"message": r["body"],
+			"meets_condition": draft_result["meets"],
+			"message": draft_result["body"],
 			"attachment": _attachment_hint(notif, doc),
 			"recipients": [
 				{"phone_e164": mask_phone_for_logs(x.phone_e164), "source": x.source}
-				for x in r["recipients"][:20]
+				for x in draft_result["recipients"][:20]
 			],
-			"recipients_count": len(r["recipients"]),
-			"error": r["error"],
-			"warnings": r["problems"],
+			"recipients_count": len(draft_result["recipients"]),
+			"error": draft_result["error"],
+			"warnings": draft_result["problems"],
 		}
 	)
 	return out
@@ -404,10 +413,14 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 		)
 	saved_name = None if notif.is_new() else notif.name
 	notif.name = saved_name or None
-	ctx = templates.context_for(doc.doctype, doc.name, {"event": "Test", "notification": saved_name}, doc=doc)
+	template_context = templates.context_for(
+		doc.doctype, doc.name, {"event": "Test", "notification": saved_name}, doc=doc
+	)
 	# the tester's own number: named when the system knows it, never "None"
-	ctx["recipient"] = notifications.recipient_context(phone_e164, *dispatch.recipient_identity(phone_e164))
-	body, error = notifications._render_notification_body(notif, ctx)
+	template_context["recipient"] = notifications.recipient_context(
+		phone_e164, *dispatch.recipient_identity(phone_e164)
+	)
+	body, error = notifications._render_notification_body(notif, template_context)
 	if error or not (body or "").strip():
 		frappe.throw(
 			_("The message could not be rendered: {0}").format(error or _("it is empty")), WAValidationError
@@ -494,15 +507,15 @@ def search_editor_picker_options(
 			order_by="name asc",
 			limit_page_length=0,
 		)
-		q = txt.casefold()
+		folded_search_text = txt.casefold()
 
 		def rank_doctype_by_search_text(r) -> int | None:
 			names = (r.name.casefold(), _(r.name).casefold())
-			if not q:
+			if not folded_search_text:
 				return 2
-			if any(n.startswith(q) for n in names):
+			if any(n.startswith(folded_search_text) for n in names):
 				return 0
-			if any(q in n for n in names):
+			if any(folded_search_text in n for n in names):
 				return 1
 			return None
 

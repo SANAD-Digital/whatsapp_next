@@ -64,11 +64,11 @@ def list_commands(filters: dict | None = None, page: int = 1, page_length: int =
 		else {}
 	)
 	counts = command_router.recent_run_counts([r.name for r in rows], days=30)
-	for r in rows:
-		fn = functions.get(r.function)
-		r["function_status"] = fn.status if fn else None
-		r["function_name"] = fn.function_name if fn else None
-		r["run_count_30d"] = counts.get(r.name, 0)
+	for command_row in rows:
+		function_row = functions.get(command_row.function)
+		command_row["function_status"] = function_row.status if function_row else None
+		command_row["function_name"] = function_row.function_name if function_row else None
+		command_row["run_count_30d"] = counts.get(command_row.name, 0)
 	return {"rows": rows, "total": total}
 
 

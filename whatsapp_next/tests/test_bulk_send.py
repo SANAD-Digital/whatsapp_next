@@ -49,12 +49,12 @@ class TestBulkSend(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_campaigns()
 		delete_all("WhatsApp Contact Group", {"group_name": ("in", [GROUP, BLACK])})
 		super().tearDownClass()
 
 	@classmethod
-	def _clean(cls):
+	def _delete_test_campaigns(cls):
 		names = frappe.get_all("WhatsApp Campaign", filters={"device": cls.device}, pluck="name")
 		if names:
 			delete_all(

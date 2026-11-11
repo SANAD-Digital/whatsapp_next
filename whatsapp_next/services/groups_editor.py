@@ -123,11 +123,11 @@ def save_group_and_members_from_editor(payload: dict) -> dict[str, Any]:
 	for (source_type, source_ref), rows in batches.items():
 		if source_type not in picker.SOURCE_TYPES:
 			source_type = "Manual"
-		r = picker.commit_add(
+		add_result = picker.commit_add(
 			DOCTYPE, doc.name, rows, source_type=source_type, source_ref=source_ref, user=frappe.session.user
 		)
-		added += cint(r.get("added"))
-		skipped += cint(r.get("skipped_duplicates")) + cint(r.get("skipped_invalid"))
+		added += cint(add_result.get("added"))
+		skipped += cint(add_result.get("skipped_duplicates")) + cint(add_result.get("skipped_invalid"))
 	return {
 		"name": doc.name,
 		"modified": str(frappe.db.get_value(DOCTYPE, doc.name, "modified")),

@@ -48,7 +48,7 @@ class TestSndPlatform(IntegrationTestCase):
 		guard.start()
 		self.addCleanup(guard.stop)
 
-	def _call(self, provider, method, *args, response=None, exc=None, **kwargs):
+	def _call_provider_with_fake_request(self, provider, method, *args, response=None, exc=None, **kwargs):
 		with patch.object(provider._session, "request") as req:
 			if exc:
 				req.side_effect = exc
@@ -59,7 +59,7 @@ class TestSndPlatform(IntegrationTestCase):
 
 	def test_headers_d020(self):
 		provider = _provider()
-		_, req = self._call(
+		_, req = self._call_provider_with_fake_request(
 			provider,
 			"get_queue_status",
 			response=_Resp(200, {"message": {"ok": True, "counts": {"Queued": 2}}}),
@@ -187,13 +187,15 @@ class TestSndPlatform(IntegrationTestCase):
 		]
 		for response, expected in cases:
 			with self.subTest(status=response.status_code, body=response._body), self.assertRaises(expected):
-				self._call(provider, "get_queue_status", response=response)
+				self._call_provider_with_fake_request(provider, "get_queue_status", response=response)
 		with self.assertRaises(pex.TransientError):
-			self._call(provider, "get_queue_status", exc=requests.Timeout())
+			self._call_provider_with_fake_request(provider, "get_queue_status", exc=requests.Timeout())
 		with self.assertRaises(pex.TransientError):
-			self._call(provider, "get_queue_status", exc=requests.ConnectionError())
+			self._call_provider_with_fake_request(
+				provider, "get_queue_status", exc=requests.ConnectionError()
+			)
 		try:
-			self._call(
+			self._call_provider_with_fake_request(
 				provider,
 				"get_queue_status",
 				response=_Resp(429, {"message": {"ok": False, "error": "x"}}, headers={"Retry-After": "7"}),
@@ -205,14 +207,14 @@ class TestSndPlatform(IntegrationTestCase):
 		provider = _provider()
 		# a dict `message` next to Frappe's own `exc_type`: the type still decides the class
 		with self.assertRaises(pex.PermissionDeniedError):
-			self._call(
+			self._call_provider_with_fake_request(
 				provider,
 				"get_queue_status",
 				response=_Resp(403, {"message": {"ok": False, "error": "no"}, "exc_type": "PermissionError"}),
 			)
 		# a string `message` on an error keeps its text and the envelope's code
 		try:
-			self._call(
+			self._call_provider_with_fake_request(
 				provider,
 				"get_queue_status",
 				response=_Resp(422, {"message": "Phone number is invalid", "code": "INVALID_PHONE"}),
@@ -264,7 +266,9 @@ class TestSndPlatform(IntegrationTestCase):
 				],
 			}
 		}
-		result, req = self._call(provider, "send_batch", messages, "b1", response=_Resp(200, body))
+		result, req = self._call_provider_with_fake_request(
+			provider, "send_batch", messages, "b1", response=_Resp(200, body)
+		)
 		sent = req.call_args.kwargs["json"]
 		self.assertEqual(sent["batch_id"], "b1")
 		m1, m2, m3 = sent["messages"]
@@ -288,7 +292,7 @@ class TestSndPlatform(IntegrationTestCase):
 		msg = NormalizedMessage(
 			client_ref="ref1", platform_device="WAD-1", phone_e164="+966500000002", body="hi"
 		)
-		result, req = self._call(
+		result, req = self._call_provider_with_fake_request(
 			provider,
 			"send_message",
 			msg,
@@ -309,7 +313,7 @@ class TestSndPlatform(IntegrationTestCase):
 		self.assertTrue(result.ok)
 		self.assertTrue(result.device_fallback)
 		self.assertEqual(req.call_args.kwargs["json"]["allow_fallback"], 0)
-		statuses, unknown = self._call(
+		statuses, unknown = self._call_provider_with_fake_request(
 			provider,
 			"get_message_status",
 			["ref1", "ref9"],
@@ -334,11 +338,14 @@ class TestSndPlatform(IntegrationTestCase):
 		)[0]
 		self.assertEqual(statuses[0].status, "Sent")
 		self.assertEqual(unknown, ["ref9"])
-		self.assertEqual(self._call(provider, "get_message_status", [], response=None)[0], ([], []))
+		self.assertEqual(
+			self._call_provider_with_fake_request(provider, "get_message_status", [], response=None)[0],
+			([], []),
+		)
 
 	def test_devices_and_pairing(self):
 		provider = _provider()
-		state, req = self._call(
+		state, req = self._call_provider_with_fake_request(
 			provider,
 			"create_device",
 			"Main",
@@ -354,7 +361,7 @@ class TestSndPlatform(IntegrationTestCase):
 		self.assertEqual(state.status, "Pending QR")
 		with self.assertRaises(pex.ValidationError):
 			provider.create_device("Main", None, "Code")
-		devices, _ = self._call(
+		devices, _ = self._call_provider_with_fake_request(
 			provider,
 			"list_devices",
 			response=_Resp(
@@ -378,7 +385,7 @@ class TestSndPlatform(IntegrationTestCase):
 		self.assertEqual(devices[0].status, "Connected")
 		self.assertEqual(devices[0].phone_e164, "+966500000001")
 		self.assertTrue(devices[0].webhook_registered)
-		qr, _ = self._call(
+		qr, _ = self._call_provider_with_fake_request(
 			provider,
 			"get_qr",
 			"WAD-9",
@@ -387,10 +394,10 @@ class TestSndPlatform(IntegrationTestCase):
 		self.assertEqual(qr.mode, "QR")
 		self.assertEqual(qr.expires_in, 60)
 		with self.assertRaises(pex.DeviceOfflineError):
-			self._call(
+			self._call_provider_with_fake_request(
 				provider, "get_qr", "WAD-9", response=_Resp(200, {"message": {"ok": True, "qr_code": None}})
 			)
-		code, _ = self._call(
+		code, _ = self._call_provider_with_fake_request(
 			provider,
 			"get_pair_code",
 			"WAD-9",
@@ -403,13 +410,13 @@ class TestSndPlatform(IntegrationTestCase):
 
 	def test_webhook_secret_and_endpoints(self):
 		provider = _provider()
-		secret, _ = self._call(
+		secret, _ = self._call_provider_with_fake_request(
 			provider,
 			"get_webhook_secret",
 			response=_Resp(200, {"message": {"ok": True, "webhook_secret": "abc"}}),
 		)
 		self.assertEqual(secret, "abc")
-		endpoints, _ = self._call(
+		endpoints, _ = self._call_provider_with_fake_request(
 			provider,
 			"list_webhook_endpoints",
 			response=_Resp(
@@ -445,7 +452,7 @@ class TestSndPlatform(IntegrationTestCase):
 		still raises."""
 		provider = _provider()
 		for state in ("pending", "not_approved", "failed"):
-			answer, _req = self._call(
+			answer, _req = self._call_provider_with_fake_request(
 				provider,
 				"confirm_paypal_topup",
 				"ORDER-1",
@@ -453,7 +460,7 @@ class TestSndPlatform(IntegrationTestCase):
 			)
 			self.assertEqual(answer, {"ok": False, "state": state})
 		with self.assertRaises(pex.ProviderError):
-			self._call(
+			self._call_provider_with_fake_request(
 				provider,
 				"renew_subscription",
 				response=_Resp(200, {"message": {"ok": False, "error": "Wallet too low"}}),

@@ -24,7 +24,7 @@ PLATFORM_FIXTURES = [
 ]
 
 
-def _settings(key: str) -> ProviderSettings:
+def _build_provider_settings(key: str) -> ProviderSettings:
 	return ProviderSettings(
 		provider_key=key,
 		base_url="https://platform.invalid",
@@ -35,8 +35,8 @@ def _settings(key: str) -> ProviderSettings:
 
 class TestProviderContract(IntegrationTestCase):
 	providers = (
-		SndPlatformProvider(_settings("snd_platform")),
-		MetaCloudProvider(_settings("meta_cloud")),
+		SndPlatformProvider(_build_provider_settings("snd_platform")),
+		MetaCloudProvider(_build_provider_settings("meta_cloud")),
 		FakeProvider(),
 	)
 

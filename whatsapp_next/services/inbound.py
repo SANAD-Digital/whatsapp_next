@@ -33,14 +33,14 @@ def resolve_contact(phone_e164: str | None) -> str | None:
 
 
 def _sender_fields(event: WebhookEvent) -> dict[str, Any]:
-	p = event.inbound
-	raw_phone = p.sender_phone or None
+	inbound_payload = event.inbound
+	raw_phone = inbound_payload.sender_phone or None
 	e164 = normalize_phone_to_e164(raw_phone) if raw_phone else None
-	sender_jid = p.sender_jid or p.from_jid
+	sender_jid = inbound_payload.sender_jid or inbound_payload.from_jid
 	if not e164 and sender_jid and not is_group_or_lid(sender_jid):
 		e164 = normalize_phone_to_e164(sender_jid)
-	chat_jid = p.chat_jid or sender_jid
-	is_group = bool(p.is_group) or bool(chat_jid and chat_jid.lower().endswith("@g.us"))
+	chat_jid = inbound_payload.chat_jid or sender_jid
+	is_group = bool(inbound_payload.is_group) or bool(chat_jid and chat_jid.lower().endswith("@g.us"))
 	return {
 		"phone": raw_phone or e164,
 		"phone_e164": e164,
@@ -71,8 +71,8 @@ def record_inbound(
 	device = device or _device_for(event)
 	if not device:
 		return None
-	p = event.inbound
-	dup = _existing(device, p.provider_message_id)
+	inbound_payload = event.inbound
+	dup = _existing(device, inbound_payload.provider_message_id)
 	if dup:
 		return dup
 	fields = _sender_fields(event)
@@ -85,27 +85,27 @@ def record_inbound(
 		**fields,
 		# the sender's own WhatsApp name, else a name this site knows them by; in a group, the
 		# group's name beside it (owner, 2026-10-08)
-		"display_name": p.push_name or _known_name(fields, contact),
-		"group_name": p.group_name if fields.get("is_group") else None,
+		"display_name": inbound_payload.push_name or _known_name(fields, contact),
+		"group_name": inbound_payload.group_name if fields.get("is_group") else None,
 		"contact": contact,
-		"message_type": p.message_type or "Text",
-		"body": p.body,
-		"caption": p.caption,
-		"media_url": p.media_url,
-		"media_mime_type": p.media_mime_type,
-		"provider_message_id": p.provider_message_id or event.event_id,
-		"quoted_provider_message_id": p.quoted_id,
-		"selected_option_id": p.selected_id,
-		"received_at": p.received_at or event.timestamp or now_datetime(),
+		"message_type": inbound_payload.message_type or "Text",
+		"body": inbound_payload.body,
+		"caption": inbound_payload.caption,
+		"media_url": inbound_payload.media_url,
+		"media_mime_type": inbound_payload.media_mime_type,
+		"provider_message_id": inbound_payload.provider_message_id or event.event_id,
+		"quoted_provider_message_id": inbound_payload.quoted_id,
+		"selected_option_id": inbound_payload.selected_id,
+		"received_at": inbound_payload.received_at or event.timestamp or now_datetime(),
 		"webhook_event": webhook_event_name,
 		"command_status": "None",
 	}
-	if p.location:
+	if inbound_payload.location:
 		values.update(
 			{
-				"location_latitude": p.location.latitude,
-				"location_longitude": p.location.longitude,
-				"location_name": p.location.name,
+				"location_latitude": inbound_payload.location.latitude,
+				"location_longitude": inbound_payload.location.longitude,
+				"location_name": inbound_payload.location.name,
 			}
 		)
 	try:
@@ -115,12 +115,12 @@ def record_inbound(
 			doc.insert(ignore_permissions=True)
 	except frappe.DuplicateEntryError:
 		return _existing(device, values["provider_message_id"])
-	_after_insert(doc.name, device, fields, p.message_type or "Text", p.body)
-	if p.media_url:
+	_after_insert(doc.name, device, fields, inbound_payload.message_type or "Text", inbound_payload.body)
+	if inbound_payload.media_url:
 		frappe.enqueue(
 			"whatsapp_next.services.inbound.fetch_media",
 			inbound_name=doc.name,
-			file_name=p.media_file_name,
+			file_name=inbound_payload.media_file_name,
 			queue="short",
 			job_id=f"wa-media-{doc.name}",
 			deduplicate=True,
@@ -211,14 +211,14 @@ def record_change(event: WebhookEvent, *, device: str) -> str | None:
 	if not name:
 		return None
 	row = frappe.db.get_value("WhatsApp Inbound Message", name, ["body", "original_body"], as_dict=True)
-	at = event.timestamp or now_datetime()
+	changed_at = event.timestamp or now_datetime()
 	if event.event_name == "message.edited":
-		values = {"body": raw.get("new_text") or row.body, "edited_at": at}
+		values = {"body": raw.get("new_text") or row.body, "edited_at": changed_at}
 		if not row.original_body:
 			values["original_body"] = raw.get("original_text") or row.body
 	else:
 		values = {
-			"deleted_at": at,
+			"deleted_at": changed_at,
 			"deleted_by": raw.get("deleted_by_number") or raw.get("deleted_by") or "",
 		}
 		if raw.get("original_text") and not row.body:
@@ -298,8 +298,8 @@ def record_reaction(
 	device = device or _device_for(event)
 	if not device:
 		return None
-	p = event.inbound
-	dup = _existing(device, p.provider_message_id)
+	inbound_payload = event.inbound
+	dup = _existing(device, inbound_payload.provider_message_id)
 	if dup:
 		return dup
 	fields = _sender_fields(event)
@@ -307,14 +307,14 @@ def record_reaction(
 		"doctype": "WhatsApp Inbound Message",
 		"device": device,
 		**fields,
-		"display_name": p.push_name,
+		"display_name": inbound_payload.push_name,
 		"contact": resolve_contact(fields["phone_e164"]) if fields["phone_e164"] else None,
 		"message_type": "Reaction",
-		"body": p.reaction,
-		"reaction": p.reaction,
-		"reaction_to_provider_message_id": p.reaction_to,
-		"provider_message_id": p.provider_message_id or event.event_id,
-		"received_at": p.received_at or event.timestamp or now_datetime(),
+		"body": inbound_payload.reaction,
+		"reaction": inbound_payload.reaction,
+		"reaction_to_provider_message_id": inbound_payload.reaction_to,
+		"provider_message_id": inbound_payload.provider_message_id or event.event_id,
+		"received_at": inbound_payload.received_at or event.timestamp or now_datetime(),
 		"webhook_event": webhook_event_name,
 		"command_status": "None",
 	}
@@ -448,15 +448,15 @@ def get_inbound_summary(days: int | None = 30) -> dict[str, Any]:
 	window."""
 	from frappe.utils import add_days, get_datetime, nowdate
 
-	msg = frappe.qb.DocType("WhatsApp Inbound Message")
+	inbound_message_table = frappe.qb.DocType("WhatsApp Inbound Message")
 	since = get_datetime(add_days(nowdate(), -(cint(days) - 1))) if cint(days) else None
 	query = (
-		frappe.qb.from_(msg)
-		.select(msg.command_status, frappe.query_builder.functions.Count("*"))
-		.groupby(msg.command_status)
+		frappe.qb.from_(inbound_message_table)
+		.select(inbound_message_table.command_status, frappe.query_builder.functions.Count("*"))
+		.groupby(inbound_message_table.command_status)
 	)
 	if since:
-		query = query.where(msg.received_at >= since)
+		query = query.where(inbound_message_table.received_at >= since)
 	by_status = {(status or "None"): int(n) for status, n in query.run()}
 	total = sum(by_status.values())
 	matched = sum(by_status.get(s, 0) for s in MATCHED_STATUSES)

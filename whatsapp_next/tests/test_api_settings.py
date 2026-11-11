@@ -283,19 +283,19 @@ class TestContactOpenToAll(IntegrationTestCase):
 
 		from whatsapp_next.services import permissions
 
-		def perm(role, **rights):
+		def make_permission_row(role, **rights):
 			return frappe._dict(role=role, permlevel=0, **rights)
 
 		meta = frappe._dict(
 			permissions=[
-				perm("All", read=1, write=1, create=0),
-				perm("System Manager", read=1, write=1, create=1, delete=1),
+				make_permission_row("All", read=1, write=1, create=0),
+				make_permission_row("System Manager", read=1, write=1, create=1, delete=1),
 				frappe._dict(role="All", permlevel=1, read=1, delete=1),  # other levels do not count
 			]
 		)
 		with patch.object(frappe, "get_meta", return_value=meta):
 			self.assertEqual(permissions.contact_open_to_all(), ["read", "write"])
-		meta.permissions = [perm("Sales User", read=1)]
+		meta.permissions = [make_permission_row("Sales User", read=1)]
 		with patch.object(frappe, "get_meta", return_value=meta):
 			self.assertEqual(permissions.contact_open_to_all(), [])
 

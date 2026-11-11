@@ -114,8 +114,8 @@ def resolve_filters(alert) -> dict[str, Any]:
 				filters[item[-3] if len(item) == 4 else item[0]] = item[-1]
 	dynamic = _load_json(getattr(alert, "dynamic_filters_json", None))
 	if isinstance(dynamic, dict):
-		for k, v in dynamic.items():
-			filters[k] = alerts_dates.resolve(v)
+		for filter_name, v in dynamic.items():
+			filters[filter_name] = alerts_dates.resolve(v)
 	if filters.get("company") == COMPANY_TOKEN:
 		filters.pop("company")
 		wants_company = True
@@ -222,7 +222,7 @@ def expand_recipients(
 			add_recipient(row.phone_e164 or normalize_phone_to_e164(row.phone), "Phone")
 		elif row.recipient_type == "Report Column" and row.report_column and rows is not None:
 			cols = report_render.normalize_columns(columns or [])
-			idx = next(
+			column_index = next(
 				(
 					i
 					for i, c in enumerate(cols)
@@ -232,15 +232,17 @@ def expand_recipients(
 			)
 			values: list[Any] = []
 			for r in rows:
-				v = (
+				cell_value = (
 					r.get(row.report_column)
 					if isinstance(r, dict)
-					else (r[idx] if idx is not None and idx < len(r) else None)
+					else (r[column_index] if column_index is not None and column_index < len(r) else None)
 				)
-				if v not in (None, "") and v not in values:
-					values.append(v)
-			for v in values[:MAX_COLUMN_RECIPIENTS]:
-				add_recipient(normalize_phone_to_e164(str(v)), "Report Column", column_value=v)
+				if cell_value not in (None, "") and cell_value not in values:
+					values.append(cell_value)
+			for cell_value in values[:MAX_COLUMN_RECIPIENTS]:
+				add_recipient(
+					normalize_phone_to_e164(str(cell_value)), "Report Column", column_value=cell_value
+				)
 	return out
 
 
@@ -248,11 +250,17 @@ def _rows_for(recipient: Recipient, rows: list[Any], columns: list[Any], column:
 	if recipient.source != "Report Column" or not column:
 		return rows
 	cols = report_render.normalize_columns(columns)
-	idx = next((i for i, c in enumerate(cols) if c["fieldname"] == column or c["label"] == column), None)
+	column_index = next(
+		(i for i, c in enumerate(cols) if c["fieldname"] == column or c["label"] == column), None
+	)
 	return [
 		r
 		for r in rows
-		if (r.get(column) if isinstance(r, dict) else (r[idx] if idx is not None and idx < len(r) else None))
+		if (
+			r.get(column)
+			if isinstance(r, dict)
+			else (r[column_index] if column_index is not None and column_index < len(r) else None)
+		)
 		== recipient.column_value
 	]
 
@@ -381,7 +389,7 @@ def _render_and_send_alert(alert, *, preview: bool = False, test_phone: str | No
 		source = source or alert.message
 		for recipient in recipients:
 			r_rows = _rows_for(recipient, rows, columns, column)
-			ctx = templates.context_for(
+			template_context = templates.context_for(
 				None,
 				None,
 				{
@@ -395,7 +403,7 @@ def _render_and_send_alert(alert, *, preview: bool = False, test_phone: str | No
 				doc=frappe._dict(),
 				recipient={"phone_e164": recipient.phone_e164, "display_name": recipient.display_name},
 			)
-			rendered = templates.render_message_template(source, ctx)
+			rendered = templates.render_message_template(source, template_context)
 			body = rendered.text if rendered.ok else _("Report {0}").format(alert.report or alert.alert_name)
 			attach: dict[str, Any] = {"message_type": "Text"}
 			if preview and alert.content_type == "Report" and alert.attachment_format in ("PDF", "PNG"):

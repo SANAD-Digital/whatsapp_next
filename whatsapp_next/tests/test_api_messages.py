@@ -27,14 +27,14 @@ class TestApiMessages(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_messages()
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_messages()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_messages():
 		names = frappe.get_all("WhatsApp Log", filters={"body": ("like", f"{TAG}%")}, pluck="name")
 		if names:
 			delete_all("WhatsApp Webhook Event", {"outbound_message": ("in", names)})

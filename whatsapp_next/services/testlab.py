@@ -420,8 +420,8 @@ def _webhook_check(settings) -> dict[str, Any]:
 
 def _webhook_traffic_check(settings) -> dict[str, Any]:
 	title = _("Last event received")
-	at = settings.webhook_last_event_at
-	if not at:
+	last_event_at = settings.webhook_last_event_at
+	if not last_event_at:
 		return _build_health_check_result(
 			"webhook_traffic",
 			title,
@@ -429,9 +429,9 @@ def _webhook_traffic_check(settings) -> dict[str, Any]:
 			_("No event has ever arrived from the platform."),
 			_("Send one test message below: its delivery receipt is the proof that the way back works."),
 		)
-	at = get_datetime(at)
-	hours = time_diff_in_seconds(now_datetime(), at) / 3600
-	when = frappe.utils.pretty_date(at)
+	last_event_at = get_datetime(last_event_at)
+	hours = time_diff_in_seconds(now_datetime(), last_event_at) / 3600
+	when = frappe.utils.pretty_date(last_event_at)
 	if hours > STALE_WEBHOOK_HOURS:
 		return _build_health_check_result(
 			"webhook_traffic",
@@ -451,8 +451,11 @@ def _events_arrive() -> bool:
 	"""The platform's events reached this site within the last day. The device's own
 	`webhook_registered` flag is mirrored from whatever state the platform last sent and reads 0
 	after a bare connection event, so it is only believed when nothing is arriving either."""
-	at = frappe.db.get_single_value("WhatsApp Settings", "webhook_last_event_at")
-	return bool(at) and time_diff_in_seconds(now_datetime(), get_datetime(at)) < STALE_WEBHOOK_HOURS * 3600
+	last_event_at = frappe.db.get_single_value("WhatsApp Settings", "webhook_last_event_at")
+	return (
+		bool(last_event_at)
+		and time_diff_in_seconds(now_datetime(), get_datetime(last_event_at)) < STALE_WEBHOOK_HOURS * 3600
+	)
 
 
 def _device_check(device: str | None) -> dict[str, Any]:
@@ -1044,8 +1047,8 @@ def sample_file(kind: str) -> str:
 	)
 	if not os.path.exists(path):
 		frappe.throw(_("The sample file {0} is missing from the app.").format(file_name), WAValidationError)
-	with open(path, "rb") as fh:
-		return attachments.save_private_file(fh.read(), file_name, SAMPLE_OWNER)
+	with open(path, "rb") as opened_file:
+		return attachments.save_private_file(opened_file.read(), file_name, SAMPLE_OWNER)
 
 
 def _run_quick_send_check(data: dict, target: str, params: dict, user: str, *, kind: str) -> dict[str, Any]:
@@ -1137,16 +1140,16 @@ def _template_attachment(tpl, reference: str | None) -> dict[str, Any]:
 
 def _template(data: dict, target: str, params: dict, user: str) -> dict[str, Any]:
 	"""A template over a real record, sent like a quick send from that record's form."""
-	tpl = _template_row(params.get("template"))
-	reference = _reference(tpl.reference_doctype, params.get("reference_name"))
-	attach = _template_attachment(tpl, reference)
+	message_template = _template_row(params.get("template"))
+	reference = _reference(message_template.reference_doctype, params.get("reference_name"))
+	attach = _template_attachment(message_template, reference)
 	caption = None
 	if attach["message_type"] != "Text":
 		# a file's text is its caption: rendered the way the send renders a body
 		caption = (
 			quick_send.preview_message_body(
-				template=tpl.name,
-				reference_doctype=tpl.reference_doctype if reference else None,
+				template=message_template.name,
+				reference_doctype=message_template.reference_doctype if reference else None,
 				reference_name=reference,
 				phone=target,
 			)["body"]
@@ -1155,11 +1158,11 @@ def _template(data: dict, target: str, params: dict, user: str) -> dict[str, Any
 	spec = OutboundSpec(
 		device=data["device"],
 		phone=target,
-		template=tpl.name,
+		template=message_template.name,
 		caption=caption,
-		reference_doctype=tpl.reference_doctype if reference else None,
+		reference_doctype=message_template.reference_doctype if reference else None,
 		reference_name=reference,
-		language=tpl.language or None,
+		language=message_template.language or None,
 		source_type="Quick Send",
 		is_test=True,
 		skip_policy=True,
@@ -1188,8 +1191,8 @@ def _notification(data: dict, target: str, params: dict, user: str) -> dict[str,
 			_("There is no {0} to try the notification on yet").format(_(document_type)), WAValidationError
 		)
 	if not params.get("real_recipients"):
-		r = notifications_editor.send_test({"name": name}, target, reference)
-		return {"outbounds": [r["outbound"]], "result": {"reference_name": reference}}
+		send_result = notifications_editor.send_test({"name": name}, target, reference)
+		return {"outbounds": [send_result["outbound"]], "result": {"reference_name": reference}}
 	if not params.get("confirm_real"):
 		frappe.throw(_("Sending to the real recipients must be confirmed."), WAValidationError)
 	expected = len(notifications.preview_for_document(name, reference)["recipients"])
@@ -1198,19 +1201,19 @@ def _notification(data: dict, target: str, params: dict, user: str) -> dict[str,
 			_("This notification reaches {0} recipients, more than the run has left.").format(expected),
 			WAValidationError,
 		)
-	r = notifications.send_for_document(name, document_type, reference, doc_event="Manual")
-	if not r.get("sent"):
+	send_result = notifications.send_for_document(name, document_type, reference, doc_event="Manual")
+	if not send_result.get("sent"):
 		frappe.throw(
 			_("Nothing was sent: {0}").format(
-				r.get("error")
+				send_result.get("error")
 				or _("the notification is disabled, or its condition does not hold for this record")
 			),
 			WAValidationError,
 		)
 	# real customer traffic: counted against the cap, but not marked as a test
 	return {
-		"real": r.get("outbounds") or [],
-		"count": r["sent"],
+		"real": send_result.get("outbounds") or [],
+		"count": send_result["sent"],
 		"result": {"reference_name": reference, "real_recipients": True},
 	}
 
@@ -1223,10 +1226,10 @@ def _run_alert_check(data: dict, target: str, params: dict, user: str) -> dict[s
 	if not name:
 		frappe.throw(_("Pick an alert"), WAValidationError)
 	frappe.has_permission("WhatsApp Notification Alert", "read", name, throw=True)
-	r = alerts_editor.send_test({"name": name}, target)
-	if not r.get("outbound"):
+	send_result = alerts_editor.send_test({"name": name}, target)
+	if not send_result.get("outbound"):
 		frappe.throw(_("The alert had nothing to send."), WAValidationError)
-	return {"outbounds": [r["outbound"]]}
+	return {"outbounds": [send_result["outbound"]]}
 
 
 def _command(data: dict, target: str, params: dict, user: str) -> dict[str, Any]:
@@ -1237,10 +1240,14 @@ def _command(data: dict, target: str, params: dict, user: str) -> dict[str, Any]
 	if not text:
 		frappe.throw(_("Message text is required"), WAValidationError)
 	if not params.get("send_reply"):
-		res = simulator.dry_run_command(text, target, data["device"])
-		return {"ok": res["status"] == "Executed", "error": res.get("error"), "result": _command_result(res)}
+		command_outcome = simulator.dry_run_command(text, target, data["device"])
+		return {
+			"ok": command_outcome["status"] == "Executed",
+			"error": command_outcome.get("error"),
+			"result": _command_result(command_outcome),
+		}
 	sim = simulator.simulate_inbound(data["device"], target, text, run_commands=True, persist=True, user=user)
-	res = {
+	command_outcome = {
 		"status": sim.status,
 		"command": sim.command,
 		"block_reason": sim.block_reason,
@@ -1295,7 +1302,7 @@ def _command(data: dict, target: str, params: dict, user: str) -> dict[str, Any]
 		"outbounds": outbounds,
 		"ok": sim.status == "Executed" and bool(outbounds),
 		"error": sim.error or (None if outbounds else _("The command produced no reply to send.")),
-		"result": _command_result(res),
+		"result": _command_result(command_outcome),
 	}
 
 
@@ -1348,10 +1355,10 @@ def _campaign(data: dict, target: None, params: dict, user: str) -> dict[str, An
 			params.get("schedule_minutes"), SCHEDULE_DEFAULT, SCHEDULE_MIN, SCHEDULE_MAX
 		)
 		payload["scheduled_at"] = str(add_to_date(now_datetime(), minutes=minutes))
-	r = bulk_send.create_and_start_bulk_campaign(payload, user=user)
+	bulk_send_result = bulk_send.create_and_start_bulk_campaign(payload, user=user)
 	frappe.db.set_value(
 		"WhatsApp Campaign",
-		r["campaign"],
+		bulk_send_result["campaign"],
 		{
 			"campaign_name": _("Test Lab · {0}").format(
 				frappe.utils.format_datetime(now_datetime(), "dd-MM-yyyy HH:mm")
@@ -1360,15 +1367,15 @@ def _campaign(data: dict, target: None, params: dict, user: str) -> dict[str, An
 		},
 		update_modified=False,
 	)
-	readiness = campaign_runner.readiness(r["campaign"])
+	readiness = campaign_runner.readiness(bulk_send_result["campaign"])
 	return {
-		"campaign": r["campaign"],
-		"count": cint(r["recipients"]),
+		"campaign": bulk_send_result["campaign"],
+		"count": cint(bulk_send_result["recipients"]),
 		"result": {
-			"status": r["status"],
-			"recipients": cint(r["recipients"]),
-			"excluded": cint(r["excluded"]),
-			"invalid": cint(r["invalid"]),
+			"status": bulk_send_result["status"],
+			"recipients": cint(bulk_send_result["recipients"]),
+			"excluded": cint(bulk_send_result["excluded"]),
+			"invalid": cint(bulk_send_result["invalid"]),
 			"scheduled_at": payload.get("scheduled_at"),
 			"schedule_minutes": minutes,
 			"readiness": {
@@ -1402,25 +1409,25 @@ def preview_check_message(kind: str, params: dict | None = None, target: str | N
 	`{total, excluded, invalid}` for `params.numbers`."""
 	params = dict(params or {})
 	if kind == "template":
-		tpl = _template_row(params.get("template"))
-		reference = _reference(tpl.reference_doctype, params.get("reference_name"))
-		r = quick_send.preview_message_body(
-			template=tpl.name,
-			reference_doctype=tpl.reference_doctype if reference else None,
+		message_template = _template_row(params.get("template"))
+		reference = _reference(message_template.reference_doctype, params.get("reference_name"))
+		body_preview = quick_send.preview_message_body(
+			template=message_template.name,
+			reference_doctype=message_template.reference_doctype if reference else None,
 			reference_name=reference,
 			phone=target or None,
 		)
 		carries = None
-		if tpl.message_type != "Text":
+		if message_template.message_type != "Text":
 			carries = {
-				"message_type": tpl.message_type,
-				"print_format": tpl.print_format,
-				"file": bool(tpl.attachment),
+				"message_type": message_template.message_type,
+				"print_format": message_template.print_format,
+				"file": bool(message_template.attachment),
 			}
 		return {
-			"message": r["body"],
-			"errors": r["errors"],
-			"reference_doctype": tpl.reference_doctype,
+			"message": body_preview["body"],
+			"errors": body_preview["errors"],
+			"reference_doctype": message_template.reference_doctype,
 			"reference_name": reference,
 			"attachment": carries,
 		}
@@ -1439,13 +1446,13 @@ def preview_check_message(kind: str, params: dict | None = None, target: str | N
 		if not params.get("alert"):
 			frappe.throw(_("Pick an alert"), WAValidationError)
 		frappe.has_permission("WhatsApp Notification Alert", "read", params["alert"], throw=True)
-		r = alerts_editor.preview_alert_draft({"name": params["alert"]})
+		body_preview = alerts_editor.preview_alert_draft({"name": params["alert"]})
 		# who the alert really reaches stays a count here: the test goes to the run's target only
-		r["recipients"] = [
+		body_preview["recipients"] = [
 			{"phone_e164": mask_phone_for_logs(x.get("phone_e164")), "source": x.get("source")}
-			for x in (r.get("recipients") or [])[:20]
+			for x in (body_preview.get("recipients") or [])[:20]
 		]
-		return r
+		return body_preview
 	if kind == "campaign":
 		from whatsapp_next.services import bulk_send
 

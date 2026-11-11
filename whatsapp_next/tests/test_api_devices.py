@@ -35,10 +35,10 @@ class TestApiDevices(IntegrationTestCase):
 		cls._prev_default = frappe.db.get_value("WhatsApp Device", {"is_default": 1}, "name")
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_devices()
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_devices()
 
 	@classmethod
 	def tearDownClass(cls):
@@ -49,7 +49,7 @@ class TestApiDevices(IntegrationTestCase):
 		super().tearDownClass()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_devices():
 		for name in frappe.get_all("WhatsApp Device", {"device_name": ("like", "ApiTest%")}, pluck="name"):
 			delete_all("WhatsApp Audit Log", {"reference_doctype": "WhatsApp Device", "reference_name": name})
 		delete_all("WhatsApp Device", {"device_name": ("like", "ApiTest%")})

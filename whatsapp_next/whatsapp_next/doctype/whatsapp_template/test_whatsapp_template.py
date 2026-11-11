@@ -15,7 +15,7 @@ DOCTYPE = "WhatsApp Template"
 PREFIX = "UT Template"
 
 
-def _doc(**values) -> "frappe.model.document.Document":
+def _build_template_doc(**values) -> "frappe.model.document.Document":
 	payload = {
 		"doctype": DOCTYPE,
 		"template_name": f"{PREFIX} {frappe.generate_hash(length=6)}",
@@ -51,16 +51,20 @@ class TestWhatsAppTemplate(IntegrationTestCase):
 				)
 
 	def test_body_must_compile(self) -> None:
-		doc = _doc(body="Hello {{ doc.name }}, total {{ doc.grand_total }}").insert(ignore_permissions=True)
+		doc = _build_template_doc(body="Hello {{ doc.name }}, total {{ doc.grand_total }}").insert(
+			ignore_permissions=True
+		)
 		self.assertEqual(doc.name, doc.template_name)
 		with self.assertRaises(WAValidationError):
-			_doc(body="Hello {{ doc.name }").insert(ignore_permissions=True)
+			_build_template_doc(body="Hello {{ doc.name }").insert(ignore_permissions=True)
 		with self.assertRaises(WAValidationError):
-			_doc(body="{% if x %}unclosed").insert(ignore_permissions=True)
+			_build_template_doc(body="{% if x %}unclosed").insert(ignore_permissions=True)
 
 	def test_document_requires_print_format(self) -> None:
 		with self.assertRaises(WAValidationError):
-			_doc(message_type="Document").insert(ignore_permissions=True)
+			_build_template_doc(message_type="Document").insert(ignore_permissions=True)
 		print_format = frappe.get_all("Print Format", limit=1, pluck="name")[0]
-		doc = _doc(message_type="Document", print_format=print_format).insert(ignore_permissions=True)
+		doc = _build_template_doc(message_type="Document", print_format=print_format).insert(
+			ignore_permissions=True
+		)
 		self.assertEqual(doc.message_type, "Document")

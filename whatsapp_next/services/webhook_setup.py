@@ -107,16 +107,16 @@ def _get_subscribed_webhook_events(settings) -> list[str]:
 
 def get_webhook_endpoint_summary() -> EndpointSummary:
 	"""What Settings knows (no provider call)."""
-	s = _get_whatsapp_settings()
+	settings = _get_whatsapp_settings()
 	return EndpointSummary(
-		endpoint_id=s.webhook_endpoint,
-		url=s.webhook_endpoint_url or receiver_url(),
-		status=s.webhook_status,
-		events=tuple(_get_subscribed_webhook_events(s)),
-		max_retries=cint(s.webhook_max_retries) or 3,
+		endpoint_id=settings.webhook_endpoint,
+		url=settings.webhook_endpoint_url or receiver_url(),
+		status=settings.webhook_status,
+		events=tuple(_get_subscribed_webhook_events(settings)),
+		max_retries=cint(settings.webhook_max_retries) or 3,
 		consecutive_failures=0,
-		last_event_at=s.webhook_last_event_at,
-		synced_at=s.webhook_synced_at,
+		last_event_at=settings.webhook_last_event_at,
+		synced_at=settings.webhook_synced_at,
 	)
 
 
@@ -159,15 +159,15 @@ def ensure_endpoint(
 
 	`url`: keep this address. A background job passes the endpoint's own: outside a request Frappe
 	cannot know the address people reach the site at (`http://`, and on Frappe 15 the bench's port)."""
-	s = _get_whatsapp_settings()
+	settings = _get_whatsapp_settings()
 	provider = registry.get_provider()
-	wanted_events = events or _get_subscribed_webhook_events(s)
-	retries = cint(max_retries) or cint(s.webhook_max_retries) or 3
+	wanted_events = events or _get_subscribed_webhook_events(settings)
+	retries = cint(max_retries) or cint(settings.webhook_max_retries) or 3
 	url = url or receiver_url()
 	existing = None
 	endpoints = provider.list_webhook_endpoints()
 	for ep in endpoints:
-		if ep.endpoint_id == s.webhook_endpoint or ep.url == url:
+		if ep.endpoint_id == settings.webhook_endpoint or ep.url == url:
 			existing = ep
 			break
 	if existing:
@@ -215,10 +215,10 @@ def set_status(status: str, user: str | None = None) -> EndpointSummary:
 	"""`Active` / `Disabled` (Active also unlocks a `Locked` endpoint, A-06)."""
 	if status not in ("Active", "Disabled"):
 		frappe.throw(_("Status must be Active or Disabled"), WAValidationError)
-	s = _get_whatsapp_settings()
-	if not s.webhook_endpoint:
+	settings = _get_whatsapp_settings()
+	if not settings.webhook_endpoint:
 		frappe.throw(_("No webhook endpoint is registered yet"), WAValidationError)
-	state = registry.get_provider().update_webhook_endpoint(s.webhook_endpoint, status, None, None)
+	state = registry.get_provider().update_webhook_endpoint(settings.webhook_endpoint, status, None, None)
 	_mirror_endpoint_state_to_settings(state)
 	audit.record_audit_entry("Webhook Changed", user=user, details={"action": "set_status", "status": status})
 	return get_webhook_endpoint_summary()
@@ -263,28 +263,28 @@ def sync_status() -> EndpointSummary | None:
 	a sign-in left undone (`_repair`)."""
 	from whatsapp_next.services import secrets
 
-	s = _get_whatsapp_settings()
-	if not s.webhook_endpoint and not secrets.read_password_field("customer_api_key"):
+	settings = _get_whatsapp_settings()
+	if not settings.webhook_endpoint and not secrets.read_password_field("customer_api_key"):
 		return None  # not linked to an account
 	try:
 		endpoints = registry.get_provider().list_webhook_endpoints()
-		ep = (
-			next((e for e in endpoints if e.endpoint_id == s.webhook_endpoint), None)
-			if s.webhook_endpoint
+		endpoint = (
+			next((e for e in endpoints if e.endpoint_id == settings.webhook_endpoint), None)
+			if settings.webhook_endpoint
 			else _own_endpoint(endpoints)
 		)
-		if ep:
-			repaired = _repair_unfinished_endpoint_setup(ep)
+		if endpoint:
+			repaired = _repair_unfinished_endpoint_setup(endpoint)
 			if repaired:
 				return repaired
-			_mirror_endpoint_state_to_settings(ep)
-			if ep.status == "Locked" and s.webhook_status != "Locked":
+			_mirror_endpoint_state_to_settings(endpoint)
+			if endpoint.status == "Locked" and settings.webhook_status != "Locked":
 				frappe.log_error(
 					title="WhatsApp webhook endpoint locked",
-					message=f"reason={ep.lock_reason} failures={ep.consecutive_failures}",
+					message=f"reason={endpoint.lock_reason} failures={endpoint.consecutive_failures}",
 				)
 			return get_webhook_endpoint_summary()
-		if not s.webhook_endpoint:
+		if not settings.webhook_endpoint:
 			return None
 		_mirror_endpoint_state_to_settings(None)
 		frappe.db.set_value(
@@ -297,10 +297,10 @@ def sync_status() -> EndpointSummary | None:
 
 def send_test_webhook(user: str | None = None) -> dict[str, Any]:
 	"""Ask the provider to deliver a `test.webhook` event to this site."""
-	s = _get_whatsapp_settings()
-	if not s.webhook_endpoint:
+	settings = _get_whatsapp_settings()
+	if not settings.webhook_endpoint:
 		frappe.throw(_("No webhook endpoint is registered yet"), WAValidationError)
-	result = registry.get_provider().test_webhook_endpoint(s.webhook_endpoint)
+	result = registry.get_provider().test_webhook_endpoint(settings.webhook_endpoint)
 	audit.record_audit_entry(
 		"Connection Tested", user=user, details={"what": "webhook", "ok": bool(result.get("ok", True))}
 	)

@@ -152,13 +152,13 @@ def render_message_template(
 	(used by previews, where the user wants to see the error)."""
 	if not (source or "").strip():
 		return RenderResult(text="")
-	ctx = dict(context or {})
+	render_context = dict(context or {})
 	try:
 		# Frappe's sandbox, but with the message globals only (see `_message_jenv`); the raw
 		# Jinja exception is kept instead of Frappe's HTML-wrapped ValidationError.
 		if ".__" in source:
 			raise TemplateError(_("Illegal template"))
-		text = _message_jenv().from_string(source).render(ctx)
+		text = _message_jenv().from_string(source).render(render_context)
 	except Exception as exc:
 		message = f"{type(exc).__name__}: {cstr(exc)}"[:_MAX_ERROR]
 		if strict:
@@ -221,7 +221,7 @@ def context_for(
 			doc = frappe.get_doc(reference_doctype, reference_name)
 		except frappe.DoesNotExistError:
 			doc = None
-	ctx: dict[str, Any] = {
+	render_context: dict[str, Any] = {
 		"doc": doc if doc is not None else SampleDoc(),
 		"recipient": _recipient(recipient),
 		"now": now_datetime(),
@@ -232,8 +232,8 @@ def context_for(
 		else "",
 	}
 	if extra:
-		ctx.update(extra)
-	return ctx
+		render_context.update(extra)
+	return render_context
 
 
 def sample_context(reference_doctype: str | None, sample_json: str | dict | None = None) -> dict[str, Any]:
@@ -268,11 +268,11 @@ def sample_context(reference_doctype: str | None, sample_json: str | dict | None
 				else:
 					doc = SampleDoc(doc_values)
 			extra = parsed
-	ctx = context_for(reference_doctype, getattr(doc, "name", None), extra, doc=doc)
+	render_context = context_for(reference_doctype, getattr(doc, "name", None), extra, doc=doc)
 	# `context_for` always sets a recipient with blank fields; a sample has nobody, so name one
-	if not any((ctx.get("recipient") or {}).values()):
-		ctx["recipient"] = frappe._dict(phone_e164="+966500000000", display_name=_("Recipient"))
-	return ctx
+	if not any((render_context.get("recipient") or {}).values()):
+		render_context["recipient"] = frappe._dict(phone_e164="+966500000000", display_name=_("Recipient"))
+	return render_context
 
 
 def variables(reference_doctype: str | None) -> list[str]:

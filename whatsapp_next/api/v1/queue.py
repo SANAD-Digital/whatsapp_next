@@ -48,20 +48,20 @@ SELECTION_FILTERS = ("device", "campaign", "phone_e164")
 
 
 def _list_query(filters: dict | None) -> dict[str, Any]:
-	f = filters or {}
-	unknown = sorted(set(f) - set(LIST_FILTERS))
+	requested_filters = filters or {}
+	unknown = sorted(set(requested_filters) - set(LIST_FILTERS))
 	if unknown:
 		frappe.throw(_("Unknown filters: {0}").format(", ".join(unknown)), WAValidationError)
 	query: dict[str, Any] = {}
-	if f.get("status"):
-		if f["status"] not in dispatch.QUEUE_STATUSES:
+	if requested_filters.get("status"):
+		if requested_filters["status"] not in dispatch.QUEUE_STATUSES:
 			frappe.throw(_("Invalid value for {0}").format("status"), WAValidationError)
-		query["status"] = f["status"]
+		query["status"] = requested_filters["status"]
 	for key in ("device", "campaign"):
-		if f.get(key):
-			query[key] = f[key]
-	if f.get("phone"):
-		query["phone_e164"] = ("like", f"%{f['phone']}%")
+		if requested_filters.get(key):
+			query[key] = requested_filters[key]
+	if requested_filters.get("phone"):
+		query["phone_e164"] = ("like", f"%{requested_filters['phone']}%")
 	# a user a User Permission limits to some devices sees (and counts) only their queue
 	allowed = permissions.allowed_devices()
 	if allowed is not None:
@@ -77,13 +77,13 @@ def _selection(names: list[str] | None, filters: dict | None) -> list[str] | dic
 	"""`names[]` wins; otherwise a filter dict restricted to `SELECTION_FILTERS`."""
 	if names:
 		return _bulk.require_bounded(names)
-	f = dict(filters or {})
-	unknown = sorted(set(f) - set(SELECTION_FILTERS))
-	if unknown or not f:
+	requested_filters = dict(filters or {})
+	unknown = sorted(set(requested_filters) - set(SELECTION_FILTERS))
+	if unknown or not requested_filters:
 		frappe.throw(
 			_("Provide names[] or filters on {0}").format(", ".join(SELECTION_FILTERS)), WAValidationError
 		)
-	return f
+	return requested_filters
 
 
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
@@ -118,29 +118,29 @@ def get_limits() -> dict[str, Any]:
 	What a campaign's slider needs and nothing else: `get_summary` also asks the provider for its
 	queue view, which a form opening a hundred times a day has no use for.
 	"""
-	s = dispatch.queue_summary()
-	return {"rate": s["rate"], "plan_rate": s["plan_rate"]}
+	queue_summary = dispatch.queue_summary()
+	return {"rate": queue_summary["rate"], "plan_rate": queue_summary["plan_rate"]}
 
 
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
 def get_summary() -> dict[str, Any]:
 	"""Counts by status, global pause state, rate / plan rate and the provider's queue view (60 s cache)."""
-	s = dispatch.queue_summary()
+	queue_summary = dispatch.queue_summary()
 	return {
 		"counts_by_status": {
-			"Queued": s["queued"],
-			"Sending": s["sending"],
-			"Paused": s["paused"],
-			"Dead Letter": s["dead_letter"],
-			"Completed": s["completed"],
-			"Held": s["held"],
+			"Queued": queue_summary["queued"],
+			"Sending": queue_summary["sending"],
+			"Paused": queue_summary["paused"],
+			"Dead Letter": queue_summary["dead_letter"],
+			"Completed": queue_summary["completed"],
+			"Held": queue_summary["held"],
 		},
-		"paused": s["paused_globally"],
-		"paused_by": s["paused_by"],
-		"paused_at": s["paused_at"],
-		"reason": s["pause_reason"],
-		"rate": s["rate"],
-		"plan_rate": s["plan_rate"],
+		"paused": queue_summary["paused_globally"],
+		"paused_by": queue_summary["paused_by"],
+		"paused_at": queue_summary["paused_at"],
+		"reason": queue_summary["pause_reason"],
+		"rate": queue_summary["rate"],
+		"plan_rate": queue_summary["plan_rate"],
 		"platform_queue": dispatch.platform_queue_status(),
 	}
 

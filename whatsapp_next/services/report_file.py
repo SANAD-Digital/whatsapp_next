@@ -22,20 +22,20 @@ EXT = {"PDF": "pdf", "Excel": "xlsx"}
 def _columns(raw: list[Any]) -> list[dict[str, Any]]:
 	"""Report columns as dicts (`fieldname`, `label`, `fieldtype`, `options`), hidden ones dropped."""
 	out = []
-	for i, col in enumerate(raw or []):
-		if isinstance(col, str):
+	for i, column in enumerate(raw or []):
+		if isinstance(column, str):
 			# legacy "Label:Fieldtype/Options:Width"
-			label, _sep, rest = col.partition(":")
+			label, _sep, rest = column.partition(":")
 			fieldtype = rest.split(":")[0].split("/")[0] or "Data"
-			col = {"label": label, "fieldtype": fieldtype, "fieldname": frappe.scrub(label) or f"col_{i}"}
-		if not isinstance(col, dict) or col.get("hidden"):
+			column = {"label": label, "fieldtype": fieldtype, "fieldname": frappe.scrub(label) or f"col_{i}"}
+		if not isinstance(column, dict) or column.get("hidden"):
 			continue
 		out.append(
 			{
-				"fieldname": col.get("fieldname") or f"col_{i}",
-				"label": cstr(col.get("label") or col.get("fieldname") or ""),
-				"fieldtype": col.get("fieldtype") or "Data",
-				"options": col.get("options"),
+				"fieldname": column.get("fieldname") or f"col_{i}",
+				"label": cstr(column.get("label") or column.get("fieldname") or ""),
+				"fieldtype": column.get("fieldtype") or "Data",
+				"options": column.get("options"),
 				"index": i,
 			}
 		)

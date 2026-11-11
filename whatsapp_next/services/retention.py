@@ -122,13 +122,13 @@ def purge(*, commit: bool = True) -> PurgeReport:
 		if days <= 0:
 			report.skipped.append(doctype)
 			continue
-		n = purge_table(doctype, days, date_field, filters=filters, commit=commit)
-		report.deleted[doctype] = n
-		if n:
+		deleted_count = purge_table(doctype, days, date_field, filters=filters, commit=commit)
+		report.deleted[doctype] = deleted_count
+		if deleted_count:
 			audit.record_audit_entry(
 				"Retention Purge",
 				severity="Info",
-				count=n,
+				count=deleted_count,
 				user="Administrator",
 				details={"doctype": doctype, "days": days},
 			)

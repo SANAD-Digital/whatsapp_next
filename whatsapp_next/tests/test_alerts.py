@@ -56,13 +56,13 @@ class TestAlerts(IntegrationTestCase):
 		ensure_settings(default_device=cls.device, send_only_to_known_numbers=0)
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_alerts_and_logs()
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_alerts_and_logs()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_alerts_and_logs():
 		delete_test_rows("WhatsApp Queue Item")
 		delete_test_rows("WhatsApp Log", {"source_type": "Notification Alert"})
 		delete_all("WhatsApp Notification Alert", {"alert_name": ("like", "AlertTest%")})

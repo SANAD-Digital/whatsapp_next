@@ -156,8 +156,8 @@ def is_jid(value: str | None) -> bool:
 
 def is_group_or_lid(value: str | None) -> bool:
 	"""True for the two JID kinds that never map to an E.164 number."""
-	v = (value or "").strip().lower()
-	return v.endswith(GROUP_SUFFIX) or v.endswith(LID_SUFFIX)
+	lowercase_value = (value or "").strip().lower()
+	return lowercase_value.endswith(GROUP_SUFFIX) or lowercase_value.endswith(LID_SUFFIX)
 
 
 def _strip_phone_formatting(raw: str) -> str:
@@ -217,13 +217,13 @@ def classify(value: str | None) -> tuple[str | None, str | None]:
 	"""Return `(kind, key)`: `("Individual", e164)`, `("Group", jid)`, `("LID", jid)` or `(None, None)`."""
 	if not value:
 		return None, None
-	v = _strip_phone_formatting(value)
-	lower = v.lower()
+	cleaned_value = _strip_phone_formatting(value)
+	lower = cleaned_value.lower()
 	if lower.endswith(GROUP_SUFFIX):
-		return "Group", v
+		return "Group", cleaned_value
 	if lower.endswith(LID_SUFFIX):
-		return "LID", v
-	e164 = normalize_phone_to_e164(v)
+		return "LID", cleaned_value
+	e164 = normalize_phone_to_e164(cleaned_value)
 	return ("Individual", e164) if e164 else (None, None)
 
 

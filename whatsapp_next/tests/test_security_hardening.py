@@ -178,7 +178,7 @@ class TestDocumentInfoOwnership(IntegrationTestCase):
 			script = fp.read().replace("@function     document_info", "@function     _test_document_info")
 		cls.script = ff.ensure_script("wa_fn__test_document_info", script)
 
-	def _run(self, party_name: str | None, name: str, **values):
+	def _run_document_info_function(self, party_name: str | None, name: str, **values):
 		from whatsapp_next.services import function_header as fh
 		from whatsapp_next.services import function_runner
 
@@ -191,11 +191,11 @@ class TestDocumentInfoOwnership(IntegrationTestCase):
 		if not invoice:
 			self.skipTest("no Sales Invoice on this site")
 		# a party field the document does not have: refused, never "every document of the type"
-		refused = self._run("Someone", invoice.name, party_field="no_such_field")
+		refused = self._run_document_info_function("Someone", invoice.name, party_field="no_such_field")
 		self.assertTrue(refused["error"])
 		self.assertEqual(refused["messages"], [])
-		other = self._run("Someone Else", invoice.name)
-		missing = self._run("Someone Else", "NO-SUCH-DOC")
+		other = self._run_document_info_function("Someone Else", invoice.name)
+		missing = self._run_document_info_function("Someone Else", "NO-SUCH-DOC")
 		# one answer for "not yours" and "does not exist"
 		self.assertEqual([m["reply"] for m in other["messages"]], ["not_found_text"])
 		self.assertEqual(
@@ -203,8 +203,8 @@ class TestDocumentInfoOwnership(IntegrationTestCase):
 			missing["messages"][0]["text"].replace("NO-SUCH-DOC", "?"),
 		)
 		self.assertNotIn("status", other["data"])  # nothing of the document is read out
-		own = self._run(invoice.customer, invoice.name)
+		own = self._run_document_info_function(invoice.customer, invoice.name)
 		self.assertIsNone(own["error"])
 		self.assertEqual([m["reply"] for m in own["messages"]], ["result_text"])
 		# no party at all: the script refuses
-		self.assertTrue(self._run(None, invoice.name)["error"])
+		self.assertTrue(self._run_document_info_function(None, invoice.name)["error"])

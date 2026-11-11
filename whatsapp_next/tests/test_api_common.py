@@ -22,7 +22,7 @@ def _sample(count: int, flag: bool = False, names: list[str] | None = None, mode
 
 
 @api_endpoint(roles=None)
-def _open(x: int = 1) -> int:
+def _endpoint_without_role_gate(x: int = 1) -> int:
 	"""Endpoint without role gate (document-level check inside)."""
 	return x
 

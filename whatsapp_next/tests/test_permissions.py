@@ -39,7 +39,7 @@ class TestPermissions(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ensure_settings()
-		cls._clean()
+		cls._delete_test_contacts_and_numbers()
 		if not frappe.db.exists("WhatsApp Contact Group", BLACKLIST):
 			frappe.get_doc(
 				{
@@ -53,16 +53,16 @@ class TestPermissions(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_contacts_and_numbers()
 		ensure_settings(global_blacklist_group=None, picker_sources=[])
 		delete_all("WhatsApp Contact Group", {"group_name": BLACKLIST})
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_contacts_and_numbers()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_contacts_and_numbers():
 		delete_all(
 			"WhatsApp Audit Log",
 			{
@@ -185,7 +185,7 @@ class TestPermissions(IntegrationTestCase):
 
 	# -- reads -------------------------------------------------------------------------
 
-	def _seed(self) -> tuple[str, str]:
+	def _create_two_test_contacts(self) -> tuple[str, str]:
 		with as_user("System Manager"):
 			a = permissions.create_contact(
 				{"first_name": f"{PREFIX} Alpha", "phone_nos": [{"phone": PHONE_1}]}
@@ -205,7 +205,7 @@ class TestPermissions(IntegrationTestCase):
 		return a, b
 
 	def test_list_contacts_filters_and_audit(self):
-		a, b = self._seed()
+		a, b = self._create_two_test_contacts()
 		with as_user("WhatsApp Contact User") as cu:
 			res = permissions.list_contacts(search=PREFIX)
 			names = {r["name"] for r in res["rows"]}
@@ -261,14 +261,14 @@ class TestPermissions(IntegrationTestCase):
 			reads = _audit_rows("Elevated Contact Read")
 			self.assertTrue(reads and all(r.user == cu for r in reads))
 		# a natively permitted user is not audited
-		self._clean()
-		self._seed()
+		self._delete_test_contacts_and_numbers()
+		self._create_two_test_contacts()
 		with as_user("System Manager"):
 			permissions.list_contacts(search=PREFIX)
 		self.assertEqual(_audit_rows("Elevated Contact Read"), [])
 
 	def test_get_and_search_contacts(self):
-		a, _b = self._seed()
+		a, _b = self._create_two_test_contacts()
 		with as_user("WhatsApp Contact User"):
 			row = permissions.get_contact(a)
 			self.assertEqual(row["first_name"], f"{PREFIX} Alpha")
@@ -311,7 +311,7 @@ class TestPermissions(IntegrationTestCase):
 		self.assertRaises(ValueError, permissions.validate_filters, meta, "not json")
 
 	def test_list_doctype_rows_merges_server_filters(self):
-		a, b = self._seed()
+		a, b = self._create_two_test_contacts()
 		frappe.db.set_value("Contact", b, "status", "Open")  # default status is Passive
 		frappe.db.set_value("Contact", b, "mobile_no", PHONE_2)
 		frappe.db.set_value("Contact", a, "mobile_no", PHONE_1)
@@ -356,7 +356,7 @@ class TestPermissions(IntegrationTestCase):
 	# -- numbers / blacklist -----------------------------------------------------------
 
 	def test_link_and_convert_number(self):
-		a, _b = self._seed()
+		a, _b = self._create_two_test_contacts()
 		frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": PHONE_3}).insert(ignore_permissions=True)
 		with as_user("WhatsApp Contact User") as cu:
 			self.assertRaises(WANotFoundError, permissions.link_number, "+966500009999", a)

@@ -16,7 +16,9 @@ from whatsapp_next.services import history_import
 AT = datetime(2026, 3, 1, 9, 30, tzinfo=timezone.utc).replace(tzinfo=None)
 
 
-def _msg(kind, mid, *, from_me=False, body="hello", phone="967711000001", original=None, **extra):
+def _build_history_message(
+	kind, mid, *, from_me=False, body="hello", phone="967711000001", original=None, **extra
+):
 	p = InboundPayload(
 		provider_message_id=mid,
 		sender_phone=None if from_me else phone,
@@ -61,9 +63,11 @@ class TestHistoryImport(IntegrationTestCase):
 			patch("whatsapp_next.services.inbound._after_insert") as after,
 			patch("frappe.enqueue") as enqueue,
 		):
-			key = history_import.store_or_apply_history_message(self.device, _msg("text", f"H-in-{self.tag}"))
+			key = history_import.store_or_apply_history_message(
+				self.device, _build_history_message("text", f"H-in-{self.tag}")
+			)
 			out = history_import.store_or_apply_history_message(
-				self.device, _msg("image", f"H-out-{self.tag}", from_me=True, body="photo")
+				self.device, _build_history_message("image", f"H-out-{self.tag}", from_me=True, body="photo")
 			)
 		self.assertEqual(key, "+967711000001")
 		self.assertTrue(out)
@@ -91,9 +95,13 @@ class TestHistoryImport(IntegrationTestCase):
 		)
 
 	def test_a_message_already_here_is_skipped(self):
-		history_import.store_or_apply_history_message(self.device, _msg("text", f"H-dup-{self.tag}"))
+		history_import.store_or_apply_history_message(
+			self.device, _build_history_message("text", f"H-dup-{self.tag}")
+		)
 		self.assertIsNone(
-			history_import.store_or_apply_history_message(self.device, _msg("text", f"H-dup-{self.tag}"))
+			history_import.store_or_apply_history_message(
+				self.device, _build_history_message("text", f"H-dup-{self.tag}")
+			)
 		)
 		self.assertEqual(
 			frappe.db.count("WhatsApp Inbound Message", {"provider_message_id": f"H-dup-{self.tag}"}), 1
@@ -101,10 +109,12 @@ class TestHistoryImport(IntegrationTestCase):
 
 	def test_edit_delete_and_reaction_apply_to_their_message(self):
 		target = f"H-t-{self.tag}"
-		history_import.store_or_apply_history_message(self.device, _msg("text", target, body="first"))
+		history_import.store_or_apply_history_message(
+			self.device, _build_history_message("text", target, body="first")
+		)
 		self.assertTrue(
 			history_import.store_or_apply_history_message(
-				self.device, _msg("edit", f"H-e-{self.tag}", body="second", original=target)
+				self.device, _build_history_message("edit", f"H-e-{self.tag}", body="second", original=target)
 			)
 		)
 		row = frappe.db.get_value(
@@ -116,14 +126,17 @@ class TestHistoryImport(IntegrationTestCase):
 		self.assertEqual((row.body, row.original_body), ("second", "first"))
 		self.assertTrue(
 			history_import.store_or_apply_history_message(
-				self.device, _msg("revoke", f"H-r-{self.tag}", body=None, original=target)
+				self.device, _build_history_message("revoke", f"H-r-{self.tag}", body=None, original=target)
 			)
 		)
 		self.assertTrue(
 			frappe.db.get_value("WhatsApp Inbound Message", {"provider_message_id": target}, "deleted_at")
 		)
 		history_import.store_or_apply_history_message(
-			self.device, _msg("reaction", f"H-x-{self.tag}", body=None, reaction="👍", reaction_to=target)
+			self.device,
+			_build_history_message(
+				"reaction", f"H-x-{self.tag}", body=None, reaction="👍", reaction_to=target
+			),
 		)
 		self.assertEqual(
 			frappe.db.get_value(
@@ -136,17 +149,27 @@ class TestHistoryImport(IntegrationTestCase):
 		# the number's own reactions and plumbing are not messages
 		self.assertIsNone(
 			history_import.store_or_apply_history_message(
-				self.device, _msg("reaction", f"H-y-{self.tag}", from_me=True, reaction="👍")
+				self.device,
+				_build_history_message("reaction", f"H-y-{self.tag}", from_me=True, reaction="👍"),
 			)
 		)
 		self.assertIsNone(
-			history_import.store_or_apply_history_message(self.device, _msg("unknown", f"H-z-{self.tag}"))
+			history_import.store_or_apply_history_message(
+				self.device, _build_history_message("unknown", f"H-z-{self.tag}")
+			)
 		)
 
 	def test_the_job_pages_with_the_cursor(self):
 		pages = [
-			HistoryPage(messages=[_msg("text", f"H-p1-{self.tag}")], next_after=10, has_more=True, total=2),
-			HistoryPage(messages=[_msg("text", f"H-p2-{self.tag}")], next_after=20, has_more=False),
+			HistoryPage(
+				messages=[_build_history_message("text", f"H-p1-{self.tag}")],
+				next_after=10,
+				has_more=True,
+				total=2,
+			),
+			HistoryPage(
+				messages=[_build_history_message("text", f"H-p2-{self.tag}")], next_after=20, has_more=False
+			),
 		]
 		calls = []
 
@@ -200,8 +223,8 @@ class TestHistoryImport(IntegrationTestCase):
 		self.assertEqual(seen, [False])
 
 	def test_a_message_that_cannot_be_stored_is_skipped(self):
-		bad = _msg("text", f"H-bad-{self.tag}", from_me=True, phone="")
-		good = _msg("text", f"H-ok-{self.tag}")
+		bad = _build_history_message("text", f"H-bad-{self.tag}", from_me=True, phone="")
+		good = _build_history_message("text", f"H-ok-{self.tag}")
 
 		class Provider:
 			def list_history(self, platform_device, **kwargs):

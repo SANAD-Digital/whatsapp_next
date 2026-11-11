@@ -195,17 +195,17 @@ def dry_run_command(text: str, sender: str, device: str | None = None) -> dict[s
 	nothing is sent.
 
 	Returns `{matched, status, command, block_reason, args, reply_body, replies, error, function_ms}`."""
-	res = command_router.dry_run(text, sender, device)
+	dry_run_result = command_router.dry_run(text, sender, device)
 	return {
-		"matched": res.status not in ("None", "Not Matched"),
-		"status": res.status,
-		"command": res.command,
-		"block_reason": res.block_reason,
-		"args": res.args,
-		"reply_body": next((r.get("body") for r in res.replies if r.get("body")), None),
-		"replies": res.replies,
-		"error": res.error,
-		"function_ms": res.elapsed_ms,
+		"matched": dry_run_result.status not in ("None", "Not Matched"),
+		"status": dry_run_result.status,
+		"command": dry_run_result.command,
+		"block_reason": dry_run_result.block_reason,
+		"args": dry_run_result.args,
+		"reply_body": next((r.get("body") for r in dry_run_result.replies if r.get("body")), None),
+		"replies": dry_run_result.replies,
+		"error": dry_run_result.error,
+		"function_ms": dry_run_result.elapsed_ms,
 	}
 
 
@@ -232,26 +232,30 @@ def _last_messages(doctype: str, keys: list[str], *, group: bool = False) -> dic
 		return {}
 	from frappe.query_builder.functions import Max
 
-	t = frappe.qb.DocType(doctype)
+	message_table = frappe.qb.DocType(doctype)
 	if doctype == "WhatsApp Inbound Message":
-		col = t.chat_jid if group else t.phone_e164
-		cond = t.is_group == (1 if group else 0)
+		key_column = message_table.chat_jid if group else message_table.phone_e164
+		group_condition = message_table.is_group == (1 if group else 0)
 	else:
-		col = t.phone_e164
-		cond = None
-	newest = frappe.qb.from_(t).select(col.as_("k"), Max(t.creation).as_("at")).where(col.isin(keys))
-	if cond is not None:
-		newest = newest.where(cond)
-	newest = newest.groupby(col)
-	query = (
-		frappe.qb.from_(t)
-		.join(newest)
-		.on((col == newest.k) & (t.creation == newest.at))
-		.select(col.as_("k"), t.body, t.message_type, t.creation)
-		.orderby(t.name, order=frappe.qb.desc)
+		key_column = message_table.phone_e164
+		group_condition = None
+	newest = (
+		frappe.qb.from_(message_table)
+		.select(key_column.as_("k"), Max(message_table.creation).as_("at"))
+		.where(key_column.isin(keys))
 	)
-	if cond is not None:
-		query = query.where(cond)
+	if group_condition is not None:
+		newest = newest.where(group_condition)
+	newest = newest.groupby(key_column)
+	query = (
+		frappe.qb.from_(message_table)
+		.join(newest)
+		.on((key_column == newest.k) & (message_table.creation == newest.at))
+		.select(key_column.as_("k"), message_table.body, message_table.message_type, message_table.creation)
+		.orderby(message_table.name, order=frappe.qb.desc)
+	)
+	if group_condition is not None:
+		query = query.where(group_condition)
 	out: dict[str, dict[str, Any]] = {}
 	for row in query.run(as_dict=True):
 		out.setdefault(row.k, row)
@@ -308,13 +312,13 @@ def conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any]:
 		**_last_messages("WhatsApp Inbound Message", singles),
 		**_last_messages("WhatsApp Inbound Message", groups, group=True),
 	}
-	for r in rows:
-		r["party_type"] = party.get(r.contact) if r.contact else None
-		picks = [m for m in (last_out.get(r.phone_e164), last_in.get(r.phone_e164)) if m]
+	for number_row in rows:
+		number_row["party_type"] = party.get(number_row.contact) if number_row.contact else None
+		picks = [m for m in (last_out.get(number_row.phone_e164), last_in.get(number_row.phone_e164)) if m]
 		last = max(picks, key=lambda m: m.creation) if picks else None
 		# a message with no text reads as its kind, in the reader's language ("نص", not "Text")
-		r["last_body"] = ((last.body or _(last.message_type or "")) if last else "")[:120]
-		r["last_at"] = last.creation if last else r.last_seen
+		number_row["last_body"] = ((last.body or _(last.message_type or "")) if last else "")[:120]
+		number_row["last_at"] = last.creation if last else number_row.last_seen
 	return {"rows": rows, "total": total}
 
 

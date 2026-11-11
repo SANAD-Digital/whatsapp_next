@@ -35,23 +35,23 @@ class TestApiQueue(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_queued_messages()
 		ensure_settings(queue_paused=0, messages_per_minute=cls._rate or 20)
 		delete_all("WhatsApp Device", {"platform_device": DEVICE})
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_queued_messages()
 		ensure_settings(queue_paused=0, messages_per_minute=20)
 
 	@classmethod
-	def _clean(cls):
+	def _delete_test_queued_messages(cls):
 		logs = frappe.get_all("WhatsApp Log", {"body": ("like", BODY + "%")}, pluck="name")
 		if logs:
 			delete_all("WhatsApp Queue Item", {"outbound_message": ("in", logs)})
 			delete_all("WhatsApp Log", {"name": ("in", logs)})
 
-	def _item(self, phone: str, priority: int | None = None) -> tuple[str, str]:
+	def _create_queued_message(self, phone: str, priority: int | None = None) -> tuple[str, str]:
 		outbound = dispatch.create_outbound(
 			OutboundSpec(device=self.device, phone=phone, body=f"{BODY} {phone}", source_type="Quick Send")
 		)
@@ -66,9 +66,9 @@ class TestApiQueue(IntegrationTestCase):
 				api.pause_queue(reason="x")
 
 	def test_list_position_eta_and_filters(self):
-		_, low = self._item(P1, priority=5)
-		_, first = self._item(P2, priority=1)
-		_, second = self._item(P3, priority=1)
+		_, low = self._create_queued_message(P1, priority=5)
+		_, first = self._create_queued_message(P2, priority=1)
+		_, second = self._create_queued_message(P3, priority=1)
 		with as_user("WhatsApp Viewer"):
 			out = api.list_queue(filters={"device": self.device, "status": "Queued"}, page_length=999)
 		by_name = {r["name"]: r for r in out["rows"]}
@@ -97,7 +97,7 @@ class TestApiQueue(IntegrationTestCase):
 
 	def test_summary(self):
 		frappe.cache.delete_value(dispatch.PLATFORM_QUEUE_CACHE_KEY)
-		self._item(P1)
+		self._create_queued_message(P1)
 		with fake_provider(), as_user("WhatsApp Viewer"):
 			out = api.get_summary()
 		self.assertGreaterEqual(out["counts_by_status"]["Queued"], 1)
@@ -112,8 +112,8 @@ class TestApiQueue(IntegrationTestCase):
 		Counts are the difference this test's rows make: the site may be sending too (R-041)."""
 		with as_user("WhatsApp Viewer"):
 			narrow_before = sum(api.get_throughput(minutes=5)["buckets"])
-		_, q1 = self._item(P1)
-		_, q2 = self._item(P2)
+		_, q1 = self._create_queued_message(P1)
+		_, q2 = self._create_queued_message(P2)
 		now = frappe.utils.now_datetime()
 		for name, minutes in ((q1, 2), (q2, 40)):
 			frappe.db.set_value(
@@ -156,9 +156,9 @@ class TestApiQueue(IntegrationTestCase):
 				api.set_rate(messages_per_minute="abc")
 
 	def test_item_operations(self):
-		out1, q1 = self._item(P1)
-		_, q2 = self._item(P2)
-		_, q3 = self._item(P3)
+		out1, q1 = self._create_queued_message(P1)
+		_, q2 = self._create_queued_message(P2)
+		_, q3 = self._create_queued_message(P3)
 		with as_user("WhatsApp Manager"):
 			with self.assertRaises(WAValidationError):
 				api.pause_items()

@@ -23,15 +23,15 @@ class TestApiQuickSend(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_sent_messages()
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_sent_messages()
 		ensure_settings(queue_paused=0, send_only_to_known_numbers=0)
 
 	@staticmethod
-	def _clean():
+	def _delete_test_sent_messages():
 		names = frappe.get_all("WhatsApp Log", filters={"body": ("like", f"{TAG}%")}, pluck="name")
 		if names:
 			delete_all("WhatsApp Queue Item", {"outbound_message": ("in", names)})
@@ -115,7 +115,7 @@ class TestApiQuickSend(IntegrationTestCase):
 			# a number still being typed does not break the preview
 			self.assertEqual(api.preview(template=tpl, phone="05", **ref)["errors"], [])
 		finally:
-			self._clean()
+			self._delete_test_sent_messages()
 			delete_all("WhatsApp Template", {"name": tpl})
 			delete_all("WhatsApp Number", {"name": ("in", [P1, P2])})
 			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
@@ -151,7 +151,7 @@ class TestApiQuickSend(IntegrationTestCase):
 				)
 			self.assertFalse(frappe.db.exists("WhatsApp Log", {"reference_name": todo.name}))
 		finally:
-			self._clean()
+			self._delete_test_sent_messages()
 			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
 
 	def test_a_message_about_a_document_is_a_form_message(self):
@@ -180,7 +180,7 @@ class TestApiQuickSend(IntegrationTestCase):
 			)
 			self.assertEqual(frappe.db.get_value("WhatsApp Queue Item", res["queue_item"], "priority"), 1)
 		finally:
-			self._clean()
+			self._delete_test_sent_messages()
 			frappe.db.delete("Comment", {"reference_doctype": "ToDo", "reference_name": todo.name})
 			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
 

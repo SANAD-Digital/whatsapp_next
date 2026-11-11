@@ -254,9 +254,9 @@ def get_conversation(
 	page = read_layer.conversation(key, device=device, before=before, limit=limit)
 	rows = []
 	for r in page.rows:
-		d = {c: getattr(r, c) for c in read_layer.COLUMNS}
-		d["cursor"] = r.cursor
-		rows.append(d)
+		conversation_row = {c: getattr(r, c) for c in read_layer.COLUMNS}
+		conversation_row["cursor"] = r.cursor
+		rows.append(conversation_row)
 	return {"rows": rows, "has_more": page.has_more, "next_cursor": page.next_cursor}
 
 

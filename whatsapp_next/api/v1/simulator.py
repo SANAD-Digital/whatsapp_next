@@ -49,22 +49,22 @@ def simulate_inbound(device: str, sender_phone: str, text: str, run_commands: bo
 	commands as a number linked to a party."""
 	if run_commands:
 		_require_manager_to_act_as_party(sender_phone)
-	res = simulator.simulate_inbound(
+	simulation_result = simulator.simulate_inbound(
 		device, sender_phone, text, run_commands=run_commands, persist=True, user=frappe.session.user
 	)
-	bodies = [r["body"] for r in res.replies if r.get("body")]
+	bodies = [r["body"] for r in simulation_result.replies if r.get("body")]
 	return {
-		"inbound": res.inbound,
-		"command_status": res.status,
-		"command": res.command,
-		"block_reason": res.block_reason,
-		"args": res.args,
-		"reply_outbound": res.outbound[0] if res.outbound else None,
-		"reply_outbounds": res.outbound,
+		"inbound": simulation_result.inbound,
+		"command_status": simulation_result.status,
+		"command": simulation_result.command,
+		"block_reason": simulation_result.block_reason,
+		"args": simulation_result.args,
+		"reply_outbound": simulation_result.outbound[0] if simulation_result.outbound else None,
+		"reply_outbounds": simulation_result.outbound,
 		"reply_body": "\n\n".join(bodies) if bodies else None,
-		"replies": res.replies,
-		"error": res.error,
-		"function_ms": res.elapsed_ms,
+		"replies": simulation_result.replies,
+		"error": simulation_result.error,
+		"function_ms": simulation_result.elapsed_ms,
 	}
 
 

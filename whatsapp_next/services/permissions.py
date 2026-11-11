@@ -290,11 +290,13 @@ def _attach_children(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 	black = _blacklisted_keys(
 		p["wa_phone_e164"] for ps in phones.values() for p in ps if p.get("wa_phone_e164")
 	)
-	for r in rows:
-		r["phone_nos"] = phones.get(r["name"], [])
-		r["links"] = links.get(r["name"], [])
-		r.update(stats.get(r["name"], {"has_whatsapp": 0}))
-		r["blacklisted"] = int(any(p.get("wa_phone_e164") in black for p in r["phone_nos"]))
+	for contact_row in rows:
+		contact_row["phone_nos"] = phones.get(contact_row["name"], [])
+		contact_row["links"] = links.get(contact_row["name"], [])
+		contact_row.update(stats.get(contact_row["name"], {"has_whatsapp": 0}))
+		contact_row["blacklisted"] = int(
+			any(p.get("wa_phone_e164") in black for p in contact_row["phone_nos"])
+		)
 	return rows
 
 
@@ -308,70 +310,100 @@ def _contact_query(
 	status: str | None = None,
 ):
 	"""The filtered Contact query (condition 2: filtering happens here, not in the view)."""
-	C = frappe.qb.DocType("Contact")
-	P = frappe.qb.DocType("Contact Phone")
-	q = frappe.qb.from_(C)
+	contact_table = frappe.qb.DocType("Contact")
+	contact_phone_table = frappe.qb.DocType("Contact Phone")
+	filtered_query = frappe.qb.from_(contact_table)
 	if search:
 		txt = f"%{search.strip()}%"
 		digits = normalize_phone_to_e164(search) or search.strip()
 		phone_match = (
-			frappe.qb.from_(P)
-			.select(P.name)
-			.where((P.parenttype == "Contact") & (P.parent == C.name))
-			.where(P.phone.like(txt) | P.wa_phone_e164.like(f"%{digits}%"))
+			frappe.qb.from_(contact_phone_table)
+			.select(contact_phone_table.name)
+			.where(
+				(contact_phone_table.parenttype == "Contact")
+				& (contact_phone_table.parent == contact_table.name)
+			)
+			.where(
+				contact_phone_table.phone.like(txt) | contact_phone_table.wa_phone_e164.like(f"%{digits}%")
+			)
 		)
-		q = q.where(C.full_name.like(txt) | C.email_id.like(txt) | ExistsCriterion(phone_match))
+		filtered_query = filtered_query.where(
+			contact_table.full_name.like(txt)
+			| contact_table.email_id.like(txt)
+			| ExistsCriterion(phone_match)
+		)
 	if link_doctype:
 		if link_doctype not in PARTY_TYPES:
 			frappe.throw(_("Unsupported party type {0}").format(link_doctype), WAValidationError)
-		D = frappe.qb.DocType("Dynamic Link")
+		dynamic_link_table = frappe.qb.DocType("Dynamic Link")
 		link_match = (
-			frappe.qb.from_(D)
-			.select(D.name)
-			.where((D.parenttype == "Contact") & (D.parent == C.name) & (D.link_doctype == link_doctype))
+			frappe.qb.from_(dynamic_link_table)
+			.select(dynamic_link_table.name)
+			.where(
+				(dynamic_link_table.parenttype == "Contact")
+				& (dynamic_link_table.parent == contact_table.name)
+				& (dynamic_link_table.link_doctype == link_doctype)
+			)
 		)
 		if link_name:
-			link_match = link_match.where(D.link_name == link_name)
-		q = q.where(ExistsCriterion(link_match))
+			link_match = link_match.where(dynamic_link_table.link_name == link_name)
+		filtered_query = filtered_query.where(ExistsCriterion(link_match))
 	if has_whatsapp is not None:
-		N = frappe.qb.DocType("WhatsApp Number")
+		whatsapp_number_table = frappe.qb.DocType("WhatsApp Number")
 		known = (
-			frappe.qb.from_(P)
-			.join(N)
-			.on(N.phone_e164 == P.wa_phone_e164)
-			.select(P.name)
-			.where((P.parenttype == "Contact") & (P.parent == C.name))
+			frappe.qb.from_(contact_phone_table)
+			.join(whatsapp_number_table)
+			.on(whatsapp_number_table.phone_e164 == contact_phone_table.wa_phone_e164)
+			.select(contact_phone_table.name)
+			.where(
+				(contact_phone_table.parenttype == "Contact")
+				& (contact_phone_table.parent == contact_table.name)
+			)
 		)
-		q = q.where(ExistsCriterion(known) if has_whatsapp else ~ExistsCriterion(known))
+		filtered_query = filtered_query.where(
+			ExistsCriterion(known) if has_whatsapp else ~ExistsCriterion(known)
+		)
 	if blacklisted is not None:
 		group = _blacklist_group()
 		if group:
-			M = frappe.qb.DocType("WhatsApp Contact Group Member")
+			group_member_table = frappe.qb.DocType("WhatsApp Contact Group Member")
 			black = (
-				frappe.qb.from_(P)
-				.join(M)
-				.on(M.phone_e164 == P.wa_phone_e164)
-				.select(P.name)
-				.where((P.parenttype == "Contact") & (P.parent == C.name) & (M.parent == group))
+				frappe.qb.from_(contact_phone_table)
+				.join(group_member_table)
+				.on(group_member_table.phone_e164 == contact_phone_table.wa_phone_e164)
+				.select(contact_phone_table.name)
+				.where(
+					(contact_phone_table.parenttype == "Contact")
+					& (contact_phone_table.parent == contact_table.name)
+					& (group_member_table.parent == group)
+				)
 			)
-			q = q.where(ExistsCriterion(black) if blacklisted else ~ExistsCriterion(black))
+			filtered_query = filtered_query.where(
+				ExistsCriterion(black) if blacklisted else ~ExistsCriterion(black)
+			)
 		elif blacklisted:
-			q = q.where(C.name.isnull())  # no blacklist configured → nothing matches
+			filtered_query = filtered_query.where(
+				contact_table.name.isnull()
+			)  # no blacklist configured → nothing matches
 	if linked is not None:
 		# "is this contact tied to an account at all" — the screen's «حالة الربط» filter, answered
 		# in the query so a Contact User never sees a row the layer would have hidden
-		D = frappe.qb.DocType("Dynamic Link")
+		dynamic_link_table = frappe.qb.DocType("Dynamic Link")
 		any_link = (
-			frappe.qb.from_(D)
-			.select(D.name)
+			frappe.qb.from_(dynamic_link_table)
+			.select(dynamic_link_table.name)
 			.where(
-				(D.parenttype == "Contact") & (D.parent == C.name) & (D.link_doctype.isin(list(PARTY_TYPES)))
+				(dynamic_link_table.parenttype == "Contact")
+				& (dynamic_link_table.parent == contact_table.name)
+				& (dynamic_link_table.link_doctype.isin(list(PARTY_TYPES)))
 			)
 		)
-		q = q.where(ExistsCriterion(any_link) if linked else ~ExistsCriterion(any_link))
+		filtered_query = filtered_query.where(
+			ExistsCriterion(any_link) if linked else ~ExistsCriterion(any_link)
+		)
 	if status:
-		q = q.where(C.status == status)
-	return q, C
+		filtered_query = filtered_query.where(contact_table.status == status)
+	return filtered_query, contact_table
 
 
 def list_contacts(
@@ -393,13 +425,15 @@ def list_contacts(
 	if field not in ORDERABLE_FIELDS or direction.lower() not in ("", "asc", "desc"):
 		frappe.throw(_("Cannot order by {0}").format(order_by), WAValidationError)
 	start, length = _get_page_start_and_length(page, page_length)
-	q, C = _contact_query(search, link_doctype, link_name, has_whatsapp, blacklisted, linked, status)
-	total = q.select(Count("*")).run()[0][0]
-	order_col = getattr(C, field)
+	filtered_query, contact_table = _contact_query(
+		search, link_doctype, link_name, has_whatsapp, blacklisted, linked, status
+	)
+	total = filtered_query.select(Count("*")).run()[0][0]
+	order_column = getattr(contact_table, field)
 	rows = (
-		q.select(*[getattr(C, f) for f in CONTACT_READ_FIELDS])
-		.orderby(order_col, order=Order.asc if direction.lower() == "asc" else Order.desc)
-		.orderby(C.name)
+		filtered_query.select(*[getattr(contact_table, f) for f in CONTACT_READ_FIELDS])
+		.orderby(order_column, order=Order.asc if direction.lower() == "asc" else Order.desc)
+		.orderby(contact_table.name)
 		.limit(length)
 		.offset(start)
 		.run(as_dict=True)
@@ -443,24 +477,27 @@ def contact_stats() -> dict[str, int]:
 	User's numbers describe exactly the rows that user may see. One audit row, not four.
 	"""
 	require("read")
-	C = frappe.qb.DocType("Contact")
-	D = frappe.qb.DocType("Dynamic Link")
+	contact_table = frappe.qb.DocType("Contact")
+	dynamic_link_table = frappe.qb.DocType("Dynamic Link")
 
 	def total_of(**kwargs) -> int:
-		q, _c = _contact_query(**kwargs)
-		return int(q.select(Count("*")).run()[0][0])
+		filtered_query, _contact_table = _contact_query(**kwargs)
+		return int(filtered_query.select(Count("*")).run()[0][0])
 
 	links = (
-		frappe.qb.from_(D)
-		.select(D.parent, Count("*").as_("n"))
-		.where((D.parenttype == "Contact") & (D.link_doctype.isin(list(PARTY_TYPES))))
-		.groupby(D.parent)
+		frappe.qb.from_(dynamic_link_table)
+		.select(dynamic_link_table.parent, Count("*").as_("n"))
+		.where(
+			(dynamic_link_table.parenttype == "Contact")
+			& (dynamic_link_table.link_doctype.isin(list(PARTY_TYPES)))
+		)
+		.groupby(dynamic_link_table.parent)
 		.run(as_dict=True)
 	)
 	names = {row["parent"] for row in links}
 	multi = {row["parent"] for row in links if cint(row["n"]) > 1}
 	# a link row may point at a contact this user cannot see: count only the ones in the query
-	visible = {row[0] for row in _contact_query()[0].select(C.name).run()}
+	visible = {row[0] for row in _contact_query()[0].select(contact_table.name).run()}
 	stats = {
 		"total": total_of(),
 		"linked": len(names & visible),
@@ -476,26 +513,26 @@ def contact_stats() -> dict[str, int]:
 def count_contacts(txt: str | None = None) -> int:
 	"""Number of contacts `search_contacts(txt)` would page through (same query, no audit row)."""
 	require("read")
-	q, _c = _contact_query(search=txt)
-	return cint(q.select(Count("*")).run()[0][0])
+	filtered_query, _contact_table = _contact_query(search=txt)
+	return cint(filtered_query.select(Count("*")).run()[0][0])
 
 
 def search_contacts(txt: str | None = None, page: int = 1, page_length: int = 20) -> list[dict[str, Any]]:
 	"""ContactPicker source 2: `name, full_name, image` + phones for contacts matching `txt`."""
 	require("read")
 	start, length = _get_page_start_and_length(page, page_length)
-	q, C = _contact_query(search=txt)
+	filtered_query, contact_table = _contact_query(search=txt)
 	rows = (
-		q.select(*[getattr(C, f) for f in CONTACT_SEARCH_FIELDS])
-		.orderby(C.full_name)
-		.orderby(C.name)
+		filtered_query.select(*[getattr(contact_table, f) for f in CONTACT_SEARCH_FIELDS])
+		.orderby(contact_table.full_name)
+		.orderby(contact_table.name)
 		.limit(length)
 		.offset(start)
 		.run(as_dict=True)
 	)
 	phones = _phones_for([r["name"] for r in rows])
-	for r in rows:
-		r["phone_nos"] = phones.get(r["name"], [])
+	for contact_row in rows:
+		contact_row["phone_nos"] = phones.get(contact_row["name"], [])
 	_audit_read(count=len(rows), search=bool(txt))
 	return rows
 
@@ -574,15 +611,15 @@ def validate_filters(meta, filters: Any) -> list[list[Any]]:
 		raise ValueError(_("filters must be a list or an object"))
 	out: list[list[Any]] = []
 	for item in items:
-		field, op, value = _normalize_filter_item(item)
-		op = str(op).strip().lower()
+		field, filter_operator, value = _normalize_filter_item(item)
+		filter_operator = str(filter_operator).strip().lower()
 		if not isinstance(field, str) or (field not in STANDARD_FIELDS and not meta.has_field(field)):
 			raise ValueError(_("unknown field {0}").format(field))
-		if op not in FILTER_OPERATORS:
-			raise ValueError(_("operator {0} is not allowed").format(op))
+		if filter_operator not in FILTER_OPERATORS:
+			raise ValueError(_("operator {0} is not allowed").format(filter_operator))
 		if isinstance(value, dict):
 			raise ValueError(_("filter values cannot be objects"))
-		out.append([field, op, value])
+		out.append([field, filter_operator, value])
 	return out
 
 
@@ -702,13 +739,15 @@ def list_doctype_rows(
 	)
 	if contact_field:
 		phones = _phones_for(sorted({r["contact"] for r in rows if r.get("contact")}))
-		for r in rows:
-			primary = next(iter(phones.get(r.get("contact") or "", [])), None)
-			r["phone"] = primary["phone"] if primary else None
-	for r in rows:
-		r.setdefault("label", r["name"])
-		r.setdefault("contact", None)
-		r["phone_e164"] = normalize_phone_to_e164(r.get("phone")) if r.get("phone") else None
+		for picker_row in rows:
+			primary = next(iter(phones.get(picker_row.get("contact") or "", [])), None)
+			picker_row["phone"] = primary["phone"] if primary else None
+	for picker_row in rows:
+		picker_row.setdefault("label", picker_row["name"])
+		picker_row.setdefault("contact", None)
+		picker_row["phone_e164"] = (
+			normalize_phone_to_e164(picker_row.get("phone")) if picker_row.get("phone") else None
+		)
 	_audit_read(count=len(rows), document_type=document_type)
 	total = frappe.db.count(document_type, filters=merged)
 	return {"rows": rows, "total": total, "page": max(cint(page) or 1, 1), "page_length": length}

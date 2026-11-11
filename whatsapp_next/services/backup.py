@@ -453,11 +453,11 @@ def pending_switch_raw() -> dict[str, Any] | None:
 
 def _build_previous_account_filters(pending: dict[str, Any]) -> dict[str, dict[str, Any]]:
 	"""Filters of what the previous account left, per DocType: what existed before the switch."""
-	at = pending["at"]
-	out = {doctype: {"creation": ("<=", at)} for doctype in ACCOUNT_DOCTYPES}
-	out["WhatsApp Device"] = {"name": ("in", pending.get("devices") or [""]), "creation": ("<=", at)}
+	switched_at = pending["at"]
+	out = {doctype: {"creation": ("<=", switched_at)} for doctype in ACCOUNT_DOCTYPES}
+	out["WhatsApp Device"] = {"name": ("in", pending.get("devices") or [""]), "creation": ("<=", switched_at)}
 	# a number the new account has talked to since is the new account's
-	out["WhatsApp Number"] = {"modified": ("<=", at)}
+	out["WhatsApp Number"] = {"modified": ("<=", switched_at)}
 	return out
 
 

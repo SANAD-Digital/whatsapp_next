@@ -48,12 +48,12 @@ def preview(
 		templates.readable_only(doc)
 		# a real record is the `doc`; the template's sample values fill only the other names
 		extra = {k: v for k, v in (_parse_json_dict(sample_context) or {}).items() if k != "doc"}
-		ctx = templates.context_for(
+		template_context = templates.context_for(
 			doctype, reference_name, extra=extra or None, doc=doc, recipient=_sample_recipient()
 		)
 	else:
-		ctx = _sample_context(doctype, sample_context)
-	result = templates.render_message_template(source, ctx)
+		template_context = _sample_context(doctype, sample_context)
+	result = templates.render_message_template(source, template_context)
 	errors = [result.error] if result.error else []
 	if doctype and not reference_name and not frappe.has_permission(doctype, "read"):
 		errors.append(
@@ -82,18 +82,18 @@ def _sample_context(doctype: str | None, sample: str | dict | None) -> dict[str,
 	record is loaded without the template's `doc` overlay, filtered, then overlaid here."""
 	parsed = dict(_parse_json_dict(sample) or {})
 	overlay = parsed.pop("doc", None)
-	ctx = templates.sample_context(doctype, parsed or None)
-	templates.readable_only(ctx.get("doc"))
+	template_context = templates.sample_context(doctype, parsed or None)
+	templates.readable_only(template_context.get("doc"))
 	if isinstance(overlay, dict):
-		if isinstance(ctx.get("doc"), Document):
+		if isinstance(template_context.get("doc"), Document):
 			# in memory only, never saved: the record keeps its methods and child tables
-			ctx["doc"].update(overlay)
+			template_context["doc"].update(overlay)
 		else:
-			ctx["doc"] = {**(ctx.get("doc") or {}), **overlay}
-	if not isinstance(ctx.get("doc"), Document):
+			template_context["doc"] = {**(template_context.get("doc") or {}), **overlay}
+	if not isinstance(template_context.get("doc"), Document):
 		# no record to read: a field the sample does not give prints nothing, not "None"
-		ctx["doc"] = _Placeholder(ctx.get("doc") or {})
-	return ctx
+		template_context["doc"] = _Placeholder(template_context.get("doc") or {})
+	return template_context
 
 
 class _Placeholder(templates.SampleDoc):

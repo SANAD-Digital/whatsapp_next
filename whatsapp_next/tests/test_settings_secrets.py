@@ -27,7 +27,7 @@ FIELDS = ("customer_api_key", "customer_api_secret", "api_key", "api_secret", "w
 LINK_STATE = (*onboarding.SIGN_OUT_RESET, "credentials_updated_at")
 
 
-def _read(fieldname: str) -> str | None:
+def _read_decrypted_secret(fieldname: str) -> str | None:
 	return get_decrypted_password(SETTINGS, SETTINGS, fieldname, raise_exception=False)
 
 
@@ -36,7 +36,7 @@ class TestSettingsSecrets(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		# the site's own keys and placeholders, put back exactly as they were
-		cls._secrets = {f: _read(f) for f in FIELDS}
+		cls._secrets = {f: _read_decrypted_secret(f) for f in FIELDS}
 		cls._singles = {f: frappe.db.get_single_value(SETTINGS, f) for f in FIELDS}
 		meta = frappe.get_meta(SETTINGS)
 		cls._link_state = {
@@ -74,7 +74,7 @@ class TestSettingsSecrets(IntegrationTestCase):
 			frappe.db.get_single_value(SETTINGS, "api_secret"), "*" * len("secret-kept-after-save")
 		)
 		self._save_settings_as_a_screen_would()
-		self.assertEqual(_read("api_secret"), "secret-kept-after-save")
+		self.assertEqual(_read_decrypted_secret("api_secret"), "secret-kept-after-save")
 
 	def test_signup_keys_survive_a_settings_save(self):
 		state = SignupState(
@@ -84,6 +84,6 @@ class TestSettingsSecrets(IntegrationTestCase):
 		)
 		self.assertTrue(onboarding.store_signup_credentials(state, user="Administrator"))
 		self._save_settings_as_a_screen_would()
-		self.assertEqual(_read("customer_api_key"), "ck-signup")
-		self.assertEqual(_read("api_key"), "ak-signup")
-		self.assertEqual(_read("api_secret"), "as-signup")
+		self.assertEqual(_read_decrypted_secret("customer_api_key"), "ck-signup")
+		self.assertEqual(_read_decrypted_secret("api_key"), "ak-signup")
+		self.assertEqual(_read_decrypted_secret("api_secret"), "as-signup")

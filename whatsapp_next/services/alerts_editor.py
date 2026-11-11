@@ -132,7 +132,9 @@ def get_alert_editor_data(name: str | None = None) -> dict[str, Any]:
 	from whatsapp_next.services.notifications_editor import templates_for
 
 	templates = templates_for(None)
-	me = frappe.db.get_value("User", frappe.session.user, ["mobile_no", "phone"], as_dict=True) or {}
+	current_user_phones = (
+		frappe.db.get_value("User", frappe.session.user, ["mobile_no", "phone"], as_dict=True) or {}
+	)
 	return {
 		"alert": alert,
 		"stats": stats,
@@ -156,7 +158,8 @@ def get_alert_editor_data(name: str | None = None) -> dict[str, Any]:
 		"variables": [{"code": code, "label": _(label)} for code, label in VARIABLES],
 		"png_available": bool(shutil.which(alerts.PNG_BINARY)),
 		"me": {
-			"phone": normalize_phone_to_e164(me.get("mobile_no")) or normalize_phone_to_e164(me.get("phone"))
+			"phone": normalize_phone_to_e164(current_user_phones.get("mobile_no"))
+			or normalize_phone_to_e164(current_user_phones.get("phone"))
 		},
 		"can_write": bool(frappe.has_permission(DOCTYPE, "write")),
 		"can_delete": bool(name and frappe.has_permission(DOCTYPE, "delete", name)),
@@ -223,10 +226,10 @@ def _find_first_validation_problem(doc) -> str | None:
 def _next_runs(doc) -> list[str]:
 	"""The next three occurrences, or none while the schedule is incomplete."""
 	try:
-		at, out = now_datetime(), []
+		next_run_at, out = now_datetime(), []
 		for _i in range(NEXT_RUNS):
-			at = doc.compute_next_run(at)
-			out.append(str(at))
+			next_run_at = doc.compute_next_run(next_run_at)
+			out.append(str(next_run_at))
 		return out
 	except Exception:
 		return []

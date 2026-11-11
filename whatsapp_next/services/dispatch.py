@@ -236,15 +236,15 @@ def _render_body(
 	is who the row goes to, so a template can greet them by name."""
 	if spec.body or not spec.template:
 		return spec.body, None
-	tpl = frappe.db.get_value("WhatsApp Template", spec.template, ["body", "disabled"], as_dict=True)
-	if not tpl:
+	template_row = frappe.db.get_value("WhatsApp Template", spec.template, ["body", "disabled"], as_dict=True)
+	if not template_row:
 		frappe.throw(_("WhatsApp Template {0} not found").format(spec.template), WANotFoundError)
-	if cint(tpl.disabled):
+	if cint(template_row.disabled):
 		frappe.throw(_("WhatsApp Template {0} is disabled").format(spec.template), WAValidationError)
-	ctx = spec.template_context or templates.context_for(
+	template_context = spec.template_context or templates.context_for(
 		spec.reference_doctype, spec.reference_name, recipient=recipient
 	)
-	result = templates.render_message_template(tpl.body, ctx)
+	result = templates.render_message_template(template_row.body, template_context)
 	return (result.text if result.ok else None), result.error
 
 
@@ -543,20 +543,31 @@ def claim_batch(device: str, limit: int, *, job_id: str | None = None) -> list[f
 	if not limit:
 		return []
 	now = now_datetime()
-	Q = frappe.qb.DocType("WhatsApp Queue Item")
+	queue_table = frappe.qb.DocType("WhatsApp Queue Item")
 	paused = paused_campaigns()
 	query = (
-		frappe.qb.from_(Q)
-		.select(Q.name, Q.outbound_message, Q.campaign, Q.attempts, Q.max_attempts, Q.priority)
-		.where((Q.status == "Queued") & (Q.device == device) & (Q.scheduled_at <= now))
-		.where(Q.next_attempt_at.isnull() | (Q.next_attempt_at <= now))
+		frappe.qb.from_(queue_table)
+		.select(
+			queue_table.name,
+			queue_table.outbound_message,
+			queue_table.campaign,
+			queue_table.attempts,
+			queue_table.max_attempts,
+			queue_table.priority,
+		)
+		.where(
+			(queue_table.status == "Queued")
+			& (queue_table.device == device)
+			& (queue_table.scheduled_at <= now)
+		)
+		.where(queue_table.next_attempt_at.isnull() | (queue_table.next_attempt_at <= now))
 	)
 	if paused:
-		query = query.where(Q.campaign.isnull() | Q.campaign.notin(list(paused)))
+		query = query.where(queue_table.campaign.isnull() | queue_table.campaign.notin(list(paused)))
 	rows = (
-		query.orderby(Q.priority)
-		.orderby(Q.scheduled_at)
-		.orderby(Q.creation)
+		query.orderby(queue_table.priority)
+		.orderby(queue_table.scheduled_at)
+		.orderby(queue_table.creation)
 		.limit(limit)
 		.for_update(skip_locked=True)
 		.run(as_dict=True)
@@ -567,32 +578,37 @@ def claim_batch(device: str, limit: int, *, job_id: str | None = None) -> list[f
 	keep: list[frappe._dict] = []
 	per_campaign: dict[str, int] = {}
 	caps: dict[str, int] = {}
-	for r in rows:
-		if r.campaign:
-			if r.campaign not in caps:
-				caps[r.campaign] = (
-					cint(frappe.db.get_value("WhatsApp Campaign", r.campaign, "messages_per_minute")) or 0
+	for claimed_row in rows:
+		if claimed_row.campaign:
+			if claimed_row.campaign not in caps:
+				caps[claimed_row.campaign] = (
+					cint(
+						frappe.db.get_value("WhatsApp Campaign", claimed_row.campaign, "messages_per_minute")
+					)
+					or 0
 				)
-			cap = caps[r.campaign]
-			if cap and per_campaign.get(r.campaign, 0) >= cap:
+			cap = caps[claimed_row.campaign]
+			if cap and per_campaign.get(claimed_row.campaign, 0) >= cap:
 				continue
-			per_campaign[r.campaign] = per_campaign.get(r.campaign, 0) + 1
-		keep.append(r)
+			per_campaign[claimed_row.campaign] = per_campaign.get(claimed_row.campaign, 0) + 1
+		keep.append(claimed_row)
 	if not keep:
 		return []
 	names = [r.name for r in keep]
 	job = job_id or f"wa-dispatch-{device}"
 	with status_writer():
-		Qn = frappe.qb.DocType("WhatsApp Queue Item")
-		frappe.qb.update(Qn).set(Qn.status, "Sending").set(Qn.claimed_at, now).set(Qn.job_id, job).set(
-			Qn.modified, now
-		).where(Qn.name.isin(names)).run()
-		L = frappe.qb.DocType("WhatsApp Log")
-		frappe.qb.update(L).set(L.status, "Sending").set(L.modified, now).where(
-			L.name.isin([r.outbound_message for r in keep])
+		queue_update_table = frappe.qb.DocType("WhatsApp Queue Item")
+		frappe.qb.update(queue_update_table).set(queue_update_table.status, "Sending").set(
+			queue_update_table.claimed_at, now
+		).set(queue_update_table.job_id, job).set(queue_update_table.modified, now).where(
+			queue_update_table.name.isin(names)
 		).run()
-	for r in keep:
-		r.job_id = job
+		log_table = frappe.qb.DocType("WhatsApp Log")
+		frappe.qb.update(log_table).set(log_table.status, "Sending").set(log_table.modified, now).where(
+			log_table.name.isin([r.outbound_message for r in keep])
+		).run()
+	for claimed_row in keep:
+		claimed_row.job_id = job
 	return keep
 
 
@@ -601,16 +617,16 @@ def build_message(
 ) -> NormalizedMessage:
 	"""`NormalizedMessage` for one WhatsApp Log row (dict or doc). Attachments are inlined."""
 	get = outbound.get if hasattr(outbound, "get") else lambda k: getattr(outbound, k, None)
-	mt = get("message_type") or "Text"
+	message_type = get("message_type") or "Text"
 	location = poll = None
-	if mt == "Location":
+	if message_type == "Location":
 		location = Location(
 			latitude=float(get("location_latitude") or 0),
 			longitude=float(get("location_longitude") or 0),
 			name=get("location_name"),
 			address=get("location_address"),
 		)
-	elif mt == "Poll":
+	elif message_type == "Poll":
 		poll = polls.validate(get("poll_question"), get("poll_options"), get("poll_allow_multiple"))
 	return NormalizedMessage(
 		client_ref=get("name"),
@@ -618,10 +634,10 @@ def build_message(
 		recipient_type=get("recipient_type") or "Individual",
 		phone_e164=get("phone_e164"),
 		jid=get("jid"),
-		message_type=mt,
+		message_type=message_type,
 		body=get("body"),
 		caption=get("caption"),
-		attachment=attachments.attachment_ref(outbound) if mt in ATTACHMENT_TYPES else None,
+		attachment=attachments.attachment_ref(outbound) if message_type in ATTACHMENT_TYPES else None,
 		view_once=bool(cint(get("view_once"))),
 		location=location,
 		poll=poll,
@@ -633,7 +649,7 @@ def build_message(
 		),
 		priority=priority,
 		reply_to=get("reply_to_provider_message_id"),
-		interactive=_interactive_payload(mt, get("interactive")),
+		interactive=_interactive_payload(message_type, get("interactive")),
 	)
 
 
@@ -868,12 +884,17 @@ def _due_now(device: str) -> bool:
 	"""Whether a non-campaign row of `device` is due and waiting. Campaign rows are left to the
 	tick: their `messages_per_minute` is a cap per batch, and a batch after a batch would lift it."""
 	now = now_datetime()
-	Q = frappe.qb.DocType("WhatsApp Queue Item")
+	queue_table = frappe.qb.DocType("WhatsApp Queue Item")
 	return bool(
-		frappe.qb.from_(Q)
-		.select(Q.name)
-		.where((Q.status == "Queued") & (Q.device == device) & (Q.scheduled_at <= now) & Q.campaign.isnull())
-		.where(Q.next_attempt_at.isnull() | (Q.next_attempt_at <= now))
+		frappe.qb.from_(queue_table)
+		.select(queue_table.name)
+		.where(
+			(queue_table.status == "Queued")
+			& (queue_table.device == device)
+			& (queue_table.scheduled_at <= now)
+			& queue_table.campaign.isnull()
+		)
+		.where(queue_table.next_attempt_at.isnull() | (queue_table.next_attempt_at <= now))
 		.limit(1)
 		.run()
 	)
@@ -1409,17 +1430,21 @@ def set_rate(messages_per_minute: int, user: str | None = None) -> int:
 
 def queue_summary(device: str | None = None) -> dict[str, Any]:
 	"""Counts by status (+ pause state) for the Queue summary card and realtime ticks."""
-	Q = frappe.qb.DocType("WhatsApp Queue Item")
+	queue_table = frappe.qb.DocType("WhatsApp Queue Item")
 	from frappe.query_builder.functions import Count
 
-	q = frappe.qb.from_(Q).select(Q.status, Count("*").as_("n")).groupby(Q.status)
+	status_count_query = (
+		frappe.qb.from_(queue_table)
+		.select(queue_table.status, Count("*").as_("n"))
+		.groupby(queue_table.status)
+	)
 	if device:
-		q = q.where(Q.device == device)
+		status_count_query = status_count_query.where(queue_table.device == device)
 	counts = {s: 0 for s in QUEUE_STATUSES}
-	for r in q.run(as_dict=True):
-		counts[r.status] = cint(r.n)
+	for status_count_row in status_count_query.run(as_dict=True):
+		counts[status_count_row.status] = cint(status_count_row.n)
 	held = frappe.db.count("WhatsApp Log", {"status": "Held", **({"device": device} if device else {})})
-	s = _get_cached_whatsapp_settings()
+	whatsapp_settings = _get_cached_whatsapp_settings()
 	return {
 		"device": device,
 		"queued": counts["Queued"],
@@ -1429,12 +1454,12 @@ def queue_summary(device: str | None = None) -> dict[str, Any]:
 		"completed": counts["Completed"],
 		"held": held,
 		"sent_last_minute": sent_this_minute(device) if device else None,
-		"paused_globally": bool(cint(s.queue_paused)),
-		"paused_by": s.queue_paused_by,
-		"paused_at": s.queue_paused_at,
-		"pause_reason": s.queue_pause_reason,
-		"rate": cint(s.messages_per_minute),
-		"plan_rate": cint(s.plan_messages_per_minute) or None,
+		"paused_globally": bool(cint(whatsapp_settings.queue_paused)),
+		"paused_by": whatsapp_settings.queue_paused_by,
+		"paused_at": whatsapp_settings.queue_paused_at,
+		"pause_reason": whatsapp_settings.queue_pause_reason,
+		"rate": cint(whatsapp_settings.messages_per_minute),
+		"plan_rate": cint(whatsapp_settings.plan_messages_per_minute) or None,
 	}
 
 
@@ -1477,20 +1502,24 @@ def queue_position(row: dict[str, Any]) -> int | None:
 	`(priority, scheduled_at, creation)` — the order `claim_batch` uses. `None` for other states."""
 	if row.get("status") != "Queued":
 		return None
-	Q = frappe.qb.DocType("WhatsApp Queue Item")
+	queue_table = frappe.qb.DocType("WhatsApp Queue Item")
 	from frappe.query_builder.functions import Count
 
 	priority = cint(row.get("priority"))
 	scheduled_at = get_datetime(row.get("scheduled_at"))
 	creation = get_datetime(row.get("creation"))
 	ahead = (
-		frappe.qb.from_(Q)
+		frappe.qb.from_(queue_table)
 		.select(Count("*").as_("n"))
-		.where((Q.status == "Queued") & (Q.device == row.get("device")))
+		.where((queue_table.status == "Queued") & (queue_table.device == row.get("device")))
 		.where(
-			(Q.priority < priority)
-			| ((Q.priority == priority) & (Q.scheduled_at < scheduled_at))
-			| ((Q.priority == priority) & (Q.scheduled_at == scheduled_at) & (Q.creation < creation))
+			(queue_table.priority < priority)
+			| ((queue_table.priority == priority) & (queue_table.scheduled_at < scheduled_at))
+			| (
+				(queue_table.priority == priority)
+				& (queue_table.scheduled_at == scheduled_at)
+				& (queue_table.creation < creation)
+			)
 		)
 		.run()
 	)
@@ -1596,15 +1625,15 @@ def throughput(minutes: int = 60) -> dict[str, Any]:
 	window = max(5, min(cint(minutes) or 60, 180))
 	now = now_datetime()
 	since = add_to_date(now, minutes=-window)
-	Q = frappe.qb.DocType("WhatsApp Queue Item")
+	queue_table = frappe.qb.DocType("WhatsApp Queue Item")
 	# Frappe maps DateFormat to TO_CHAR on PostgreSQL but passes the pattern as it is: each
 	# database gets its own spelling of "minute", or PostgreSQL returned garbage and this raised
 	pattern = "YYYY-MM-DD HH24:MI" if frappe.db.db_type == "postgres" else "%Y-%m-%d %H:%i"
-	minute = DateFormat(Q.completed_at, pattern)
+	minute = DateFormat(queue_table.completed_at, pattern)
 	rows = (
-		frappe.qb.from_(Q)
+		frappe.qb.from_(queue_table)
 		.select(minute.as_("minute"), Count("*").as_("n"))
-		.where((Q.status == "Completed") & (Q.completed_at >= since))
+		.where((queue_table.status == "Completed") & (queue_table.completed_at >= since))
 		.groupby(minute)
 	).run(as_dict=True)
 	buckets = [0] * window

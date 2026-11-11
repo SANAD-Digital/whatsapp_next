@@ -68,20 +68,20 @@ class TestCampaignRunner(IntegrationTestCase):
 		ensure_settings(default_device=cls.device, queue_paused=0, send_only_to_known_numbers=0)
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_campaigns()
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_campaigns()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_campaigns():
 		delete_test_rows("WhatsApp Queue Item")
 		delete_test_rows("WhatsApp Log", {"source_type": "Campaign"})
 		delete_all("WhatsApp Campaign", {"campaign_name": ("like", f"{NAME}%")})
 		delete_all("WhatsApp Audit Log", {"action": ("like", "Campaign%")})
 		frappe.db.commit()
 
-	def _status(self, name):
+	def _get_campaign_status(self, name):
 		return frappe.db.get_value("WhatsApp Campaign", name, "status")
 
 	def _outbound(self, name):
@@ -107,15 +107,15 @@ class TestCampaignRunner(IntegrationTestCase):
 		with self.assertRaises(WAValidationError):
 			runner.schedule(name, add_to_date(now_datetime(), hours=-1))
 		runner.schedule(name, add_to_date(now_datetime(), hours=1))
-		self.assertEqual(self._status(name), "Scheduled")
+		self.assertEqual(self._get_campaign_status(name), "Scheduled")
 		runner.unschedule(name)
-		self.assertEqual(self._status(name), "Draft")
+		self.assertEqual(self._get_campaign_status(name), "Draft")
 		empty = _campaign(self.device, recipients=())
 		with self.assertRaises(WAValidationError):
 			runner.start_campaign(empty)
 		with patch.object(frappe, "enqueue") as enq:
 			runner.start_campaign(name)
-		self.assertEqual(self._status(name), "Queued")
+		self.assertEqual(self._get_campaign_status(name), "Queued")
 		self.assertEqual(enq.call_args.args[0], "whatsapp_next.services.campaign_runner.materialize")
 		self.assertEqual(
 			frappe.db.count("WhatsApp Audit Log", {"action": "Campaign Started", "reference_name": name}), 1
@@ -129,7 +129,7 @@ class TestCampaignRunner(IntegrationTestCase):
 			runner.start_campaign(name)
 		counts = runner.materialize(name)
 		self.assertEqual((counts["recipients"], counts["created"], counts["failed"]), (2, 4, 0))
-		self.assertEqual(self._status(name), "Running")
+		self.assertEqual(self._get_campaign_status(name), "Running")
 		rows = self._outbound(name)
 		self.assertEqual(len(rows), 4)
 		first = next(r for r in rows if r.campaign_message_idx == 1 and r.phone_e164 == P1)
@@ -154,11 +154,11 @@ class TestCampaignRunner(IntegrationTestCase):
 
 		# pause → queue rows Paused, claim skips them
 		self.assertEqual(runner.pause_campaign(name, reason="hold"), 4)
-		self.assertEqual(self._status(name), "Paused")
+		self.assertEqual(self._get_campaign_status(name), "Paused")
 		self.assertEqual(frappe.db.count("WhatsApp Queue Item", {"campaign": name, "status": "Paused"}), 4)
 		self.assertEqual(dispatch.claim_batch(self.device, 10), [])
 		self.assertEqual(runner.resume_campaign(name), 4)
-		self.assertEqual(self._status(name), "Running")
+		self.assertEqual(self._get_campaign_status(name), "Running")
 		# send the first (due) messages, then finalize when everything is terminal
 		with fake_provider():
 			dispatch.dispatch_device_batch(self.device)
@@ -175,7 +175,7 @@ class TestCampaignRunner(IntegrationTestCase):
 					)
 		c = runner.refresh_counters(name)
 		self.assertEqual((c.sent, c.failed, c.open), (2, 2, 0))
-		self.assertEqual(self._status(name), "Partially Failed")
+		self.assertEqual(self._get_campaign_status(name), "Partially Failed")
 		self.assertEqual(
 			frappe.db.get_value("WhatsApp Campaign Recipient", {"parent": name, "phone_e164": P1}, "status"),
 			"Failed",
@@ -310,7 +310,7 @@ class TestCampaignRunner(IntegrationTestCase):
 		)
 		n = runner.cancel_campaign(name, reason="stop")
 		self.assertEqual(n, 2)
-		self.assertEqual(self._status(name), "Cancelled")
+		self.assertEqual(self._get_campaign_status(name), "Cancelled")
 		self.assertTrue(all(r.status == "Cancelled" for r in self._outbound(name)))
 		self.assertEqual(frappe.db.count("WhatsApp Queue Item", {"campaign": name, "status": "Deleted"}), 2)
 		self.assertEqual(
@@ -339,10 +339,10 @@ class TestCampaignRunner(IntegrationTestCase):
 		with patch.object(frappe, "enqueue"):
 			runner.start_campaign(name)
 		runner.pause_campaign(name, reason="early")  # the materialize job has not run yet
-		self.assertEqual(self._status(name), "Paused")
+		self.assertEqual(self._get_campaign_status(name), "Paused")
 		counts = runner.materialize(name)
 		self.assertEqual(counts["created"], 4)
-		self.assertEqual(self._status(name), "Paused")
+		self.assertEqual(self._get_campaign_status(name), "Paused")
 		self.assertEqual(dispatch.claim_batch(self.device, 10), [])  # held while paused
 		self.assertEqual(runner.materialize(name), {"skipped": 1})
 		runner.resume_campaign(name)
@@ -384,7 +384,7 @@ class TestCampaignRunner(IntegrationTestCase):
 			runner.start_campaign(name)
 			counts = runner.materialize(name)
 		self.assertEqual(counts["created"], 0)
-		self.assertEqual(self._status(name), "Completed")
+		self.assertEqual(self._get_campaign_status(name), "Completed")
 
 	def test_counters_for_many_matches_counters_for(self):
 		a = _campaign(self.device)
@@ -411,7 +411,7 @@ class TestCampaignRunner(IntegrationTestCase):
 				update_modified=False,
 			)
 			self.assertEqual(runner.promote_scheduled(), [name])
-		self.assertEqual(self._status(name), "Queued")
+		self.assertEqual(self._get_campaign_status(name), "Queued")
 
 	def test_edit_lock_ignores_datetime_round_trip(self):
 		"""A Paused campaign saved from the client (datetimes as strings) may still gain recipients;

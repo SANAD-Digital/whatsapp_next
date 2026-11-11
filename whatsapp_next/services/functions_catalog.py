@@ -338,14 +338,14 @@ def save_values(function_key: str, values: dict | None) -> dict[str, Any]:
 		)
 	current = values_of(doc)
 	for name, value in values.items():
-		p = params[name]
-		if p["fieldtype"] == "Template":
+		param_spec = params[name]
+		if param_spec["fieldtype"] == "Template":
 			if isinstance(value, dict):
 				value = {str(k): str(v) for k, v in value.items() if not fh.is_empty(v)}
 			value = value or None
-		elif not fh.is_empty(value) and not (p["fieldtype"] == "Date" and isinstance(value, str)):
+		elif not fh.is_empty(value) and not (param_spec["fieldtype"] == "Date" and isinstance(value, str)):
 			try:
-				value = fh.coerce_param_value(p, value)
+				value = fh.coerce_param_value(param_spec, value)
 			except ValueError as exc:
 				frappe.throw(str(exc), WAValidationError)
 		if fh.is_empty(value) if not isinstance(value, dict) else not value:

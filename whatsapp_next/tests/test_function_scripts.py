@@ -36,7 +36,7 @@ LINKED = "FnScript Linked Contact"
 SUPPLIER_CONTACT = "FnScript Supplier Contact"
 
 
-def _link(contact: str, doctype: str, name: str) -> None:
+def _link_contact_to_document(contact: str, doctype: str, name: str) -> None:
 	doc = frappe.get_doc("Contact", contact)
 	if not any(link.link_doctype == doctype and link.link_name == name for link in doc.links):
 		doc.set("links", [link for link in doc.links if link.link_doctype != doctype])
@@ -66,10 +66,10 @@ class TestFunctionScripts(IntegrationTestCase):
 		cls.supplier = (frappe.get_all("Supplier", limit=1, pluck="name") or [None])[0]
 		cls.contact = ensure_contact(LINKED, P_LINKED)
 		if cls.customer:
-			_link(cls.contact, "Customer", cls.customer)
+			_link_contact_to_document(cls.contact, "Customer", cls.customer)
 		cls.supplier_contact = ensure_contact(SUPPLIER_CONTACT, P_SUPPLIER)
 		if cls.supplier:
-			_link(cls.supplier_contact, "Supplier", cls.supplier)
+			_link_contact_to_document(cls.supplier_contact, "Supplier", cls.supplier)
 
 	@classmethod
 	def tearDownClass(cls):
@@ -93,10 +93,10 @@ class TestFunctionScripts(IntegrationTestCase):
 		if not self.customer:
 			self.skipTest("no Customer on this site")
 
-	def _sim(self, phone: str, text: str, **kw):
+	def _simulate_inbound_text(self, phone: str, text: str, **kw):
 		return simulator.simulate_inbound(self.device, phone, text, **kw)
 
-	def _live(self, body: str, selected: str | None = None):
+	def _route_live_inbound(self, body: str, selected: str | None = None):
 		"""A received message from the linked contact, routed live (replies captured, not sent)."""
 		doc = frappe.get_doc(
 			{
@@ -192,11 +192,11 @@ class TestFunctionScripts(IntegrationTestCase):
 		).insert(ignore_permissions=True)
 		ff.ensure_function("_test_needs")
 		ff.make_command("tfnneeds", "_test_needs")
-		res = self._sim(P_UNLINKED, "tfnneeds")
+		res = self._simulate_inbound_text(P_UNLINKED, "tfnneeds")
 		self.assertEqual((res.status, _texts(res.replies)), ("Executed", ["ok"]))
 		# ... and once it is disabled, the command is blocked `Function Inactive`, with the reason kept
 		frappe.db.set_value("Report", ff.NEEDED_REPORT, "disabled", 1)
-		res = self._sim(P_UNLINKED, "tfnneeds", persist=True)
+		res = self._simulate_inbound_text(P_UNLINKED, "tfnneeds", persist=True)
 		self.assertEqual((res.status, res.block_reason), ("Blocked", "Function Inactive"))
 		row = frappe.db.get_value(
 			"WhatsApp Inbound Message", res.inbound, ["block_reason", "command_error"], as_dict=True
@@ -206,7 +206,9 @@ class TestFunctionScripts(IntegrationTestCase):
 		# an Inactive function blocks the same way
 		frappe.db.set_value("Report", ff.NEEDED_REPORT, "disabled", 0)
 		fc.set_status("_test_needs", "Inactive")
-		self.assertEqual(self._sim(P_UNLINKED, "tfnneeds").block_reason, "Function Inactive")
+		self.assertEqual(
+			self._simulate_inbound_text(P_UNLINKED, "tfnneeds").block_reason, "Function Inactive"
+		)
 
 	# 4 ---------------------------------------------------------------------------------------------
 
@@ -226,7 +228,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		with self.assertRaises(WAValidationError):
 			ff.make_command("tfnspanx", "_test_span", allowed_party_types=[{"party_type": "Supplier"}])
 		if self.supplier:
-			res = self._sim(P_SUPPLIER, "tfnspan")
+			res = self._simulate_inbound_text(P_SUPPLIER, "tfnspan")
 			self.assertEqual((res.status, res.block_reason), ("Blocked", "Party Type"))
 
 	# 5 ---------------------------------------------------------------------------------------------
@@ -240,19 +242,19 @@ class TestFunctionScripts(IntegrationTestCase):
 			settings_overrides={"timespan": "select date range"},
 			disabled_replies="statement",
 		)
-		res, sent, _name = self._live("tfnrange")
+		res, sent, _name = self._route_live_inbound("tfnrange")
 		self.assertEqual(res.status, "Awaiting Input")
 		session = command_sessions.load_question_session(self.device, P_LINKED)
 		self.assertEqual(session["pending"], ["from_date", "to_date"])
 		self.assertIn("From date", sent[0]["body"])
 
-		res, sent, _name = self._live("2026-01-01")
+		res, sent, _name = self._route_live_inbound("2026-01-01")
 		self.assertEqual(res.status, "Awaiting Input")
 		session = command_sessions.load_question_session(self.device, P_LINKED)
 		self.assertEqual((session["pending"], session["args"]), (["to_date"], {"from_date": "2026-01-01"}))
 		self.assertIn("To date", sent[0]["body"])
 
-		res, sent, name = self._live("2026-01-31")
+		res, sent, name = self._route_live_inbound("2026-01-31")
 		self.assertEqual(res.status, "Executed", res.error)
 		self.assertIsNone(command_sessions.load_question_session(self.device, P_LINKED))
 		self.assertEqual(
@@ -278,13 +280,15 @@ class TestFunctionScripts(IntegrationTestCase):
 		ff.make_command("tfnspan2", "_test_span", disabled_replies="statement")
 		with patch.object(function_runner, "run_function", wraps=function_runner.run_function) as run:
 			for text in ("tfnspan2 timespan=forever", "tfnspan2 forever"):
-				res = self._sim(P_LINKED, text)
+				res = self._simulate_inbound_text(P_LINKED, text)
 				self.assertEqual(res.status, "Failed", text)
 				self.assertIn("«forever» is not an allowed value", res.error)
 				self.assertEqual([r["output_key"] for r in res.replies], ["error"])
 			run.assert_not_called()
 			# an allowed value runs
-			self.assertEqual(self._sim(P_LINKED, "tfnspan2 timespan=today").status, "Executed")
+			self.assertEqual(
+				self._simulate_inbound_text(P_LINKED, "tfnspan2 timespan=today").status, "Executed"
+			)
 			run.assert_called_once()
 
 	# 7 ---------------------------------------------------------------------------------------------
@@ -293,7 +297,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		self._need_customer()
 		ff.ensure_function("_test_span")
 		code = ff.make_command("tfnspan3", "_test_span", settings_overrides={"timespan": "today"})
-		res = self._sim(P_LINKED, "tfnspan3 party=SOMEONE-ELSE party_type=Supplier")
+		res = self._simulate_inbound_text(P_LINKED, "tfnspan3 party=SOMEONE-ELSE party_type=Supplier")
 		self.assertEqual(res.status, "Executed", res.error)
 		self.assertEqual((res.data["party_type"], res.data["party"]), ("Customer", self.customer))
 		# the editor refuses the party as a command value ...
@@ -307,7 +311,7 @@ class TestFunctionScripts(IntegrationTestCase):
 			json.dumps({"timespan": "today", "party": "SOMEONE-ELSE", "party_type": "Supplier"}),
 		)
 		frappe.clear_document_cache("WhatsApp Command", code)
-		res = self._sim(P_LINKED, "tfnspan3")
+		res = self._simulate_inbound_text(P_LINKED, "tfnspan3")
 		self.assertEqual((res.data["party_type"], res.data["party"]), ("Customer", self.customer))
 		# the merge itself never takes it from the values
 		draft = frappe._dict(
@@ -319,7 +323,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		)
 		self.assertEqual((params["party_type"], params["party"], missing), ("Customer", self.customer, []))
 		# a sender with no party is not linked, whatever the text says
-		res = self._sim(P_UNLINKED, "tfnspan3 party=SOMEONE-ELSE")
+		res = self._simulate_inbound_text(P_UNLINKED, "tfnspan3 party=SOMEONE-ELSE")
 		self.assertEqual((res.status, res.block_reason), ("Blocked", "Not Linked"))
 
 	# 8 ---------------------------------------------------------------------------------------------
@@ -337,12 +341,12 @@ class TestFunctionScripts(IntegrationTestCase):
 		ff.make_command(
 			"tfnspanar", "_test_span", settings_overrides={"timespan": "today"}, disabled_replies="statement"
 		)
-		res = self._sim(P_LINKED, "tfnspanen")
+		res = self._simulate_inbound_text(P_LINKED, "tfnspanen")
 		self.assertEqual(
 			(res.status, _texts(res.replies)), ("Executed", [f"Balance of {self.customer} today"])
 		)
 		self.assertEqual(res.data["language"], "en")
-		res = self._sim(P_LINKED, "tfnspanar")
+		res = self._simulate_inbound_text(P_LINKED, "tfnspanar")
 		self.assertEqual(_texts(res.replies), [f"رصيد {self.customer} today"])
 		self.assertEqual(res.data["language"], "ar")
 		# the command's own text for the language wins over the header's
@@ -352,7 +356,9 @@ class TestFunctionScripts(IntegrationTestCase):
 		doc.append("templates", {"param": "msg_result", "language": "ar", "text": "خاص {{ party }}"})
 		doc.status = "Active"
 		doc.save(ignore_permissions=True)
-		self.assertEqual(_texts(self._sim(P_LINKED, "tfnspanen").replies), [f"Own {self.customer}"])
+		self.assertEqual(
+			_texts(self._simulate_inbound_text(P_LINKED, "tfnspanen").replies), [f"Own {self.customer}"]
+		)
 
 	# 9 ---------------------------------------------------------------------------------------------
 
@@ -360,7 +366,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		ff.ensure_function("_test_misbehave")
 		for code, mode in (("tfnbadreply", "bad_reply"), ("tfnbadreport", "bad_report")):
 			ff.make_command(code, "_test_misbehave", settings_overrides={"mode": mode})
-			res = self._sim(P_UNLINKED, code, persist=True)
+			res = self._simulate_inbound_text(P_UNLINKED, code, persist=True)
 			self.assertEqual(res.status, "Failed", mode)
 			# the sender reads the generic failure; the status log keeps which reply was undeclared
 			self.assertNotIn("not declared", res.error)
@@ -377,7 +383,7 @@ class TestFunctionScripts(IntegrationTestCase):
 			)
 		# the same function with declared messages only is fine
 		ff.make_command("tfnfine", "_test_misbehave")
-		self.assertEqual(_texts(self._sim(P_UNLINKED, "tfnfine").replies), ["fine"])
+		self.assertEqual(_texts(self._simulate_inbound_text(P_UNLINKED, "tfnfine").replies), ["fine"])
 
 	# 10 --------------------------------------------------------------------------------------------
 
@@ -388,14 +394,14 @@ class TestFunctionScripts(IntegrationTestCase):
 		ff.make_command(
 			"tfndis", "_test_span", settings_overrides={"timespan": "today"}, disabled_replies="statement"
 		)
-		res = self._sim(P_LINKED, "tfnall")
+		res = self._simulate_inbound_text(P_LINKED, "tfnall")
 		self.assertEqual([r["output_key"] for r in res.replies], ["result_text", "statement"])
 		report = res.replies[1]
 		self.assertEqual(
 			(report["message_type"], report["attachment"], report["report_name"], report["filters"]),
 			("Document", None, ff.SPAN_REPORT, {"party": self.customer}),
 		)
-		res = self._sim(P_LINKED, "tfndis")
+		res = self._simulate_inbound_text(P_LINKED, "tfndis")
 		self.assertEqual(
 			[(r["output_key"], r["message_type"]) for r in res.replies], [("result_text", "Text")]
 		)

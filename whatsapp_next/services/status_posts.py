@@ -79,21 +79,21 @@ def post_now(name: str, *, user: str | None = None) -> str:
 		doc.db_set({"state": "Failed", "error": str(exc)[:500]})
 		frappe.db.commit()  # nosemgrep - see above
 		raise
-	at = now_datetime()
+	posted_at = now_datetime()
 	doc.db_set(
 		{
 			"state": "Posted",
 			"status_id": status_id,
-			"posted_at": at,
+			"posted_at": posted_at,
 			"error": None,
-			"expires_at": add_to_date(at, hours=LIFETIME_HOURS),
+			"expires_at": add_to_date(posted_at, hours=LIFETIME_HOURS),
 			"view_count": 0,
 		}
 	)
 	audit.record_audit_entry(
 		"Status Posted", reference=(POST, name), details={"kind": doc.kind, "device": doc.device}, user=user
 	)
-	_schedule_repeat(doc, at)
+	_schedule_repeat(doc, posted_at)
 	return status_id
 
 
@@ -205,13 +205,13 @@ def refresh_views(names: list[str] | None = None) -> int:
 			frappe.log_error(title="WhatsApp status views not read", message=f"device={device}")
 			continue
 		for p in posts:
-			v = views.get(p.status_id) or {}
+			post_views = views.get(p.status_id) or {}
 			frappe.db.set_value(
 				POST,
 				p.name,
 				{
-					"view_count": cint(v.get("count")),
-					"viewers": json.dumps(v.get("viewers") or [], ensure_ascii=False),
+					"view_count": cint(post_views.get("count")),
+					"viewers": json.dumps(post_views.get("viewers") or [], ensure_ascii=False),
 					"views_synced_at": now_datetime(),
 				},
 				update_modified=False,

@@ -101,12 +101,12 @@ class TestApiOnboarding(IntegrationTestCase):
 		finished, every user is sent back to the setup; whoever cannot run it is told instead."""
 		from whatsapp_next.boot import boot_session
 
-		def state(**values):
+		def set_settings_values(**values):
 			frappe.db.set_single_value(SETTINGS, values)
 			frappe.clear_document_cache(SETTINGS, SETTINGS)
 
 		# never registered
-		state(redirect_unregistered_to_wizard=1, setup_completed=0)
+		set_settings_values(redirect_unregistered_to_wizard=1, setup_completed=0)
 		for f in SECRETS:
 			remove_encrypted_password(SETTINGS, SETTINGS, f)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
@@ -125,12 +125,12 @@ class TestApiOnboarding(IntegrationTestCase):
 			self.assertTrue(api.get_status()["needs_setup"])
 
 		# the setting switches it off
-		state(redirect_unregistered_to_wizard=0)
+		set_settings_values(redirect_unregistered_to_wizard=0)
 		with as_user("System Manager"):
 			self.assertFalse(svc.should_redirect_to_wizard(), "the setting switches it off")
 
 		# signed in, but the wizard never finished: still sent back
-		state(
+		set_settings_values(
 			redirect_unregistered_to_wizard=1,
 			platform_base_url="https://platform.example.com",
 			setup_completed=0,
@@ -142,7 +142,7 @@ class TestApiOnboarding(IntegrationTestCase):
 			self.assertTrue(svc.should_redirect_to_wizard(), "an unfinished setup still sends back")
 
 		# signed in and finished: the product opens
-		state(setup_completed=1)
+		set_settings_values(setup_completed=1)
 		with as_user("WhatsApp Agent"):
 			self.assertFalse(svc.should_redirect_to_wizard(), "a finished setup lets everyone in")
 			self.assertFalse(api.get_status()["needs_setup"])

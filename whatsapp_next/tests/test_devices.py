@@ -48,13 +48,13 @@ class TestDevices(IntegrationTestCase):
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_devices()
 
 	def tearDown(self):
-		self._clean()
+		self._delete_test_devices()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_devices():
 		delete_all(
 			"WhatsApp Audit Log", {"reference_doctype": "WhatsApp Device", "reference_name": ("like", "%")}
 		)
@@ -69,7 +69,7 @@ class TestDevices(IntegrationTestCase):
 			},
 		)
 
-	def _status(self, name):
+	def _get_device_connection_state(self, name):
 		return frappe.db.get_value(
 			"WhatsApp Device",
 			name,
@@ -147,7 +147,7 @@ class TestDevices(IntegrationTestCase):
 			self.assertEqual(
 				(change.previous, change.status, change.changed), ("Pending QR", "Connected", True)
 			)
-			st = self._status(name)
+			st = self._get_device_connection_state(name)
 			self.assertIsNotNone(st.connected_at)
 			self.assertIsNone(
 				frappe.cache.get_value(devices.PAIR_CACHE_KEY.format(platform_device=row.platform_device))
@@ -166,28 +166,30 @@ class TestDevices(IntegrationTestCase):
 			name = devices.create_device(NAME, phone="+966500000402")
 			pd = frappe.db.get_value("WhatsApp Device", name, "platform_device")
 
-		def ev(ename, **kw):
+		def make_webhook_event(ename, **kw):
 			return WebhookEvent(event_id=f"e-{ename}", event_name=ename, platform_device=pd, **kw)
 
 		self.assertTrue(
 			devices.apply_connection_event(
-				ev(
+				make_webhook_event(
 					"connection.connected",
 					device=DeviceState(platform_device=pd, wa_device_id="wa-new", webhook_registered=True),
 				)
 			).changed
 		)
-		st = self._status(name)
+		st = self._get_device_connection_state(name)
 		self.assertEqual((st.status, st.wa_device_id, st.webhook_registered), ("Connected", "wa-new", 1))
 		self.assertTrue(
-			devices.apply_connection_event(ev("connection.disconnected", reason="network")).changed
+			devices.apply_connection_event(
+				make_webhook_event("connection.disconnected", reason="network")
+			).changed
 		)
-		st = self._status(name)
+		st = self._get_device_connection_state(name)
 		self.assertEqual((st.status, st.last_error), ("Disconnected", "network"))
 		self.assertIsNotNone(st.disconnected_at)
-		self.assertTrue(devices.apply_connection_event(ev("connection.logged_out")).changed)
-		self.assertEqual(self._status(name).status, "Logged Out")
-		self.assertIsNone(devices.apply_connection_event(ev("message.sent")))
+		self.assertTrue(devices.apply_connection_event(make_webhook_event("connection.logged_out")).changed)
+		self.assertEqual(self._get_device_connection_state(name).status, "Logged Out")
+		self.assertIsNone(devices.apply_connection_event(make_webhook_event("message.sent")))
 		self.assertIsNone(
 			devices.apply_connection_event(
 				WebhookEvent(event_id="x", event_name="connection.connected", platform_device="WAD-unknown")
@@ -234,7 +236,7 @@ class TestDevices(IntegrationTestCase):
 			)
 		)
 		self.assertEqual(change.wrong_number, {"connected": "+967770788938", "expected": "+967777667663"})
-		st = self._status(name)
+		st = self._get_device_connection_state(name)
 		self.assertEqual(st.status, "Logged Out")
 		self.assertIn("+967770788938", st.last_error)
 		# the number of the device stays its own, never the one that scanned
@@ -285,7 +287,7 @@ class TestDevices(IntegrationTestCase):
 			)
 			# re-pair after logout → Pending QR
 			devices.start_pairing(a, "QR")
-			self.assertEqual(self._status(a).status, "Pending QR")
+			self.assertEqual(self._get_device_connection_state(a).status, "Pending QR")
 
 			# defaults: the default device cannot be deleted / disabled while others exist
 			devices.set_default(a)
@@ -347,6 +349,6 @@ class TestDevices(IntegrationTestCase):
 			fp.create_device("DevTest foreign", None, "QR")  # exists only on the platform
 			counts = devices.sync_from_provider()
 			self.assertEqual(counts, {"seen": 1, "changed": 1, "unknown": 1})
-			self.assertEqual(self._status(a).status, "Connected")
+			self.assertEqual(self._get_device_connection_state(a).status, "Connected")
 			self.assertEqual(frappe.db.count("WhatsApp Device", {"device_name": "DevTest foreign"}), 0)
 			self.assertEqual(devices.sync_from_provider()["changed"], 0)

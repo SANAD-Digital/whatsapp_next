@@ -43,8 +43,8 @@ def _count_outbound_by_field(
 	# NULL and "" are one group here: added together, not the second overwriting the first
 	out: dict[str, int] = {}
 	for key, count in query.run():
-		k = key if key is not None else ""
-		out[k] = out.get(k, 0) + int(count)
+		group_key = key if key is not None else ""
+		out[group_key] = out.get(group_key, 0) + int(count)
 	return out
 
 

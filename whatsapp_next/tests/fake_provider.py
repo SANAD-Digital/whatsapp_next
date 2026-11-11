@@ -69,7 +69,7 @@ class FakeProvider(BaseProvider):
 	def _record(self, name: str, **kwargs) -> None:
 		self.calls.append((name, kwargs))
 
-	def _next(self, prefix: str) -> str:
+	def _generate_fake_id(self, prefix: str) -> str:
 		self._counter += 1
 		return f"{prefix}-{self._counter:04d}"
 
@@ -238,11 +238,11 @@ class FakeProvider(BaseProvider):
 		if pairing_mode == "Code" and not phone_e164:
 			raise pex.ValidationError("phone required", code="PHONE_REQUIRED_FOR_PAIR_CODE")
 		state = DeviceState(
-			platform_device=self._next("WAD"),
+			platform_device=self._generate_fake_id("WAD"),
 			device_name=device_name,
 			phone_e164=phone_e164,
 			status="Pending QR",
-			wa_device_id=self._next("wa"),
+			wa_device_id=self._generate_fake_id("wa"),
 			pairing_mode=pairing_mode,
 		)
 		self.devices[state.platform_device] = state
@@ -329,12 +329,12 @@ class FakeProvider(BaseProvider):
 				rejected=True,
 				reason="quota",
 				code="QUOTA_EXCEEDED",
-				platform_message_log=self._next("ML"),
+				platform_message_log=self._generate_fake_id("ML"),
 			)
 		return SendResult(
 			ok=True,
-			provider_message_id=self._next("pm"),
-			platform_message_log=self._next("ML"),
+			provider_message_id=self._generate_fake_id("pm"),
+			platform_message_log=self._generate_fake_id("ML"),
 			device=message.platform_device,
 		)
 
@@ -359,7 +359,7 @@ class FakeProvider(BaseProvider):
 		status = "Held" if self.batch_mode == "held" else "Queued"
 		accepted = []
 		for m in messages:
-			qid = self._next("MQ")
+			qid = self._generate_fake_id("MQ")
 			accepted.append(BatchAccepted(client_ref=m.client_ref, queue_id=qid, status=status))
 			self.statuses[m.client_ref] = MessageStatus(client_ref=m.client_ref, queue_id=qid, status=status)
 		return BatchResult(batch_id=batch_id, accepted=tuple(accepted))
@@ -400,7 +400,7 @@ class FakeProvider(BaseProvider):
 		return [ProviderGroup(jid="120363000000000000@g.us", name="Fake Group", participants_count=3)]
 
 	# --- webhooks ---
-	def sign(self, timestamp: str, raw_body: bytes | str) -> str:
+	def sign_webhook_body(self, timestamp: str, raw_body: bytes | str) -> str:
 		"""Sign like the platform (helper for receiver tests)."""
 		body = raw_body.decode() if isinstance(raw_body, bytes) else raw_body
 		return hmac.new(self.secret.encode(), f"{timestamp}.{body}".encode(), hashlib.sha256).hexdigest()
@@ -426,7 +426,7 @@ class FakeProvider(BaseProvider):
 	def configure_webhook(self, endpoint_url, events, max_retries) -> WebhookEndpointState:
 		self._record("configure_webhook", url=endpoint_url, events=list(events))
 		state = WebhookEndpointState(
-			endpoint_id=self._next("WAWE"),
+			endpoint_id=self._generate_fake_id("WAWE"),
 			url=endpoint_url,
 			status="Active",
 			events=tuple(events),

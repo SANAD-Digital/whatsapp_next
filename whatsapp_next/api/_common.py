@@ -149,13 +149,13 @@ def coerce_arguments(
 ) -> dict:
 	"""Coerce request values (strings) into the annotated Python types; reject unknown names."""
 	params = signature.parameters
-	accepts_var_kw = any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
+	accepts_extra_keywords = any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
 	out: dict = {}
 	for name, value in kwargs.items():
 		if name in ("cmd", "_"):
 			continue
 		if name not in params:
-			if accepts_var_kw:
+			if accepts_extra_keywords:
 				out[name] = value
 				continue
 			frappe.throw(_("Unknown argument: {0}").format(name), WAValidationError)
@@ -198,10 +198,10 @@ def coerce_value(name: str, value, hint):
 		if hint is bool:
 			if isinstance(value, bool):
 				return value
-			s = str(value).strip().lower()
-			if s in _TRUE:
+			boolean_text = str(value).strip().lower()
+			if boolean_text in _TRUE:
 				return True
-			if s in _FALSE:
+			if boolean_text in _FALSE:
 				return False
 			raise ValueError
 		if hint is int:

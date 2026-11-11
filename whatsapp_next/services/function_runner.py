@@ -165,17 +165,17 @@ def execute(command, params: dict[str, Any], *, disabled: set[str] | None = None
 	"""Run the command's function with ready `params` (caller handles the user and the metrics).
 	A script that raises becomes the generic error for the sender, logged with the script's name;
 	a message the header did not declare fails the run and nothing is sent."""
-	fn = frappe.db.get_value(
+	function_row = frappe.db.get_value(
 		"WhatsApp Function", command.function, ["server_script", "manifest"], as_dict=True
 	)
-	if not fn or not fn.server_script:
+	if not function_row or not function_row.server_script:
 		return FunctionRun(error=_("Function is inactive"), params=params)
-	spec = functions_catalog.manifest_of(fn)
+	spec = functions_catalog.manifest_of(function_row)
 	try:
-		result = run_function(fn.server_script, params, spec)
+		result = run_function(function_row.server_script, params, spec)
 	except Exception as exc:
 		frappe.log_error(
-			title=f"WhatsApp function {fn.server_script} failed",
+			title=f"WhatsApp function {function_row.server_script} failed",
 			message=f"command={command.name} {type(exc).__name__}: {str(exc)[:300]}",
 		)
 		return FunctionRun(
@@ -189,7 +189,9 @@ def execute(command, params: dict[str, Any], *, disabled: set[str] | None = None
 	try:
 		messages = fh.validate_messages(spec, result["messages"], disabled=disabled)
 	except ValueError as exc:
-		frappe.log_error(title=f"WhatsApp function {fn.server_script}: undeclared reply", message=str(exc))
+		frappe.log_error(
+			title=f"WhatsApp function {function_row.server_script}: undeclared reply", message=str(exc)
+		)
 		# the sender is told the request failed; what the script did wrong stays with the team
 		return FunctionRun(error=_(GENERIC_ERROR), detail=str(exc), data=result["data"], params=params)
 	return FunctionRun(messages=messages, data=result["data"], params=params)
@@ -330,9 +332,9 @@ def run_function_trial(
 		rollback_to("wa_fn_trial")
 		frappe.set_user(previous)
 		frappe.session.sid, frappe.session.data, frappe.local.form_dict = saved_sid, saved_data, saved_form
-	ms = int((frappe.utils.now_datetime() - started).total_seconds() * 1000)
+	run_milliseconds = int((frappe.utils.now_datetime() - started).total_seconds() * 1000)
 	out["error"] = result["error"]
-	if not record_trial_step(_("Run"), not result["error"], result["error"] or f"{ms} ms"):
+	if not record_trial_step(_("Run"), not result["error"], result["error"] or f"{run_milliseconds} ms"):
 		return out
 	try:
 		out["messages"] = fh.validate_messages(spec, result["messages"])

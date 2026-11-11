@@ -174,6 +174,6 @@ def _save_number(jid: str, name: str, device: str) -> None:
 
 def _count_members_by_status(members) -> dict[str, int]:
 	out: dict[str, int] = {}
-	for m in members:
-		out[m.status] = out.get(m.status, 0) + 1
+	for member in members:
+		out[member.status] = out.get(member.status, 0) + 1
 	return out

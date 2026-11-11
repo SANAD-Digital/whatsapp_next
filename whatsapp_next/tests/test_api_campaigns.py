@@ -43,14 +43,14 @@ class TestApiCampaigns(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		cls._clean()
+		cls._delete_test_campaigns()
 		super().tearDownClass()
 
 	def setUp(self):
-		self._clean()
+		self._delete_test_campaigns()
 
 	@staticmethod
-	def _clean():
+	def _delete_test_campaigns():
 		campaigns = frappe.get_all(
 			"WhatsApp Campaign", filters={"campaign_name": ("like", f"{NAME}%")}, pluck="name"
 		)
@@ -94,7 +94,7 @@ class TestApiCampaigns(IntegrationTestCase):
 		runner.materialize(name)
 		return name
 
-	def _status(self, name):
+	def _get_campaign_status(self, name):
 		return frappe.db.get_value("WhatsApp Campaign", name, "status")
 
 	# -- gates -------------------------------------------------------------------------
@@ -291,13 +291,16 @@ class TestApiCampaigns(IntegrationTestCase):
 			self.assertEqual((res["count"], res["done"]), (1, [running]))
 			self.assertEqual(res["skipped"], [{"name": draft, "reason": "Draft"}])
 			self.assertEqual([f["name"] for f in res["failed"]], ["no-such-ApiTest"])
-			self.assertEqual(self._status(running), "Paused")
+			self.assertEqual(self._get_campaign_status(running), "Paused")
 			res = api.resume_many(names=[running, draft])
 			self.assertEqual((res["count"], [s["name"] for s in res["skipped"]]), (1, [draft]))
-			self.assertEqual(self._status(running), "Running")
+			self.assertEqual(self._get_campaign_status(running), "Running")
 			res = api.cancel_many(names=[running, draft], reason="ApiTest bulk cancel")
 			self.assertEqual((res["count"], res["skipped"]), (2, []))
-			self.assertEqual((self._status(running), self._status(draft)), ("Cancelled", "Cancelled"))
+			self.assertEqual(
+				(self._get_campaign_status(running), self._get_campaign_status(draft)),
+				("Cancelled", "Cancelled"),
+			)
 			res = api.cancel_many(names=[running])
 			self.assertEqual((res["count"], res["skipped"]), (0, [{"name": running, "reason": "Cancelled"}]))
 

@@ -125,9 +125,9 @@ def reconcile_handed_over(limit: int = MAX_REFS) -> dict[str, int]:
 		return counts
 	by_ref, unknown = looked
 	for r in rows:
-		s = by_ref.get(r.name)
-		if s:
-			action = _apply_platform_status(r.name, s)
+		platform_status = by_ref.get(r.name)
+		if platform_status:
+			action = _apply_platform_status(r.name, platform_status)
 			counts["wait" if action == "wait" else "resolved"] += 1
 		elif r.name in unknown:
 			if not cint(
@@ -209,14 +209,19 @@ def requeue_stale_claims(older_than_minutes: int = STALE_MINUTES) -> int:
 def assert_coherence(fix: bool = False) -> list[Drift]:
 	"""Pairs whose `(Queue Item.status, outbound.status)` is not allowed. With `fix`, the outbound
 	is corrected from the Queue Item (the dispatcher's own state) and the count is logged."""
-	Q = frappe.qb.DocType("WhatsApp Queue Item")
-	L = frappe.qb.DocType("WhatsApp Log")
+	queue_table = frappe.qb.DocType("WhatsApp Queue Item")
+	log_table = frappe.qb.DocType("WhatsApp Log")
 	rows = (
-		frappe.qb.from_(Q)
-		.join(L)
-		.on(L.name == Q.outbound_message)
-		.select(Q.name.as_("queue_item"), Q.status.as_("qs"), L.name.as_("outbound"), L.status.as_("os"))
-		.where(Q.status.isin(list(ALLOWED)))
+		frappe.qb.from_(queue_table)
+		.join(log_table)
+		.on(log_table.name == queue_table.outbound_message)
+		.select(
+			queue_table.name.as_("queue_item"),
+			queue_table.status.as_("qs"),
+			log_table.name.as_("outbound"),
+			log_table.status.as_("os"),
+		)
+		.where(queue_table.status.isin(list(ALLOWED)))
 		.run(as_dict=True)
 	)
 	drifts: list[Drift] = []
@@ -261,17 +266,17 @@ def resolve_expired_holds(days: int = HELD_EXPIRY_DAYS) -> int:
 	if looked is None:
 		return 0
 	by_ref, unknown = looked
-	n = 0
+	resolved_count = 0
 	for name in rows:
-		s = by_ref.get(name)
-		if s and _apply_platform_status(name, s) != "wait":
-			n += 1
-		elif name in unknown or (s and s.status == "Held"):
+		platform_status = by_ref.get(name)
+		if platform_status and _apply_platform_status(name, platform_status) != "wait":
+			resolved_count += 1
+		elif name in unknown or (platform_status and platform_status.status == "Held"):
 			dispatch.apply_status(
 				name, "Failed", error_code="platform_rejected", reason="hold expired", source="reconcile"
 			)
-			n += 1
-	return n
+			resolved_count += 1
+	return resolved_count
 
 
 def finalize_campaigns() -> int:
@@ -281,9 +286,9 @@ def finalize_campaigns() -> int:
 		from whatsapp_next.services import campaign_runner
 	except ImportError:  # phase order: campaign_runner lands in B-15
 		return 0
-	n = 0
+	closed_count = 0
 	for name in frappe.get_all("WhatsApp Campaign", filters={"status": "Running"}, pluck="name"):
 		campaign_runner.refresh_counters(name)
 		if frappe.db.get_value("WhatsApp Campaign", name, "status") != "Running":
-			n += 1
-	return n
+			closed_count += 1
+	return closed_count
