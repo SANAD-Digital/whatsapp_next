@@ -76,7 +76,7 @@ class TestWebhooks(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("Webhook Device", PLATFORM_DEVICE, phone="+966500000001")
+		cls.device = ensure_device("Webhook Device", PLATFORM_DEVICE, phone="+967784499996")
 		settings = ensure_settings(enable_commands=0)
 		# The site's own signing secret goes back afterwards: left behind, the fixture secret makes
 		# every real delivery to this site fail its signature check.
@@ -319,7 +319,7 @@ class TestWebhooks(IntegrationTestCase):
 			)
 			self.assertEqual(
 				(msg.phone_e164, msg.display_name, msg.body, msg.is_group, msg.device, msg.command_status),
-				("+966500000002", "Ahmed", "كشف حساب", 0, self.device, "None"),
+				("+967777667663", "Ahmed", "كشف حساب", 0, self.device, "None"),
 			)
 			# processing again is a no-op; the inbound row is not duplicated
 			self.assertEqual(handlers.process_event(out.event), "Processed")
@@ -385,7 +385,7 @@ class TestWebhooks(IntegrationTestCase):
 		from whatsapp_next.services import numbers_materializer
 
 		raw = {
-			"jid": "966500000001@s.whatsapp.net",
+			"jid": "967784499996@s.whatsapp.net",
 			"group_jid": "120363000000000009@g.us",
 			"group_name": "Sales team",
 		}
@@ -400,7 +400,7 @@ class TestWebhooks(IntegrationTestCase):
 
 	def test_status_events_apply_to_outbound(self):
 		out_name = dispatch.create_outbound(
-			OutboundSpec(device=self.device, phone="+966500000002", body="webhook-test hi", source_type="API")
+			OutboundSpec(device=self.device, phone="+967777667663", body="webhook-test hi", source_type="API")
 		)
 		with fake_provider(), patch.object(frappe, "enqueue"):
 			for event_name, expected in (
@@ -430,7 +430,7 @@ class TestWebhooks(IntegrationTestCase):
 			self.assertEqual(frappe.db.get_value("WhatsApp Log", out_name, "status"), "Failed")
 			held = dispatch.create_outbound(
 				OutboundSpec(
-					device=self.device, phone="+966500000003", body="webhook-test held", source_type="API"
+					device=self.device, phone="+967777999579", body="webhook-test held", source_type="API"
 				)
 			)
 			body = fixture("message.held", client_ref=held)
@@ -545,7 +545,7 @@ class TestWebhooks(IntegrationTestCase):
 		"""A LID sender whose number is known is published under the number (the key an open
 		conversation drawer hashes), the Numbers upsert comes from the after_insert doc hook, and a
 		sender without a push name takes the name the site already knows for the number."""
-		key = "+966500000077"
+		key = "+967777999579"
 		delete_all("WhatsApp Number", {"phone_e164": key})
 		frappe.get_doc(
 			{"doctype": "WhatsApp Number", "phone_e164": key, "display_name": "Webhook Known"}
@@ -589,7 +589,7 @@ class TestWebhooks(IntegrationTestCase):
 			row = frappe.db.get_value(
 				"WhatsApp Inbound Message", name, ["phone_e164", "sender_jid"], as_dict=True
 			)
-			self.assertEqual(row.phone_e164, "+966500000077")
+			self.assertEqual(row.phone_e164, "+967777999579")
 			self.assertTrue(row.sender_jid.endswith("@lid"))
 			react = provider.parse_webhook({}, fixture("message.reaction"))
 			name = inbound.record_reaction(react, device=self.device)
@@ -616,5 +616,5 @@ class TestWebhooks(IntegrationTestCase):
 		self.assertTrue(inbound.should_route("Text", "#help", True, enabled=True))
 		self.assertFalse(inbound.should_route("Image", "x", False, enabled=True))
 		self.assertFalse(inbound.should_route("Text", "  ", False, enabled=True))
-		self.assertEqual(len(inbound.key_hash("+966500000002")), 40)
+		self.assertEqual(len(inbound.key_hash("+967777667663")), 40)
 		self.assertIsNone(inbound.key_hash(None))

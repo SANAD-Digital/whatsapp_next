@@ -162,7 +162,7 @@ class TestFunctionHeader(IntegrationTestCase):
 
 	def test_build_params(self):
 		spec = _parse_fixture_function_header("_test_span")
-		customer = Sender("+966500000001", None, None, None, party_type="Customer", party_name="CUST-1")
+		customer = Sender("+967784499996", None, None, None, party_type="Customer", party_name="CUST-1")
 		params, missing = fh.build_params(spec, customer, {"party": "OTHER", "party_type": "Supplier"}, "en")
 		self.assertEqual((params["party_type"], params["party"]), ("Customer", "CUST-1"))
 		self.assertEqual((params["timespan"], params["language"]), ("this month", "en"))

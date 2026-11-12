@@ -21,7 +21,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	job_kwargs,
 )
 
-PHONE = "+966500000901"
+PHONE = "+967784499996"
 NAME = "NotifTest ToDo"
 
 
@@ -47,7 +47,7 @@ class TestNotifications(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("Notif Device", "WAD-TEST-NT01", phone="+966500000061")
+		cls.device = ensure_device("Notif Device", "WAD-TEST-NT01", phone="+967777667663")
 		ensure_settings(default_device=cls.device, send_only_to_known_numbers=0)
 
 	def setUp(self):
@@ -202,7 +202,7 @@ class TestNotifications(IntegrationTestCase):
 				{"recipient_type": "Document Field", "receiver_by_document_field": "allocated_to"},
 				{
 					"recipient_type": "Fixed Number",
-					"phone": "+966500000902",
+					"phone": "+967775040850",
 					"condition": "doc.priority == 'High'",
 				},
 			],
@@ -263,7 +263,7 @@ class TestNotifications(IntegrationTestCase):
 			"recipients",
 			[
 				{"recipient_type": "Fixed Number", "phone": PHONE},
-				{"recipient_type": "Fixed Number", "phone": "+966500000977"},
+				{"recipient_type": "Fixed Number", "phone": "+967777999579"},
 			],
 		)
 		notif.save(ignore_permissions=True)
@@ -278,7 +278,7 @@ class TestNotifications(IntegrationTestCase):
 		)
 		named = svc.resolve_recipients(frappe.get_doc("WhatsApp Notification", notif.name), todo3)
 		self.assertEqual(
-			[(r.phone_e164, r.contact) for r in named], [(PHONE, contact), ("+966500000977", None)]
+			[(r.phone_e164, r.contact) for r in named], [(PHONE, contact), ("+967777999579", None)]
 		)
 		self.assertEqual(named[0].display_name, recips[0].display_name)
 		with patch.object(frappe, "enqueue"):
@@ -292,7 +292,7 @@ class TestNotifications(IntegrationTestCase):
 			)
 		}
 		self.assertTrue(bodies[PHONE].endswith(f"for {recips[0].display_name}"), bodies)
-		self.assertTrue(bodies["+966500000977"].endswith("for"), bodies)
+		self.assertTrue(bodies["+967777999579"].endswith("for"), bodies)
 		self.assertNotIn("None", "".join(bodies.values()))
 		# missing document / disabled → skipped
 		self.assertEqual(svc.send_for_document(notif.name, "ToDo", "nope", "New")["skipped"], 1)

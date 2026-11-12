@@ -47,7 +47,7 @@ class TestWhatsAppNotificationAlert(IntegrationTestCase):
 			"notification_time": "09:30:00",
 			"content_type": "Static Message",
 			"message": "Daily digest",
-			"recipients": [{"recipient_type": "Phone", "phone": "0501234567"}],
+			"recipients": [{"recipient_type": "Phone", "phone": "+967784499996"}],
 		}
 		payload.update(values)
 		return frappe.get_doc(payload)
@@ -71,7 +71,7 @@ class TestWhatsAppNotificationAlert(IntegrationTestCase):
 
 	def test_phone_normalized_and_next_run_set(self) -> None:
 		doc = self._insert()
-		self.assertEqual(doc.recipients[0].phone_e164, "+966501234567")
+		self.assertEqual(doc.recipients[0].phone_e164, "+967784499996")
 		self.assertTrue(doc.next_run_at)
 		self.assertGreater(doc.next_run_at, frappe.utils.now_datetime())
 		with self.assertRaises(WAInvalidPhoneError):

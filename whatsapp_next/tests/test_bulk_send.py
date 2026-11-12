@@ -16,7 +16,7 @@ from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_devi
 
 GROUP = "BulkTest Group"
 BLACK = "BulkTest Blacklist"
-P1, P2, P3 = "+966500940001", "+966500940002", "+966500940003"
+P1, P2, P3 = "+967784499996", "+967777667663", "+967777999579"
 
 
 def _group(name: str, kind: str, phones: list[str]) -> str:
@@ -42,7 +42,7 @@ class TestBulkSend(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ensure_settings()  # the local numbers below are Saudi: the region is pinned, whatever the site's
-		cls.device = ensure_device("BulkTest Device", "WAD-TEST-BULK", phone="+966500940000")
+		cls.device = ensure_device("BulkTest Device", "WAD-TEST-BULK", phone="+967775040850")
 		frappe.db.set_value("WhatsApp Device", cls.device, "status", "Connected")
 		cls.group = _group(GROUP, "Other", [P1, P2])
 		cls.black = _group(BLACK, "Blacklist", [P2])
@@ -66,7 +66,7 @@ class TestBulkSend(IntegrationTestCase):
 	def test_estimate_excludes_blacklists(self):
 		with as_user("WhatsApp Manager"):
 			# P2 sits in a blacklist group the sender did not pick: left out; P3 typed twice counts once
-			out = api.estimate(groups=[self.group], numbers=[P3, "0500940003", "bad"])
+			out = api.estimate(groups=[self.group], numbers=[P3, "+967777999579", "bad"])
 			self.assertEqual((out["total"], out["excluded"], out["invalid"]), (2, 1, 1))
 			# picking the blacklist group on purpose sends to it
 			out = api.estimate(groups=[self.group, self.black])
@@ -81,7 +81,7 @@ class TestBulkSend(IntegrationTestCase):
 			"WhatsApp Contact Group Member", filters={"parent": self.black}, fields=["name"], limit=1
 		)[0]
 		frappe.db.set_value(
-			"WhatsApp Contact Group Member", row.name, {"phone": "0500940002", "phone_e164": None}
+			"WhatsApp Contact Group Member", row.name, {"phone": "+967777667663", "phone_e164": None}
 		)
 		try:
 			with as_user("WhatsApp Manager"):
@@ -111,7 +111,7 @@ class TestBulkSend(IntegrationTestCase):
 		self.assertEqual(
 			(camp.device, camp.messages_per_minute, camp.messages[0].body), (self.device, 12, "bulk hello")
 		)
-		self.assertEqual(sorted(r.phone_e164 for r in camp.recipients), [P1, P3])
+		self.assertEqual(sorted(r.phone_e164 for r in camp.recipients), sorted([P1, P3]))
 		self.assertEqual({r.source_type for r in camp.recipients}, {"Contact Group", "Manual"})
 		self.assertEqual(
 			frappe.db.count("WhatsApp Audit Log", {"action": "Bulk Send", "reference_name": camp.name}), 1

@@ -8,10 +8,10 @@
  "integration_link": "WAIL-00001",
  "message_log": "WAML-00002",
  "occurred_at": "2026-09-22 10:00:00",
- "phone_number": "966500000001",
+ "phone_number": "967784499996",
  "queue_id": "WAMQ-00002",
  "reason": "Recipient is not a registered WhatsApp user",
- "recipient_no": "966500000004",
+ "recipient_no": "967777667663",
  "status": "Failed",
  "subscription": "WASUB-00001"
 }

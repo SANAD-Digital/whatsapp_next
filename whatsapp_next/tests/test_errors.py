@@ -61,6 +61,6 @@ class TestErrors(IntegrationTestCase):
 			self.assertIsInstance(code, str)
 
 	def test_message_pii_masked(self):
-		result = classify("Recipient 966501234567 not registered")
-		self.assertNotIn("966501234567", result.message)
+		result = classify("Recipient 967784499996 not registered")
+		self.assertNotIn("967784499996", result.message)
 		self.assertIn("<phone>", result.message)

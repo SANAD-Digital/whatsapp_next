@@ -23,7 +23,7 @@ class TestInboundChanges(IntegrationTestCase):
 				"message_type": "Text",
 				"body": "Meeting at 5",
 				"provider_message_id": self.pid,
-				"phone_e164": "+967770000001",
+				"phone_e164": "+967784499996",
 				"command_status": "None",
 			}
 		)
@@ -58,14 +58,14 @@ class TestInboundChanges(IntegrationTestCase):
 
 	def test_delete_records_who_and_keeps_the_text(self):
 		handle_event(
-			self._event("message.deleted", original_text="Meeting at 5", deleted_by_number="967770000002"),
+			self._event("message.deleted", original_text="Meeting at 5", deleted_by_number="967777667663"),
 			webhook_event_name=None,
 			device=self.device,
 		)
 		row = frappe.db.get_value(
 			"WhatsApp Inbound Message", self.name, ["body", "deleted_at", "deleted_by"], as_dict=True
 		)
-		self.assertEqual((row.body, row.deleted_by), ("Meeting at 5", "967770000002"))
+		self.assertEqual((row.body, row.deleted_by), ("Meeting at 5", "967777667663"))
 		self.assertIsNotNone(row.deleted_at)
 
 	def test_unknown_message_is_ignored(self):
@@ -122,11 +122,11 @@ class TestChangeReplies(TestInboundChanges):
 		)
 		[reply] = self._replies()
 		self.assertEqual(reply.body, "Edited, it said:\n\nMeeting at 5")
-		self.assertEqual((reply.reply_to_provider_message_id, reply.phone_e164), (self.pid, "+967770000001"))
+		self.assertEqual((reply.reply_to_provider_message_id, reply.phone_e164), (self.pid, "+967784499996"))
 
 	def test_delete_reply_sends_the_deleted_text(self):
 		handle_event(
-			self._event("message.deleted", original_text="Meeting at 5", deleted_by_number="967770000001"),
+			self._event("message.deleted", original_text="Meeting at 5", deleted_by_number="967784499996"),
 			webhook_event_name=None,
 			device=self.device,
 		)
@@ -169,14 +169,14 @@ class TestChangeReplies(TestInboundChanges):
 			settings_service.save_fields({fieldname: [{"phone_e164": k} for k in keys]}, section="commands")
 			frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
-		set_reply_targets("edit_reply_to", ["+967770000999", "120363000000222@g.us"])  # not this chat
+		set_reply_targets("edit_reply_to", ["+967777667663", "120363000000222@g.us"])  # not this chat
 		handle_event(
 			self._event("message.edited", original_text="a", new_text="b"),
 			webhook_event_name=None,
 			device=self.device,
 		)
 		self.assertEqual(self._replies(), [])
-		set_reply_targets("edit_reply_to", ["967770000001"])  # this chat, written without its +
+		set_reply_targets("edit_reply_to", ["967784499996"])  # this chat, written without its +
 		handle_event(
 			self._event("message.edited", original_text="b", new_text="c"),
 			webhook_event_name=None,

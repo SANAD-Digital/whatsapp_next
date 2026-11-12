@@ -78,7 +78,7 @@ class TestPlatformOps(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("Ops Device", "WAD-TEST-OP01", phone="+966500000081")
+		cls.device = ensure_device("Ops Device", "WAD-TEST-OP01", phone="+967784499996")
 		# This site's webhook registration goes back afterwards (it may be a live dev site).
 		s = frappe.get_single("WhatsApp Settings")
 		# and its subscription cache: `test_usage_sync` writes the fake provider's plan over it
@@ -286,7 +286,7 @@ class TestPlatformOps(IntegrationTestCase):
 					"doctype": "WhatsApp Log",
 					"device": self.device,
 					"recipient_type": "Individual",
-					"phone": "+966500000082",
+					"phone": "+967777667663",
 					"message_type": "Text",
 					"body": "retention-test",
 					"status": "Sent",
@@ -298,7 +298,7 @@ class TestPlatformOps(IntegrationTestCase):
 					"doctype": "WhatsApp Log",
 					"device": self.device,
 					"recipient_type": "Individual",
-					"phone": "+966500000083",
+					"phone": "+967777999579",
 					"message_type": "Text",
 					"body": "retention-test keep",
 					"status": "Queued",
@@ -311,7 +311,7 @@ class TestPlatformOps(IntegrationTestCase):
 					"outbound_message": log.name,
 					"device": self.device,
 					"status": "Completed",
-					"phone_e164": "+966500000082",
+					"phone_e164": "+967777667663",
 				}
 			).insert(ignore_permissions=True)
 			# a run that failed before its cleanup leaves the event behind (it commits)

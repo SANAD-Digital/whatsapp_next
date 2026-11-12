@@ -23,14 +23,14 @@ from whatsapp_next.tests.conftest_frappe import (
 )
 
 GROUP = "PickerTest Group"
-P1, P2, P3 = "+966500000801", "+966500000802", "+966500000803"
+P1, P2, P3 = "+967777667663", "+967784499996", "+967777999579"
 
 
 class TestPicker(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("Picker Device", "WAD-TEST-PK01", phone="+966500000051")
+		cls.device = ensure_device("Picker Device", "WAD-TEST-PK01", phone="+967775040850")
 		ensure_settings(default_device=cls.device)
 
 	def setUp(self):
@@ -101,8 +101,8 @@ class TestPicker(IntegrationTestCase):
 			(members["total"], members["rows"][0]["phone_e164"], members["rows"][0]["source_name"]),
 			(1, P1, GROUP),
 		)
-		res = picker.parse_manual("0500000802\nAli;0500000803\n+966500000804 Sara\nabc\n\n,")
-		self.assertEqual([r["phone_e164"] for r in res.rows], [P2, P3, "+966500000804"])
+		res = picker.parse_manual("+967784499996\nAli;+967777999579\n+967782309999 Sara\nabc\n\n,")
+		self.assertEqual([r["phone_e164"] for r in res.rows], [P2, P3, "+967782309999"])
 		self.assertEqual([r["display_name"] for r in res.rows], [None, "Ali", "Sara"])
 		self.assertEqual(len(res.invalid), 2)
 		self.assertEqual(res.total, 5)
@@ -115,7 +115,7 @@ class TestPicker(IntegrationTestCase):
 		wb = openpyxl.Workbook()
 		worksheet = wb.active
 		worksheet.append(["الاسم", "رقم الجوال", "note"])
-		worksheet.append(["Ahmed", "0500000802", "x"])
+		worksheet.append(["Ahmed", "+967784499996", "x"])
 		worksheet.append(["Bad", "abc", ""])
 		worksheet.append([None, None, None])
 		buf = io.BytesIO()
@@ -137,12 +137,12 @@ class TestPicker(IntegrationTestCase):
 		out = io.StringIO()
 		w = csv.writer(out)
 		w.writerow(["Name", "Phone 1 - Value"])
-		w.writerow(["Sara", "+966 50 000 0803"])
+		w.writerow(["Sara", "+967 777 999 579"])
 		url = attachments.save_private_file(out.getvalue().encode("utf-8-sig"), "picker-test.csv")
 		res = picker.parse_upload(url, "csv")
 		self.assertEqual((res.rows[0]["phone_e164"], res.rows[0]["display_name"]), (P3, "Sara"))
 
-		vcf = "BEGIN:VCARD\nVERSION:3.0\nFN:Omar\nTEL;TYPE=CELL:0500000802\nTEL:0500000803\nEND:VCARD\nBEGIN:VCARD\nVERSION:3.0\nFN:NoPhone\nEND:VCARD\n"
+		vcf = "BEGIN:VCARD\nVERSION:3.0\nFN:Omar\nTEL;TYPE=CELL:+967784499996\nTEL:+967777999579\nEND:VCARD\nBEGIN:VCARD\nVERSION:3.0\nFN:NoPhone\nEND:VCARD\n"
 		url = attachments.save_private_file(vcf.encode(), "picker-test.vcf")
 		res = picker.parse_upload(url, "vcf")
 		self.assertEqual([r["phone_e164"] for r in res.rows], [P2, P3])
@@ -159,7 +159,7 @@ class TestPicker(IntegrationTestCase):
 
 	def test_whatsapp_numbers_source(self):
 		"""Unlinked individual WhatsApp Numbers, found by their saved name, added as their own source."""
-		w1, w2, g = "+966500000851", "+966500000852", "120363000000000851@g.us"
+		w1, w2, g = "+967779972929", "+967775675566", "120363000000000851@g.us"
 		delete_all("WhatsApp Number", {"name": ("in", [w1, w2, g])})
 		contact = frappe.get_all("Contact", limit=1, pluck="name")[0]
 		with status_writer():
@@ -177,7 +177,7 @@ class TestPicker(IntegrationTestCase):
 			self.assertEqual([r["phone_e164"] for r in found["rows"]], [w1])  # linked and group rows stay out
 			self.assertEqual(found["rows"][0]["display_name"], "PickerTest Saved Friend")
 			self.assertEqual(found["rows"][0]["source_type"], "WhatsApp Number")
-			self.assertEqual(picker.search_whatsapp_numbers("966500000851")["total"], 1)
+			self.assertEqual(picker.search_whatsapp_numbers("967779972929")["total"], 1)
 			res = picker.commit_add(
 				"WhatsApp Contact Group", GROUP, found["rows"], source_type="WhatsApp Number"
 			)
@@ -194,7 +194,7 @@ class TestPicker(IntegrationTestCase):
 	def test_preview_and_commit_group(self):
 		rows = [
 			{"phone": P1},
-			{"phone": "0500000802", "display_name": "Two"},
+			{"phone": "+967784499996", "display_name": "Two"},
 			{"phone": P2},
 			{"phone": "zzz"},
 		]
@@ -220,7 +220,7 @@ class TestPicker(IntegrationTestCase):
 			1,
 		)
 		self.assertEqual(
-			picker.commit_remove("WhatsApp Contact Group", GROUP, phone_e164s=["0500000801"]), {"removed": 1}
+			picker.commit_remove("WhatsApp Contact Group", GROUP, phone_e164s=["+967777667663"]), {"removed": 1}
 		)
 		self.assertEqual(
 			[m.phone_e164 for m in frappe.get_doc("WhatsApp Contact Group", GROUP).members], [P2]

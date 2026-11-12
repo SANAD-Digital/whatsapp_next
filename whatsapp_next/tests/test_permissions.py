@@ -18,9 +18,9 @@ from whatsapp_next.exceptions import (
 from whatsapp_next.services import permissions
 from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_settings
 
-PHONE_1 = "+966500000201"
-PHONE_2 = "+966500000202"
-PHONE_3 = "+966500000203"
+PHONE_1 = "+967777999579"
+PHONE_2 = "+967777667663"
+PHONE_3 = "+967784499996"
 PREFIX = "PermTest"
 BLACKLIST = "PermTest Blacklist"
 
@@ -131,7 +131,7 @@ class TestPermissions(IntegrationTestCase):
 				{
 					"first_name": f"{PREFIX} One",
 					"email_id": "one@example.com",
-					"phone_nos": [{"phone": "0500000201"}],
+					"phone_nos": [{"phone": "+967777999579"}],
 				}
 			)
 			doc = frappe.get_doc("Contact", name)
@@ -232,7 +232,7 @@ class TestPermissions(IntegrationTestCase):
 			)
 			self.assertEqual(row_a["phone_nos"][0]["wa_phone_e164"], PHONE_1)
 			# phone search hits through Contact Phone
-			self.assertEqual({r["name"] for r in permissions.list_contacts(search="0500000202")["rows"]}, {b})
+			self.assertEqual({r["name"] for r in permissions.list_contacts(search="+967777667663")["rows"]}, {b})
 			# has_whatsapp filter is applied in the query
 			self.assertEqual(
 				{r["name"] for r in permissions.list_contacts(search=PREFIX, has_whatsapp=True)["rows"]}, {a}
@@ -359,7 +359,7 @@ class TestPermissions(IntegrationTestCase):
 		a, _b = self._create_two_test_contacts()
 		frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": PHONE_3}).insert(ignore_permissions=True)
 		with as_user("WhatsApp Contact User") as cu:
-			self.assertRaises(WANotFoundError, permissions.link_number, "+966500009999", a)
+			self.assertRaises(WANotFoundError, permissions.link_number, "+967775040850", a)
 			self.assertRaises(WANotFoundError, permissions.link_number, PHONE_1, "no-such-contact")
 			permissions.link_number(PHONE_1, a)
 			n = frappe.get_doc("WhatsApp Number", PHONE_1)
@@ -372,12 +372,12 @@ class TestPermissions(IntegrationTestCase):
 			doc = frappe.get_doc("Contact", contact)
 			self.assertEqual(doc.phone_nos[0].wa_phone_e164, PHONE_3)
 			self.assertEqual(frappe.db.get_value("WhatsApp Number", PHONE_3, "contact"), contact)
-			self.assertEqual(permissions.resolve_contact_by_phone("00966500000203"), contact)
+			self.assertEqual(permissions.resolve_contact_by_phone("00967784499996"), contact)
 			self.assertEqual(len(_audit_rows("Number Converted")), 1)
 
 	def test_toggle_blacklist(self):
 		with as_user("WhatsApp Agent"):
-			self.assertTrue(permissions.toggle_blacklist("0500000201", True, note="spam"))
+			self.assertTrue(permissions.toggle_blacklist("+967777999579", True, note="spam"))
 			self.assertTrue(permissions.toggle_blacklist(PHONE_1, True))  # idempotent
 			members = frappe.get_doc("WhatsApp Contact Group", BLACKLIST).members
 			self.assertEqual([m.phone_e164 for m in members], [PHONE_1])

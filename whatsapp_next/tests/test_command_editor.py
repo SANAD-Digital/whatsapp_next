@@ -26,7 +26,7 @@ from whatsapp_next.tests.conftest_frappe import (
 
 FUNCTION = "_test_echo"
 CODE = "edtestping"
-PHONE = "+966500930501"
+PHONE = "+967784499996"
 GROUP = "EdTest Group"
 CUSTOMER = "EdTest Customer"
 
@@ -188,7 +188,7 @@ class TestCommandEditor(IntegrationTestCase):
 		g.save(ignore_permissions=True)
 		self.assertIsNone(cr.check_access(cmd, self._inbound(), self._sender()))
 		# an unlinked number passes the type check unless the command requires a linked contact
-		stranger = Sender(phone_e164="+966500930599", jid=None, display_name=None, contact=None)
+		stranger = Sender(phone_e164="+967777667663", jid=None, display_name=None, contact=None)
 		self.assertIsNone(cr.check_access(cmd, frappe._dict(message_type="Text"), stranger))
 		self._save_command_as_manager(name=name, requires_linked_contact=1)
 		cmd = frappe.get_doc("WhatsApp Command", name)
@@ -420,7 +420,7 @@ class TestCommandEditor(IntegrationTestCase):
 		frappe.get_doc(
 			{
 				"doctype": "WhatsApp Inbound Message",
-				"device": ensure_device("EdTest Device", "WAD-TEST-ED01", phone="+966500930500"),
+				"device": ensure_device("EdTest Device", "WAD-TEST-ED01", phone="+967777667663"),
 				"provider_message_id": "EDTEST-IN-1",
 				"phone": PHONE,
 				"phone_e164": PHONE,

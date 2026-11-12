@@ -96,7 +96,7 @@ class TestProviderContract(IntegrationTestCase):
 			{"X-SND-Event": "message.received", "X-SND-Event-ID": body["event_id"]}, body
 		)
 		self.assertIsNotNone(event.inbound)
-		self.assertEqual(event.inbound.sender_phone, "966500000002")
+		self.assertEqual(event.inbound.sender_phone, "967777667663")
 		self.assertEqual(event.inbound.body, "كشف حساب")
 		self.assertEqual(event.inbound.message_type, "Text")
 		self.assertFalse(event.inbound.is_group)
@@ -117,7 +117,7 @@ class TestProviderContract(IntegrationTestCase):
 		with open(os.path.join(FIXTURES, "connection.disconnected.json"), encoding="utf-8") as fh:
 			conn = provider.parse_webhook({}, json.load(fh))
 		self.assertEqual(conn.device.status, "Logged Out")
-		self.assertEqual(conn.device.phone_e164, "+966500000001")
+		self.assertEqual(conn.device.phone_e164, "+967784499996")
 
 	def test_signature_check(self):
 		secret = "s3cret"
@@ -146,7 +146,7 @@ class TestProviderContract(IntegrationTestCase):
 				self.assertFalse(missing.valid)
 
 	def test_batch_size_guard_before_io(self):
-		msg = NormalizedMessage(client_ref="r", platform_device="d", phone_e164="+966500000002", body="x")
+		msg = NormalizedMessage(client_ref="r", platform_device="d", phone_e164="+967777667663", body="x")
 		for provider in (self.providers[0], self.providers[2]):
 			with self.subTest(provider=provider.key), self.assertRaises(pex.ValidationError):
 				provider.send_batch([msg] * (MAX_BATCH + 1), "b")
@@ -168,7 +168,7 @@ class TestProviderContract(IntegrationTestCase):
 		with open(os.path.join(FIXTURES, "meta_message_received.json"), encoding="utf-8") as fh:
 			event = meta.parse_webhook({}, json.load(fh))
 		self.assertEqual(event.event_name, "message.received")
-		self.assertEqual(event.inbound.sender_phone, "+966500000002")
+		self.assertEqual(event.inbound.sender_phone, "+967777667663")
 		self.assertEqual(event.inbound.body, "hello")
 		with open(os.path.join(FIXTURES, "meta_message_delivered.json"), encoding="utf-8") as fh:
 			status = meta.parse_webhook({}, json.load(fh))

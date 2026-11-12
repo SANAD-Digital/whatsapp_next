@@ -22,7 +22,7 @@ from frappe.utils import add_to_date, now_datetime
 TAG = "DEMOSIM-"
 COMMAND_CODE = "ping"
 CONTACT_NAME = "Rana Al Otaibi"
-PHONE = "+966500330077"
+PHONE = "+967784499996"
 CONVERSATION = [
 	("in", "Hello, are you there?", 46),
 	("out", "Yes — write #ping to check the connection.", 44),

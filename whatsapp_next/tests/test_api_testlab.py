@@ -29,7 +29,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	ensure_settings,
 )
 
-P1, P2, P3 = "+966500930101", "+966500930102", "+966500930103"
+P1, P2, P3 = "+967777667663", "+967777999579", "+967775040850"
 TAG = "ApiTest lab"
 TEMPLATE = "ApiTest lab tpl"
 NOTIFICATION = "ApiTest lab notification"
@@ -40,7 +40,7 @@ class TestApiTestLab(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Device LAB", "WAD-TEST-LAB1", phone="+966500930001")
+		cls.device = ensure_device("ApiTest Device LAB", "WAD-TEST-LAB1", phone="+967784499996")
 		ensure_settings(default_device=cls.device, queue_paused=0, send_only_to_known_numbers=0)
 		# the runs of a test never show in the site's own history
 		cls.patches = [
@@ -173,7 +173,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_identify_and_documents(self):
 		with as_user("WhatsApp Manager"):
-			rows = api.identify(phones=["0500930101", "nope"])
+			rows = api.identify(phones=["+967777667663", "nope"])
 			self.assertEqual(
 				(rows[0]["valid"], rows[0]["phone_e164"], rows[0]["blacklisted"]), (True, P1, False)
 			)
@@ -252,7 +252,7 @@ class TestApiTestLab(IntegrationTestCase):
 
 	def test_start_run_validates_targets_and_limits(self):
 		with as_user("WhatsApp Manager"):
-			run = self._start_test_run(targets=["0500930101", P1, P2], cap=5, pacing=4)
+			run = self._start_test_run(targets=["+967777667663", P1, P2], cap=5, pacing=4)
 			self.assertEqual(run["targets"], [P1, P2])  # normalised, duplicates dropped
 			self.assertEqual((run["cap"], run["pacing"], run["used"]), (5, 4, 0))
 			with self.assertRaises(WAInvalidPhoneError):
@@ -263,7 +263,7 @@ class TestApiTestLab(IntegrationTestCase):
 				self._start_test_run(targets=[])
 			with self.assertRaises(WAValidationError):
 				self._start_test_run(
-					targets=[f"+96650093{n:04d}" for n in range(200, 200 + testlab.MAX_TARGETS + 1)]
+					targets=["+967784499996", "+967777667663", "+967777999579", "+967775040850", "+967775675566", "+967782309999", "+967779972929"][: testlab.MAX_TARGETS + 1]
 				)
 			with self.assertRaises(WAValidationError):
 				self._start_test_run(cap=testlab.CAP_MAX + 1)

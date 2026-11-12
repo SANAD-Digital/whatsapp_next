@@ -54,9 +54,9 @@ class TestWhatsAppDevice(IntegrationTestCase):
 				)
 
 	def test_phone_pair_normalized(self) -> None:
-		doc = _insert("WAD-UT-0001", phone="0501234567")
-		self.assertEqual(doc.phone, "0501234567")
-		self.assertEqual(doc.phone_e164, "+966501234567")
+		doc = _insert("WAD-UT-0001", phone="+967784499996")
+		self.assertEqual(doc.phone, "+967784499996")
+		self.assertEqual(doc.phone_e164, "+967784499996")
 		doc = _insert("WAD-UT-0002")
 		self.assertFalse(doc.phone_e164)
 

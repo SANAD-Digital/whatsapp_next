@@ -14,7 +14,7 @@ from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_device, ensure_settings
 
-P1, P2 = "+966500920201", "+966500920202"
+P1, P2 = "+967784499996", "+967777667663"
 TAG = "ApiTest msg"
 
 
@@ -22,7 +22,7 @@ class TestApiMessages(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Device MSG", "WAD-TEST-API22", phone="+966500920002")
+		cls.device = ensure_device("ApiTest Device MSG", "WAD-TEST-API22", phone="+967777999579")
 		ensure_settings(default_device=cls.device, queue_paused=0, send_only_to_known_numbers=0)
 
 	@classmethod

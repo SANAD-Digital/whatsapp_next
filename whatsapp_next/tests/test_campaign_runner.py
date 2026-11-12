@@ -22,7 +22,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	fake_provider,
 )
 
-P1, P2, P3 = "+966500000701", "+966500000702", "+966500000703"
+P1, P2, P3 = "+967777667663", "+967784499996", "+967777999579"
 NAME = "CampaignTest"
 
 
@@ -64,7 +64,7 @@ class TestCampaignRunner(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("Campaign Device", "WAD-TEST-CP01", phone="+966500000041")
+		cls.device = ensure_device("Campaign Device", "WAD-TEST-CP01", phone="+967775040850")
 		ensure_settings(default_device=cls.device, queue_paused=0, send_only_to_known_numbers=0)
 
 	def setUp(self):

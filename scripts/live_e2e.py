@@ -22,7 +22,7 @@
 #
 # Safety rails (hard limits, all enforced in code):
 #   * ONE recipient: every payload is scanned before it leaves (`guard`); any phone-like value
-#     that is not +967770788938, any group JID, any User/Role recipient is refused. After every
+#     that is not +967784499996, any group JID, any User/Role recipient is refused. After every
 #     scenario the DB is scanned for rows this run created to any other key; an open one is
 #     cancelled at once and the run aborts.
 #   * ONE device: WA-DEV-014, never touched.
@@ -55,8 +55,8 @@ import requests
 BENCH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-RECIPIENT = "+967770788938"
-RECIPIENT_DIGITS = "967770788938"
+RECIPIENT = "+967784499996"
+RECIPIENT_DIGITS = "967784499996"
 RECIPIENT_NAME = "Albashq Alshwmy"  # the Contact linked to the number
 DEVICE = "WA-DEV-014"
 MAX_REAL = 40

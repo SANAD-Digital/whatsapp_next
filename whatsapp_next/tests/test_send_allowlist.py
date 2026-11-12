@@ -40,7 +40,7 @@ class TestSendAllowlist(IntegrationTestCase):
 	def test_only_listed_chats_pass(self):
 		self.assertTrue(snd_platform.recipient_allowed(build_normalized_message("a", phone="+967782309999")))
 		self.assertTrue(snd_platform.recipient_allowed(build_normalized_message("b", phone="+967777667663")))
-		self.assertFalse(snd_platform.recipient_allowed(build_normalized_message("c", phone="+966500008003")))
+		self.assertFalse(snd_platform.recipient_allowed(build_normalized_message("c", phone="+967784499996")))
 		self.assertTrue(
 			snd_platform.recipient_allowed(
 				build_normalized_message("d", jid="120363000000111@g.us", kind="Group")
@@ -57,19 +57,19 @@ class TestSendAllowlist(IntegrationTestCase):
 
 		settings_service.save_fields({"send_only_to": []}, section="policy")
 		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
-		self.assertTrue(snd_platform.recipient_allowed(build_normalized_message("a", phone="+966500008003")))
+		self.assertTrue(snd_platform.recipient_allowed(build_normalized_message("a", phone="+967784499996")))
 
 	def test_site_config_no_longer_decides(self):
 		"""The list left site_config (owner, 2026-11-09: «مكانها غلط»): a key there changes nothing."""
-		with patch.dict(frappe.local.conf, {"wa_send_allowlist": ["966500008003"]}):
+		with patch.dict(frappe.local.conf, {"wa_send_allowlist": ["967784499996"]}):
 			self.assertFalse(
-				snd_platform.recipient_allowed(build_normalized_message("a", phone="+966500008003"))
+				snd_platform.recipient_allowed(build_normalized_message("a", phone="+967784499996"))
 			)
 
 	def test_a_single_send_outside_the_list_never_reaches_the_platform(self):
 		with patch.object(snd_platform.SndPlatformProvider, "_request") as request:
 			with self.assertRaises(pex.ValidationError):
-				self.provider.send_message(build_normalized_message("a", phone="+966500008003"))
+				self.provider.send_message(build_normalized_message("a", phone="+967784499996"))
 		request.assert_not_called()
 
 	def test_a_batch_sends_only_its_listed_numbers(self):
@@ -85,7 +85,7 @@ class TestSendAllowlist(IntegrationTestCase):
 			result = self.provider.send_batch(
 				[
 					build_normalized_message("ok", phone="+967782309999"),
-					build_normalized_message("no", phone="+966500008003"),
+					build_normalized_message("no", phone="+967784499996"),
 				],
 				"B1",
 			)
@@ -97,6 +97,6 @@ class TestSendAllowlist(IntegrationTestCase):
 
 	def test_a_batch_with_no_listed_number_asks_the_platform_nothing(self):
 		with patch.object(snd_platform.SndPlatformProvider, "_request") as request:
-			result = self.provider.send_batch([build_normalized_message("no", phone="+966500008003")], "B2")
+			result = self.provider.send_batch([build_normalized_message("no", phone="+967784499996")], "B2")
 		request.assert_not_called()
 		self.assertEqual(len(result.errors), 1)

@@ -31,7 +31,7 @@ class TestCommandSessions(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ff.drop_all()
-		cls.device = ensure_device("Session Device", "WAD-TEST-SS01", phone="+966500950001")
+		cls.device = ensure_device("Session Device", "WAD-TEST-SS01", phone="+967784499996")
 		ensure_settings(
 			enable_commands=1, command_service_user=ff.ensure_service_user(), main_menu_mode="Off"
 		)

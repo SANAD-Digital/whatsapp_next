@@ -20,14 +20,14 @@ from whatsapp_next.tests.conftest_frappe import (
 )
 
 NAME = "ApiTest Notification"
-PHONE = "+966500930201"
+PHONE = "+967784499996"
 
 
 class TestApiNotifications(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Notif Device", "WAD-APITEST-NT", phone="+966500930200")
+		cls.device = ensure_device("ApiTest Notif Device", "WAD-APITEST-NT", phone="+967777667663")
 		ensure_settings(send_only_to_known_numbers=0)
 
 	def setUp(self):
@@ -76,7 +76,7 @@ class TestApiNotifications(IntegrationTestCase):
 		with as_user("WhatsApp Manager"):
 			out = api.preview(name=NAME, reference_name=self.todo.name)
 		self.assertEqual(out["message"], f"apitest apitest notif body -> {PHONE}")
-		self.assertEqual(out["recipients"], [{"phone_e164": "966*******01", "source": "Fixed Number"}])
+		self.assertEqual(out["recipients"], [{"phone_e164": "967*******96", "source": "Fixed Number"}])
 		self.assertEqual(out["errors"], [])
 		frappe.db.set_value("ToDo", self.todo.name, "status", "Closed")
 		with as_user("WhatsApp Manager"):

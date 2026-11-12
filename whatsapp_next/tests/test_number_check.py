@@ -26,7 +26,7 @@ class Provider:
 				jid=f"{n[1:]}@s.whatsapp.net" if n in self.on else None,
 			)
 			for n in numbers
-			if n != "+967711999999"
+			if n != "+967784499996"
 		]  # one number missing from the answer
 
 
@@ -40,9 +40,9 @@ class TestNumberCheck(IntegrationTestCase):
 	def test_asks_once_then_remembers(self):
 		provider = Provider({self.a})
 		with patch("whatsapp_next.providers.registry.get_provider", return_value=provider):
-			first = number_check.check_numbers_on_whatsapp([self.a, self.b, "+967711999999", "not a number"])
+			first = number_check.check_numbers_on_whatsapp([self.a, self.b, "+967784499996", "not a number"])
 			again = number_check.check_numbers_on_whatsapp([self.a, self.b])
-		self.assertEqual(first, {self.a: True, self.b: False, "+967711999999": False})
+		self.assertEqual(first, {self.a: True, self.b: False, "+967784499996": False})
 		self.assertEqual(again, {self.a: True, self.b: False})
 		self.assertEqual(len(provider.calls), 1)
 		self.assertEqual(frappe.db.get_value("WhatsApp Number Check", self.a, "on_whatsapp"), "Yes")

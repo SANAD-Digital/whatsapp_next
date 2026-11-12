@@ -25,14 +25,14 @@ from whatsapp_next.tests.conftest_frappe import (
 GROUP = "ApiTest Picker Group"
 CAMPAIGN = "ApiTest Picker Campaign"
 CONTACT = "ApiTest Picker Contact"
-P1, P2, P3 = "+966500920501", "+966500920502", "+966500920503"
+P1, P2, P3 = "+967784499996", "+967777999579", "+967777667663"
 
 
 class TestApiPicker(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Device PK", "WAD-TEST-API25", phone="+966500920005")
+		cls.device = ensure_device("ApiTest Device PK", "WAD-TEST-API25", phone="+967775040850")
 		ensure_settings(default_device=cls.device)
 		cls.contact = ensure_contact(CONTACT, P3)
 
@@ -141,7 +141,7 @@ class TestApiPicker(IntegrationTestCase):
 				(members["total"], members["rows"][0]["phone_e164"], members["rows"][0]["source_name"]),
 				(1, P1, GROUP),
 			)
-			manual = api.parse_manual(text="0500920502\nAli;0500920503\nabc")
+			manual = api.parse_manual(text="+967777999579\nAli;+967777667663\nabc")
 			self.assertEqual([r["phone_e164"] for r in manual["rows"]], [P2, P3])
 			self.assertEqual((len(manual["invalid"]), manual["total"]), (1, 3))
 		with as_user("WhatsApp Contact User"):
@@ -208,7 +208,7 @@ class TestApiPicker(IntegrationTestCase):
 		out = io.StringIO()
 		w = csv.writer(out)
 		w.writerow(["Name", "Phone"])
-		w.writerow(["Sara", "0500920502"])
+		w.writerow(["Sara", "+967777999579"])
 		w.writerow(["Bad", "abc"])
 		with as_user("WhatsApp Manager"):
 			url = attachments.save_private_file(out.getvalue().encode("utf-8-sig"), "apitest-picker.csv")
@@ -225,7 +225,7 @@ class TestApiPicker(IntegrationTestCase):
 	def test_preview_and_commit_group(self):
 		rows = [
 			{"phone": P1},
-			{"phone": "0500920502", "display_name": "Two"},
+			{"phone": "+967777999579", "display_name": "Two"},
 			{"phone": P2},
 			{"phone": "zzz"},
 		]
@@ -254,7 +254,7 @@ class TestApiPicker(IntegrationTestCase):
 				)
 			self.assertEqual(
 				api.commit_remove(
-					target_doctype="WhatsApp Contact Group", target_name=GROUP, phone_e164s=["0500920501"]
+					target_doctype="WhatsApp Contact Group", target_name=GROUP, phone_e164s=["+967784499996"]
 				),
 				{"removed": 1},
 			)

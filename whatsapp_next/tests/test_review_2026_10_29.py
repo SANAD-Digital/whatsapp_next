@@ -16,7 +16,7 @@ from whatsapp_next.api.v1 import settings as settings_api
 from whatsapp_next.services import quick_send, templates, wa_groups
 from whatsapp_next.tests.conftest_frappe import as_user
 
-PHONE = "+966500929901"
+PHONE = "+967784499996"
 
 
 class TestReview20261029(IntegrationTestCase):

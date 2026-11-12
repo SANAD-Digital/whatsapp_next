@@ -50,13 +50,13 @@ class TestWaGroups(IntegrationTestCase):
 			return wa_groups.create_whatsapp_group(
 				self.device,
 				kw.pop("name", "Project team"),
-				kw.pop("members", ["+967711000001", "967711000002"]),
+				kw.pop("members", ["+967784499996", "967777667663"]),
 				**kw,
 			)
 
 	def test_creates_the_group_and_its_number(self):
 		result = self._create(description="Weekly")
-		self.assertEqual(self.provider.calls[0][2], ["+967711000001", "+967711000002"])
+		self.assertEqual(self.provider.calls[0][2], ["+967784499996", "+967777667663"])
 		self.assertEqual([m["status"] for m in result["members"]], ["added", "invite_required"])
 		row = frappe.db.get_value(
 			"WhatsApp Number", result["jid"], ["number_type", "display_name", "synced_device"], as_dict=True
@@ -75,11 +75,11 @@ class TestWaGroups(IntegrationTestCase):
 			{
 				"doctype": "Contact",
 				"first_name": f"Group {frappe.generate_hash(length=5)}",
-				"phone_nos": [{"phone": "+967711000003", "is_primary_mobile_no": 1}],
+				"phone_nos": [{"phone": "+967777999579", "is_primary_mobile_no": 1}],
 			}
 		).insert(ignore_permissions=True)
 		members = wa_groups.members_from("Contact", [contact.name])
-		self.assertEqual([m["phone_e164"] for m in members], ["+967711000003"])
+		self.assertEqual([m["phone_e164"] for m in members], ["+967777999579"])
 		result = self._create(members=[m["phone_e164"] for m in members], contact=contact.name)
 		self.assertTrue(result["saved_to_contact"])
 		phones = frappe.get_all("Contact Phone", filters={"parent": contact.name}, pluck="wa_phone_e164")

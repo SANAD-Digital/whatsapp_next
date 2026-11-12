@@ -17,7 +17,7 @@ from whatsapp_next.tests.conftest_frappe import (
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Contact", "User", "WhatsApp Device"]
 
 DOCTYPE = "WhatsApp Number"
-KEYS = ("+966501234567", "120363012345678@g.us", "987654321@lid", "+966500000002")
+KEYS = ("+967784499996", "120363012345678@g.us", "987654321@lid", "+967777667663")
 
 
 def _insert(**values) -> "frappe.model.document.Document":
@@ -66,9 +66,9 @@ class TestWhatsAppNumber(IntegrationTestCase):
 		self.assertTrue(frappe.has_permission(DOCTYPE, "export", user=ensure_test_user("WhatsApp Viewer")))
 
 	def test_key_normalization(self) -> None:
-		doc = _insert(phone="0501234567")
-		self.assertEqual(doc.name, "+966501234567")
-		self.assertEqual(doc.phone_e164, "+966501234567")
+		doc = _insert(phone="+967784499996")
+		self.assertEqual(doc.name, "+967784499996")
+		self.assertEqual(doc.phone_e164, "+967784499996")
 		self.assertEqual(doc.number_type, "Individual")
 		self.assertEqual(doc.link_status, "Not Linked")
 		group = _insert(phone_e164="120363012345678@g.us")
@@ -83,7 +83,7 @@ class TestWhatsAppNumber(IntegrationTestCase):
 
 	def test_link_status_follows_contact(self) -> None:
 		contact = ensure_contact()
-		doc = _insert(phone_e164="+966500000002", contact=contact, link_status="Not Linked")
+		doc = _insert(phone_e164="+967777667663", contact=contact, link_status="Not Linked")
 		self.assertEqual(doc.link_status, "Linked")
 		doc.contact = None
 		doc.save(ignore_permissions=True)

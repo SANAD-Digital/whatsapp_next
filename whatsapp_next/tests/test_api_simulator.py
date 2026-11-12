@@ -18,7 +18,7 @@ from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_devi
 
 SERVICE_USER = "wa-test-apisvc@example.com"
 CODE = "apitestping"
-P1 = "+966500920301"
+P1 = "+967784499996"
 TAG = "ApiTest sim"
 GROUP = "120363000000920301@g.us"
 SETTINGS_KEYS = ("enable_commands", "command_service_user", "unknown_command_reply", "send_receipt_reply")
@@ -47,7 +47,7 @@ class TestApiSimulator(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Device SIM", "WAD-TEST-API23", phone="+966500920003")
+		cls.device = ensure_device("ApiTest Device SIM", "WAD-TEST-API23", phone="+967777667663")
 		settings = frappe.get_single("WhatsApp Settings")
 		cls.previous = {k: settings.get(k) for k in SETTINGS_KEYS}
 		ensure_settings(
@@ -125,7 +125,7 @@ class TestApiSimulator(IntegrationTestCase):
 	def test_simulate_inbound_persists_simulated_rows(self):
 		with as_user("WhatsApp Agent"):
 			res = api.simulate_inbound(
-				device=self.device, sender_phone="0500920301", text=f"#{CODE} {TAG} hi"
+				device=self.device, sender_phone="+967784499996", text=f"#{CODE} {TAG} hi"
 			)
 		self.assertEqual(
 			(res["command_status"], res["command"], res["block_reason"]), ("Executed", CODE, None)
@@ -170,7 +170,7 @@ class TestApiSimulator(IntegrationTestCase):
 			api.simulate_inbound(device=self.device, sender_phone=P1, text=f"{TAG} list me", run_commands="0")
 		numbers_materializer.refresh_keys([P1])
 		with as_user("WhatsApp Agent"):
-			out = api.list_conversations(txt="920301")
+			out = api.list_conversations(txt="499996")
 		row = next(r for r in out["rows"] if r["phone_e164"] == P1)
 		self.assertEqual(row["last_body"], f"{TAG} list me")
 		self.assertIsNone(row["party_type"])  # an unsaved number: no contact, no party
@@ -228,7 +228,7 @@ class TestApiSimulator(IntegrationTestCase):
 
 	def test_get_identity(self):
 		with as_user("WhatsApp Agent"):
-			who = api.get_identity(phone_e164="0500920301")
+			who = api.get_identity(phone_e164="+967784499996")
 			self.assertEqual(who["phone_e164"], P1)
 			self.assertEqual(set(who) >= {"accounts", "groups", "link_status", "party_type"}, True)
 			with self.assertRaises(WAInvalidPhoneError):
@@ -238,7 +238,7 @@ class TestApiSimulator(IntegrationTestCase):
 
 	def test_send_test(self):
 		with as_user("WhatsApp Agent"), patch.object(frappe, "enqueue") as enq:
-			res = api.send_test(device=self.device, phone="0500920301", body=f"{TAG} test send")
+			res = api.send_test(device=self.device, phone="+967784499996", body=f"{TAG} test send")
 		out = frappe.db.get_value(
 			"WhatsApp Log", res["outbound"], ["is_test", "status", "source_type", "phone_e164"], as_dict=True
 		)

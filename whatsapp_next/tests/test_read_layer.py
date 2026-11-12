@@ -13,8 +13,8 @@ from whatsapp_next.services import read_layer
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_device, ensure_settings
 
-KEY_A = "+966500000101"
-KEY_B = "+966500000102"
+KEY_A = "+967777667663"
+KEY_B = "+967784499996"
 GROUP = "120363000000000001@g.us"
 LID = "123456789012345@lid"
 TAG = "rl-test"
@@ -87,8 +87,8 @@ class TestReadLayer(IntegrationTestCase):
 		super().setUpClass()
 		ensure_settings()
 		# Dedicated devices: other modules' rows on the shared test device must not affect counts.
-		cls.device = ensure_device("Read Layer Device", "WAD-TEST-RL01", phone="+966500000011")
-		cls.device2 = ensure_device("Read Layer Device 2", "WAD-TEST-RL02", phone="+966500000012")
+		cls.device = ensure_device("Read Layer Device", "WAD-TEST-RL01", phone="+967777999579")
+		cls.device2 = ensure_device("Read Layer Device 2", "WAD-TEST-RL02", phone="+967775040850")
 
 	def setUp(self):
 		self._delete_test_messages()
@@ -144,7 +144,7 @@ class TestReadLayer(IntegrationTestCase):
 			self.device2,
 			phone=None,
 			chat_jid=GROUP,
-			sender_jid="966500000101@s.whatsapp.net",
+			sender_jid="967777667663@s.whatsapp.net",
 			ts=self._minutes_after_start(2),
 		)
 		self.assertEqual(len(read_layer.conversation(GROUP).rows), 2)
@@ -221,7 +221,7 @@ class TestReadLayer(IntegrationTestCase):
 		_outbound(self.device, ts=self._minutes_after_start(2))
 		_inbound(self.device2, ts=self._minutes_after_start(3), display_name="Push Name")
 		_outbound(self.device, phone=KEY_B, ts=self._minutes_after_start(5))
-		stats = read_layer.stats_by_key([KEY_A, KEY_B, "+966500000999"])
+		stats = read_layer.stats_by_key([KEY_A, KEY_B, "+967775675566"])
 		self.assertEqual(set(stats), {KEY_A, KEY_B})
 		a = stats[KEY_A]
 		self.assertEqual((a.outbound_count, a.inbound_count), (2, 1))

@@ -22,7 +22,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	ensure_test_user,
 )
 
-PHONE = "+966500950001"
+PHONE = "+967784499996"
 PNG = bytes.fromhex(
 	"89504e470d0a1a0a0000000d4948445200000001000000010806000000"
 	"1f15c4890000000d49444154789c6360000002000100e221bc330000000049454e44ae426082"
@@ -33,7 +33,7 @@ class TestMessageKinds(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("KindsTest Device", "WAD-TEST-KIND", phone="+966500950000")
+		cls.device = ensure_device("KindsTest Device", "WAD-TEST-KIND", phone="+967777667663")
 		frappe.db.set_value("WhatsApp Device", cls.device, "status", "Connected")
 		cls.contact = ensure_contact("KindsTest Contact", PHONE)
 		cls.image = attachments.save_private_file(PNG, "kinds-test.png")

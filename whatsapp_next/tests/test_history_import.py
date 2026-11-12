@@ -17,7 +17,7 @@ AT = datetime(2026, 3, 1, 9, 30, tzinfo=timezone.utc).replace(tzinfo=None)
 
 
 def _build_history_message(
-	kind, mid, *, from_me=False, body="hello", phone="967711000001", original=None, **extra
+	kind, mid, *, from_me=False, body="hello", phone="967784499996", original=None, **extra
 ):
 	p = InboundPayload(
 		provider_message_id=mid,
@@ -69,7 +69,7 @@ class TestHistoryImport(IntegrationTestCase):
 			out = history_import.store_or_apply_history_message(
 				self.device, _build_history_message("image", f"H-out-{self.tag}", from_me=True, body="photo")
 			)
-		self.assertEqual(key, "+967711000001")
+		self.assertEqual(key, "+967784499996")
 		self.assertTrue(out)
 		after.assert_not_called()
 		enqueue.assert_not_called()
@@ -81,7 +81,7 @@ class TestHistoryImport(IntegrationTestCase):
 		)
 		self.assertEqual(
 			(row.is_history, row.command_status, row.received_at, row.phone_e164),
-			(1, "None", AT, "+967711000001"),
+			(1, "None", AT, "+967784499996"),
 		)
 		log = frappe.db.get_value(
 			"WhatsApp Log",
@@ -91,7 +91,7 @@ class TestHistoryImport(IntegrationTestCase):
 		)
 		self.assertEqual(
 			(log.source_type, log.status, log.message_type, log.creation, log.phone_e164),
-			("History", "Sent", "Image", AT, "+967711000001"),
+			("History", "Sent", "Image", AT, "+967784499996"),
 		)
 
 	def test_a_message_already_here_is_skipped(self):

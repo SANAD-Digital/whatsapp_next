@@ -23,7 +23,7 @@ from whatsapp_next.tests.conftest_frappe import (
 )
 
 NAME = "ApiTest Device"
-PHONE = "+966500910201"
+PHONE = "+967784499996"
 
 
 class TestApiDevices(IntegrationTestCase):

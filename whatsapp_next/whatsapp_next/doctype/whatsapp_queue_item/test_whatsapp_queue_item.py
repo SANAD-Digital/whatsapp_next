@@ -22,7 +22,7 @@ def _outbound(device: str) -> str:
 				"doctype": "WhatsApp Log",
 				"device": device,
 				"recipient_type": "Individual",
-				"phone": "+966501234567",
+				"phone": "+967784499996",
 				"message_type": "Text",
 				"body": "queue test",
 				"source_type": "API",
@@ -68,13 +68,13 @@ class TestWhatsAppQueueItem(IntegrationTestCase):
 
 	def test_defaults(self) -> None:
 		outbound = _outbound(self.device)
-		doc = _insert(self.device, outbound, phone_e164="+966501234567")
+		doc = _insert(self.device, outbound, phone_e164="+967784499996")
 		self.assertEqual(doc.client_ref, outbound)
 		self.assertEqual(doc.max_attempts, 3)
 		self.assertEqual(doc.priority, 5)
 		self.assertEqual(doc.status, "Queued")
 		self.assertTrue(doc.scheduled_at)
-		self.assertEqual(doc.phone_e164, "+966501234567")
+		self.assertEqual(doc.phone_e164, "+967784499996")
 
 	def test_status_guard(self) -> None:
 		doc = _insert(self.device, _outbound(self.device))

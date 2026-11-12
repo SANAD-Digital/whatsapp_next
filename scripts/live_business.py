@@ -20,7 +20,7 @@
 # print format, a letter head).
 #
 # Hard limits, enforced in code:
-#   * recipients: only +967770788938 and +967777667663 — every payload is scanned before it leaves,
+#   * recipients: only +967784499996 and +967777667663 — every payload is scanned before it leaves,
 #     a notification is previewed on its document and must resolve to exactly the expected number
 #     before the document is submitted, and after every scenario the rows this run caused are
 #     scanned (a foreign open one is cancelled and the run stops);
@@ -80,7 +80,7 @@ OWNER_SI_NOTIFICATION = "فاتورة بيع إشعار"  # the owner's own noti
 # the two people, their existing Contacts, and the customer each buys for in this test
 PEOPLE = {
 	"A": {
-		"phone": "+967770788938",
+		"phone": "+967784499996",
 		"contact": "Albashq Alshwmy-Grant Plastics Ltd.",
 		"name": "Albashq Alshwmy",
 		"customer": "مؤسسة النور للتجارة العامة",

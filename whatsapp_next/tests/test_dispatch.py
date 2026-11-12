@@ -31,7 +31,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	fake_provider,
 )
 
-P1, P2, P3 = "+966500000301", "+966500000302", "+966500000303"
+P1, P2, P3 = "+967784499996", "+967777999579", "+967777667663"
 BLACKLIST = "DispatchTest Blacklist"
 
 
@@ -892,7 +892,7 @@ class TestDispatch(IntegrationTestCase):
 		self.assertEqual(quick_send.warnings_for(self.device), ["queue_paused"])
 		ensure_settings(queue_paused=0)
 		self.assertEqual(quick_send.warnings_for("no-such-device"), ["device_offline"])
-		rec = quick_send.resolve_recipient(phone="0500000301")
+		rec = quick_send.resolve_recipient(phone="+967784499996")
 		self.assertEqual((rec["phone_e164"], rec["known"], rec["blacklisted"]), (P1, True, False))
 		with self.assertRaises(WAInvalidPhoneError):
 			quick_send.resolve_recipient(phone="abc")

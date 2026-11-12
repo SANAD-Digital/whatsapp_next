@@ -191,7 +191,7 @@ class TestInboundMedia(IntegrationTestCase):
 				"reaction_message_id": "REACT1",
 				"reaction": "👍",
 				"reacted_by": "155512209424618@lid",
-				"reacted_by_number": "967770788938",
+				"reacted_by_number": "967784499996",
 				"reacted_by_name": "Ali",
 				"chat": "155512209424618@lid",
 				"from": "155512209424618@lid",
@@ -200,5 +200,5 @@ class TestInboundMedia(IntegrationTestCase):
 		)
 		self.assertEqual(
 			(p.message_type, p.provider_message_id, p.reaction_to, p.reaction, p.sender_phone, p.push_name),
-			("Reaction", "REACT1", "IMG1", "👍", "967770788938", "Ali"),
+			("Reaction", "REACT1", "IMG1", "👍", "967784499996", "Ali"),
 		)

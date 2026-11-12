@@ -15,7 +15,7 @@ from whatsapp_next.services import numbers_sync
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_contact, ensure_device
 
-K_HERE, K_NEW, K_SYSTEM, K_LINKED = "+966500000801", "+966500000802", "+966500000803", "+966500000804"
+K_HERE, K_NEW, K_SYSTEM, K_LINKED = "+967777667663", "+967784499996", "+967777999579", "+967775040850"
 LID = "123456789012399@lid"
 GROUP = "120363000000000099@g.us"
 KEYS = (K_HERE, K_NEW, K_SYSTEM, K_LINKED, LID, GROUP)
@@ -23,10 +23,10 @@ KEYS = (K_HERE, K_NEW, K_SYSTEM, K_LINKED, LID, GROUP)
 
 def _phone_book():
 	return [
-		ProviderContact(jid="966500000801@s.whatsapp.net", phone_e164=K_HERE, name="Saved Here"),
-		ProviderContact(jid="966500000802@s.whatsapp.net", phone_e164=K_NEW, name="Saved New"),
-		ProviderContact(jid="966500000803@s.whatsapp.net", phone_e164=K_SYSTEM, name="Saved System"),
-		ProviderContact(jid="966500000804@s.whatsapp.net", phone_e164=K_LINKED, name="Saved Linked"),
+		ProviderContact(jid="967777667663@s.whatsapp.net", phone_e164=K_HERE, name="Saved Here"),
+		ProviderContact(jid="967784499996@s.whatsapp.net", phone_e164=K_NEW, name="Saved New"),
+		ProviderContact(jid="967777999579@s.whatsapp.net", phone_e164=K_SYSTEM, name="Saved System"),
+		ProviderContact(jid="967775040850@s.whatsapp.net", phone_e164=K_LINKED, name="Saved Linked"),
 		ProviderContact(jid=LID, phone_e164=None, name="Hidden Number"),
 		ProviderContact(jid="120363000000000098@g.us", phone_e164=None, name="A Group"),
 	]
@@ -38,7 +38,7 @@ class TestNumbersSync(IntegrationTestCase):
 		super().setUpClass()
 		cls.device = ensure_device("NumSync Device", "WAD-TEST-NS01")
 		cls.system = ensure_contact("NumSync System", K_SYSTEM)
-		cls.linked = ensure_contact("NumSync Linked", "+966500000899")
+		cls.linked = ensure_contact("NumSync Linked", "+967775675566")
 
 	@classmethod
 	def tearDownClass(cls):

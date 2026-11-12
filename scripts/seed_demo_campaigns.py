@@ -22,6 +22,9 @@ import random
 import frappe
 from frappe.utils import add_to_date, now_datetime
 
+# the owner's own numbers: the only ones a demo or a test may use (2026-11-12)
+OWNER_TEST_NUMBERS = ["+967784499996", "+967777667663", "+967777999579", "+967775040850", "+967775675566", "+967782309999", "+967779972929"]
+
 random.seed(20260924)
 
 TAG = "DEMO "
@@ -104,7 +107,7 @@ def _log(campaign, device, name, phone, status, when):
 	doc.recipient_type = "Individual"
 	doc.display_name = name
 	doc.phone = phone
-	doc.phone_e164 = "+966" + phone[1:]
+	doc.phone_e164 = phone
 	doc.message_type = "Text"
 	doc.body = f"Demo campaign message for {name}."
 	doc.status = status
@@ -173,7 +176,7 @@ def _campaign(device, title, status, total, sent_share, fail_share, days_ago, se
 			{
 				"recipient_type": "Individual",
 				"display_name": name,
-				"phone": f"05{random.randint(10000000, 99999999)}",
+				"phone": random.choice(OWNER_TEST_NUMBERS),
 				"source_type": "Contact",
 				"status": _recipient_status(i, sample, status, sent_share, fail_share),
 			},
@@ -200,7 +203,7 @@ def _campaign(device, title, status, total, sent_share, fail_share, days_ago, se
 					doc.name,
 					device,
 					random.choice(NAMES),
-					f"05{random.randint(10000000, 99999999)}",
+					random.choice(OWNER_TEST_NUMBERS),
 					status_log,
 					at,
 				)

@@ -20,7 +20,7 @@ from whatsapp_next.tests.conftest_frappe import (
 )
 
 NAME = "ApiTest Alert"
-PHONE = "+966500930301"
+PHONE = "+967784499996"
 COLUMNS = [
 	{"label": "Customer", "fieldname": "customer", "fieldtype": "Data"},
 	{"label": "Amount", "fieldname": "amount", "fieldtype": "Currency"},
@@ -32,7 +32,7 @@ class TestApiAlerts(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Alert Device", "WAD-APITEST-AL", phone="+966500930300")
+		cls.device = ensure_device("ApiTest Alert Device", "WAD-APITEST-AL", phone="+967777667663")
 		ensure_settings(send_only_to_known_numbers=0)
 
 	def setUp(self):

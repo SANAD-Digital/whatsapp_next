@@ -15,14 +15,14 @@ from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_devi
 NAME = "ApiTest Notif Editor"
 RENAMED = "ApiTest Notif Editor 2"
 TEMPLATE = "ApiTest Notif Editor Template"
-PHONE = "+966500930301"
+PHONE = "+967784499996"
 
 
 class TestApiNotificationsEditor(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest NotifEd Device", "WAD-APITEST-NE", phone="+966500930300")
+		cls.device = ensure_device("ApiTest NotifEd Device", "WAD-APITEST-NE", phone="+967777667663")
 		ensure_settings(send_only_to_known_numbers=0)
 
 	def setUp(self):

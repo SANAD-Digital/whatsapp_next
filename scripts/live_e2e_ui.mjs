@@ -21,7 +21,7 @@ const payload = JSON.parse(process.argv[3] || "{}");
 const lang = process.argv[4] || "en";
 const hostname = new URL(HOST).hostname;
 // the engine's own recipient rule: one number by default, the business test passes its two
-const ALLOWED = (process.env.E2E_ALLOWED || "967770788938").split(",");
+const ALLOWED = (process.env.E2E_ALLOWED || "967784499996").split(",");
 
 for (const k of ["phone", "number"]) {
 	if (payload[k] && !ALLOWED.includes(String(payload[k]).replace(/\D/g, ""))) {

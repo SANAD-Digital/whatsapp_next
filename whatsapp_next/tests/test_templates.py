@@ -54,9 +54,9 @@ class TestTemplates(IntegrationTestCase):
 		self.assertEqual(len(errors), 1)
 
 	def test_context_for_and_variables(self):
-		ctx = templates.context_for("Role", "System Manager", {"extra": 1}, recipient={"phone_e164": "+9665"})
+		ctx = templates.context_for("Role", "System Manager", {"extra": 1}, recipient={"phone_e164": "+967784499996"})
 		self.assertEqual(ctx["doc"].name, "System Manager")
-		self.assertEqual(ctx["recipient"].phone_e164, "+9665")
+		self.assertEqual(ctx["recipient"].phone_e164, "+967784499996")
 		self.assertEqual(ctx["extra"], 1)
 		self.assertTrue(ctx["doc_url"].endswith("/role/System%20Manager"))
 		self.assertEqual(

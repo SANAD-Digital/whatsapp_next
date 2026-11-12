@@ -68,7 +68,7 @@ class TestInteractive(IntegrationTestCase):
 		name = dispatch.create_outbound(
 			dispatch.OutboundSpec(
 				device=device,
-				phone="+967770000001",
+				phone="+967784499996",
 				message_type="List",
 				skip_policy=True,
 				interactive={
@@ -99,7 +99,7 @@ class TestInteractive(IntegrationTestCase):
 			dispatch.create_outbound(
 				dispatch.OutboundSpec(
 					device=device,
-					phone="+967770000001",
+					phone="+967784499996",
 					message_type="Buttons",
 					skip_policy=True,
 					interactive={"text": "Continue?", "buttons": [{"text": "Yes"}]},

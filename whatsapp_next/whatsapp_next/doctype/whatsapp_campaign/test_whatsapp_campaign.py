@@ -51,7 +51,7 @@ class TestWhatsAppCampaign(IntegrationTestCase):
 			"campaign_name": "_wa_test campaign",
 			"device": self.device,
 			"messages": [{"message_type": "Text", "body": "Hello {{ display_name }}"}],
-			"recipients": [{"phone": "0501234567", "source_type": "Manual"}],
+			"recipients": [{"phone": "+967784499996", "source_type": "Manual"}],
 		}
 		payload.update(values)
 		return frappe.get_doc(payload).insert(ignore_permissions=True)
@@ -73,11 +73,11 @@ class TestWhatsAppCampaign(IntegrationTestCase):
 	def test_recipient_phone_normalized_and_counted(self) -> None:
 		doc = self._insert(
 			recipients=[
-				{"phone": "0501234567", "source_type": "Manual"},
-				{"phone": "0507654321", "source_type": "Manual", "status": "Removed"},
+				{"phone": "+967784499996", "source_type": "Manual"},
+				{"phone": "+967777667663", "source_type": "Manual", "status": "Removed"},
 			]
 		)
-		self.assertEqual(doc.recipients[0].phone_e164, "+966501234567")
+		self.assertEqual(doc.recipients[0].phone_e164, "+967784499996")
 		self.assertEqual(doc.total_recipients, 1)
 		self.assertEqual(doc.status, "Draft")
 		self.assertTrue(doc.name.startswith("WA-CAMP-"))
@@ -133,6 +133,6 @@ class TestWhatsAppCampaign(IntegrationTestCase):
 			doc.save()
 		doc.reload()
 		doc.description = "notes are fine"
-		doc.append("recipients", {"phone": "0509999999", "source_type": "Manual"})
+		doc.append("recipients", {"phone": "+967777667663", "source_type": "Manual"})
 		doc.save()
 		self.assertEqual(doc.total_recipients, 2)

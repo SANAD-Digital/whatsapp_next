@@ -205,7 +205,7 @@ def ensure_device(
 	device_name: str = "Test Device",
 	platform_device: str = "WAD-TEST-0001",
 	status: str = "Connected",
-	phone: str = "+966500000001",
+	phone: str = "+967784499996",
 ) -> str:
 	"""Insert (once) a WhatsApp Device row bypassing the platform; returns its name. The platform
 	id must carry a test prefix, so clean-ups can tell fixture rows from site data (R-041); the
@@ -223,6 +223,9 @@ def ensure_device(
 
 			with status_writer():
 				frappe.db.set_value("WhatsApp Device", name, "status", status)
+		if frappe.db.get_value("WhatsApp Device", name, "phone_e164") != phone:
+			# left by an older run with another number
+			frappe.db.set_value("WhatsApp Device", name, {"phone": phone, "phone_e164": phone})
 		return name
 	from whatsapp_next.services.guards import status_writer
 
@@ -241,10 +244,16 @@ def ensure_device(
 	return doc.name
 
 
-def ensure_contact(first_name: str = "WA Test Contact", phone: str = "+966500000002") -> str:
+def ensure_contact(first_name: str = "WA Test Contact", phone: str = "+967777667663") -> str:
 	"""Insert (once) a Contact with one phone row; returns its name."""
 	existing = frappe.db.get_value("Contact", {"first_name": first_name}, "name")
 	if existing:
+		# a contact left by an older run may hold another number (before 2026-11-12 the tests used
+		# made-up ones): it gets the number this test asks for
+		doc = frappe.get_doc("Contact", existing)
+		if [row.phone for row in doc.phone_nos] != [phone]:
+			doc.set("phone_nos", [{"phone": phone, "is_primary_mobile_no": 1}])
+			doc.save(ignore_permissions=True)
 		return existing
 	doc = frappe.get_doc(
 		{

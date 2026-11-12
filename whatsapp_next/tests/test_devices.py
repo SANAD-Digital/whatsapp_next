@@ -92,8 +92,8 @@ class TestDevices(IntegrationTestCase):
 			with self.assertRaises(WAInvalidPhoneError):
 				devices.create_device(NAME, pairing_mode="QR")  # no number
 			self.assertFalse([c for c in fp.calls if c[0] == "create_device"])
-			name = devices.create_device(NAME, phone="0500000402", pairing_mode="QR")
-			self.assertEqual(frappe.db.get_value("WhatsApp Device", name, "phone_e164"), "+966500000402")
+			name = devices.create_device(NAME, phone="+967784499996", pairing_mode="QR")
+			self.assertEqual(frappe.db.get_value("WhatsApp Device", name, "phone_e164"), "+967784499996")
 			self.assertEqual(devices.start_pairing(name, "Code").pair_code, "ABCD-1234")
 
 	def test_create_and_pair_qr(self):
@@ -104,14 +104,14 @@ class TestDevices(IntegrationTestCase):
 				devices.create_device(NAME, pairing_mode="Code")  # code needs a phone
 			with self.assertRaises(WAValidationError):
 				devices.create_device(NAME, pairing_mode="Bluetooth")
-			name = devices.create_device(NAME, phone="0500000401", pairing_mode="QR")
+			name = devices.create_device(NAME, phone="+967784499996", pairing_mode="QR")
 			row = frappe.db.get_value(
 				"WhatsApp Device",
 				name,
 				["status", "platform_device", "phone_e164", "wa_device_id"],
 				as_dict=True,
 			)
-			self.assertEqual((row.status, row.phone_e164), ("Pending QR", "+966500000401"))
+			self.assertEqual((row.status, row.phone_e164), ("Pending QR", "+967784499996"))
 			self.assertTrue(row.platform_device.startswith("WAD-") and row.wa_device_id.startswith("wa-"))
 			self.assertEqual(
 				frappe.db.count("WhatsApp Audit Log", {"action": "Device Created", "reference_name": name}), 1
@@ -163,7 +163,7 @@ class TestDevices(IntegrationTestCase):
 
 	def test_connection_events_and_machine(self):
 		with fake_provider():
-			name = devices.create_device(NAME, phone="+966500000402")
+			name = devices.create_device(NAME, phone="+967784499996")
 			pd = frappe.db.get_value("WhatsApp Device", name, "platform_device")
 
 		def make_webhook_event(ename, **kw):
@@ -216,9 +216,9 @@ class TestDevices(IntegrationTestCase):
 			pd = frappe.db.get_value("WhatsApp Device", name, "platform_device")
 		self.assertEqual(
 			devices.wrong_number_info(
-				"wrong_number: linked with 967770788938, registered for 967777667663; unlinked"
+				"wrong_number: linked with 967784499996, registered for 967777667663; unlinked"
 			),
-			{"connected": "+967770788938", "expected": "+967777667663"},
+			{"connected": "+967784499996", "expected": "+967777667663"},
 		)
 		self.assertIsNone(devices.wrong_number_info("connection.logged_out webhook"))
 		change = devices.apply_connection_event(
@@ -230,15 +230,15 @@ class TestDevices(IntegrationTestCase):
 				raw={
 					"reason": "wrong_number",
 					"expected_number": "967777667663",
-					"connected_number": "967770788938",
+					"connected_number": "967784499996",
 				},
-				device=DeviceState(platform_device=pd, phone_e164="+967770788938"),
+				device=DeviceState(platform_device=pd, phone_e164="+967784499996"),
 			)
 		)
-		self.assertEqual(change.wrong_number, {"connected": "+967770788938", "expected": "+967777667663"})
+		self.assertEqual(change.wrong_number, {"connected": "+967784499996", "expected": "+967777667663"})
 		st = self._get_device_connection_state(name)
 		self.assertEqual(st.status, "Logged Out")
-		self.assertIn("+967770788938", st.last_error)
+		self.assertIn("+967784499996", st.last_error)
 		# the number of the device stays its own, never the one that scanned
 		self.assertEqual(frappe.db.get_value("WhatsApp Device", name, "phone_e164"), "+967777667663")
 
@@ -249,8 +249,8 @@ class TestDevices(IntegrationTestCase):
 		from whatsapp_next.services import quick_send
 
 		with fake_provider():
-			a = devices.create_device(NAME + " A", phone="+966500000405")
-			b = devices.create_device(NAME + " B", phone="+966500000406")
+			a = devices.create_device(NAME + " A", phone="+967777667663")
+			b = devices.create_device(NAME + " B", phone="+967784499996")
 		# the drifted state: the flag without Settings
 		frappe.db.set_value("WhatsApp Device", {"name": ("!=", a)}, "is_default", 0)
 		frappe.db.set_value("WhatsApp Device", a, "is_default", 1)
@@ -274,8 +274,8 @@ class TestDevices(IntegrationTestCase):
 
 	def test_disconnect_delete_default_disabled(self):
 		with fake_provider() as fp:
-			a = devices.create_device(NAME + " A", phone="+966500000403")
-			b = devices.create_device(NAME + " B", phone="+966500000404")
+			a = devices.create_device(NAME + " A", phone="+967775040850")
+			b = devices.create_device(NAME + " B", phone="+967777999579")
 			pd_a = frappe.db.get_value("WhatsApp Device", a, "platform_device")
 			fp.set_device_status(pd_a, "Connected")
 			devices.poll_device_state(a)
@@ -310,7 +310,7 @@ class TestDevices(IntegrationTestCase):
 			number = frappe.get_doc(
 				{
 					"doctype": "WhatsApp Number",
-					"phone_e164": "+966500000499",
+					"phone_e164": "+967784499996",
 					"number_type": "Individual",
 					"last_device": a,
 				}
@@ -324,7 +324,7 @@ class TestDevices(IntegrationTestCase):
 					"event": "New",
 					"device": a,
 					"message": "x",
-					"recipients": [{"recipient_type": "Fixed Number", "phone": "+966500000498"}],
+					"recipients": [{"recipient_type": "Fixed Number", "phone": "+967777667663"}],
 				}
 			).insert(ignore_permissions=True)
 			devices.delete_device(a, delete_remote=True)
@@ -343,7 +343,7 @@ class TestDevices(IntegrationTestCase):
 
 	def test_sync_from_provider_and_unregistered(self):
 		with fake_provider() as fp:
-			a = devices.create_device(NAME + " S", phone="+966500000405")
+			a = devices.create_device(NAME + " S", phone="+967777667663")
 			pd = frappe.db.get_value("WhatsApp Device", a, "platform_device")
 			fp.set_device_status(pd, "Connected")
 			fp.create_device("DevTest foreign", None, "QR")  # exists only on the platform

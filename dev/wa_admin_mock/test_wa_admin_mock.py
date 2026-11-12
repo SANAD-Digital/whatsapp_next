@@ -179,11 +179,11 @@ class TestKeysAndDevices(MockTestCase):
 		self.assertEqual(client.device_status()["status"], "disconnected")
 		qr = client.device_login_qr()
 		self.assertTrue(qr["qr_code"].startswith("data:image/png;base64,iVBOR"))
-		pair = client.device_login_pair_code("966500000001")
+		pair = client.device_login_pair_code("967784499996")
 		self.assertEqual(pair, {"PairCode": "MOCK-0001"})  # exact key case
 		self.connect(device["id"])
 		self.assertEqual(client.device_status()["status"], "connected")
-		self.assertEqual(client.device_me()["phone_number"], "966500000001")
+		self.assertEqual(client.device_me()["phone_number"], "967784499996")
 		self.assertApiError(400, "already logged in", client.device_login_qr)
 		client.device_logout()
 		self.assertEqual(client.device_status()["status"], "logged_out")
@@ -201,13 +201,13 @@ class TestMessaging(MockTestCase):
 		device = self.new_device(self.new_key()["api_key"])
 		client = self.client(device_token=device["token"])
 		self.assertApiError(
-			400, "not connected", client.send_text_message, "966500000001@s.whatsapp.net", "hi"
+			400, "not connected", client.send_text_message, "967784499996@s.whatsapp.net", "hi"
 		)
 
 	def test_text_returns_provider_message_id_in_a_dict(self):
 		client = self.connected_client()
-		first = client.send_text_message("966500000001@s.whatsapp.net", "DEV TEST")
-		second = client.send_text_message("966500000001@s.whatsapp.net", "DEV TEST")
+		first = client.send_text_message("967784499996@s.whatsapp.net", "DEV TEST")
+		second = client.send_text_message("967784499996@s.whatsapp.net", "DEV TEST")
 		self.assertEqual(first["provider_message_id"], "MOCKMSG00000001")
 		self.assertEqual(second["provider_message_id"], "MOCKMSG00000002")
 
@@ -215,13 +215,13 @@ class TestMessaging(MockTestCase):
 		client = self.connected_client()
 		png = base64.b64encode(b"\x89PNG\r\n\x1a\n").decode()
 		media = client.send_media_message(
-			"966500000001@s.whatsapp.net", "image", png, "a.png", "image/png", caption="DEV"
+			"967784499996@s.whatsapp.net", "image", png, "a.png", "image/png", caption="DEV"
 		)
 		self.assertIn("provider_message_id", media)
-		location = client.send_location_message("966500000001@s.whatsapp.net", 24.7136, 46.6753, name="DEV")
+		location = client.send_location_message("967784499996@s.whatsapp.net", 24.7136, 46.6753, name="DEV")
 		self.assertIn("provider_message_id", location)
 		poll = client.create_poll(
-			"966500000001@s.whatsapp.net", {"question": "DEV?", "options": ["a", "b"], "multi_answer": False}
+			"967784499996@s.whatsapp.net", {"question": "DEV?", "options": ["a", "b"], "multi_answer": False}
 		)
 		self.assertEqual(poll["poll_id"], "MOCKPOLL000001")
 		results = client.poll_results(poll["poll_id"])
@@ -229,9 +229,9 @@ class TestMessaging(MockTestCase):
 
 	def test_contacts_and_groups(self):
 		client = self.connected_client()
-		synced = client.sync_contacts(["+966 50 000 0002"])
-		self.assertEqual(synced[0]["jid"], "966500000002@s.whatsapp.net")
-		self.assertEqual(client.list_contacts()[0]["phone"], "966500000002")
+		synced = client.sync_contacts(["+967 777 667 663"])
+		self.assertEqual(synced[0]["jid"], "967777667663@s.whatsapp.net")
+		self.assertEqual(client.list_contacts()[0]["phone"], "967777667663")
 		self.assertEqual(client.list_groups(), [])
 
 

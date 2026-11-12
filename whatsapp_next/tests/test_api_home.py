@@ -22,7 +22,7 @@ class TestApiHome(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ensure_settings()
-		cls.device = ensure_device("ApiTest Home Device", DEVICE, status="Connected", phone="+966500910101")
+		cls.device = ensure_device("ApiTest Home Device", DEVICE, status="Connected", phone="+967784499996")
 
 	@classmethod
 	def tearDownClass(cls):
@@ -80,7 +80,7 @@ class TestApiHomeActivity(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ensure_settings()
-		cls.device = ensure_device("ApiTest Home Device", DEVICE, status="Connected", phone="+966500910101")
+		cls.device = ensure_device("ApiTest Home Device", DEVICE, status="Connected", phone="+967784499996")
 
 	@classmethod
 	def tearDownClass(cls):
@@ -99,7 +99,7 @@ class TestApiHomeActivity(IntegrationTestCase):
 					"doctype": "WhatsApp Log",
 					"device": self.device,
 					"recipient_type": "Individual",
-					"phone": "+966500910199",
+					"phone": "+967777667663",
 					"message_type": "Text",
 					"body": "home-activity-test",
 					"status": status,

@@ -26,14 +26,14 @@ from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_devi
 
 FUNCTION = "_test_echo"
 CODE = "apitestping"
-SENDER = "+966500930401"
+SENDER = "+967784499996"
 
 
 class TestApiCommands(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Cmd Device", "WAD-APITEST-CM", phone="+966500930400")
+		cls.device = ensure_device("ApiTest Cmd Device", "WAD-APITEST-CM", phone="+967777667663")
 		ensure_settings(
 			enable_commands=1, command_service_user=ff.ensure_service_user(), send_receipt_reply=0
 		)
@@ -186,7 +186,7 @@ class TestApiCommands(IntegrationTestCase):
 		name = self._command(status="Active")
 		before = frappe.db.count("WhatsApp Log")
 		with as_user("WhatsApp Manager"):
-			out = api.test_command(text=f"#{CODE} hello there", sender_phone="0500930401", device=self.device)
+			out = api.test_command(text=f"#{CODE} hello there", sender_phone="+967784499996", device=self.device)
 			self.assertEqual(
 				(out["matched"], out["status"], out["command"], out["args"]["text"]),
 				(True, "Executed", name, "hello there"),

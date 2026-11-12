@@ -230,7 +230,7 @@ class TestSndPlatform(IntegrationTestCase):
 			NormalizedMessage(
 				client_ref="ref1",
 				platform_device="WAD-1",
-				phone_e164="+966500000002",
+				phone_e164="+967777667663",
 				body="hi",
 				source=Source(type="Campaign", doctype="WhatsApp Log", docname="ref1", site="s"),
 			),
@@ -246,7 +246,7 @@ class TestSndPlatform(IntegrationTestCase):
 			NormalizedMessage(
 				client_ref="ref3",
 				platform_device="WAD-1",
-				phone_e164="+966500000002",
+				phone_e164="+967777667663",
 				message_type="Poll",
 				poll=Poll(question="q", options=("a", "b"), allow_multiple=True),
 			),
@@ -272,7 +272,7 @@ class TestSndPlatform(IntegrationTestCase):
 		sent = req.call_args.kwargs["json"]
 		self.assertEqual(sent["batch_id"], "b1")
 		m1, m2, m3 = sent["messages"]
-		self.assertEqual(m1["recipient_no"], "966500000002")  # digits without + (PB-05)
+		self.assertEqual(m1["recipient_no"], "967777667663")  # digits without + (PB-05)
 		self.assertEqual(m1["client_ref"], "ref1")
 		self.assertEqual(m1["message_body"], "hi")
 		self.assertEqual(m1["source_type"], "Campaign")
@@ -290,7 +290,7 @@ class TestSndPlatform(IntegrationTestCase):
 	def test_send_message_and_status(self):
 		provider = _provider()
 		msg = NormalizedMessage(
-			client_ref="ref1", platform_device="WAD-1", phone_e164="+966500000002", body="hi"
+			client_ref="ref1", platform_device="WAD-1", phone_e164="+967777667663", body="hi"
 		)
 		result, req = self._call_provider_with_fake_request(
 			provider,
@@ -349,14 +349,14 @@ class TestSndPlatform(IntegrationTestCase):
 			provider,
 			"create_device",
 			"Main",
-			"+966500000001",
+			"+967784499996",
 			"Code",
 			response=_Resp(
 				200,
 				{"message": {"ok": True, "device": "WAD-9", "wa_device_id": "wa9", "status": "Pending QR"}},
 			),
 		)
-		self.assertEqual(req.call_args.kwargs["json"]["phone_number"], "966500000001")
+		self.assertEqual(req.call_args.kwargs["json"]["phone_number"], "967784499996")
 		self.assertEqual(state.platform_device, "WAD-9")
 		self.assertEqual(state.status, "Pending QR")
 		with self.assertRaises(pex.ValidationError):
@@ -374,7 +374,7 @@ class TestSndPlatform(IntegrationTestCase):
 								"name": "WAD-9",
 								"device_name": "Main",
 								"status": "connected",
-								"phone_number": "966500000001",
+								"phone_number": "967784499996",
 								"wa_webhook_id": "wh1",
 							}
 						],
@@ -383,7 +383,7 @@ class TestSndPlatform(IntegrationTestCase):
 			),
 		)
 		self.assertEqual(devices[0].status, "Connected")
-		self.assertEqual(devices[0].phone_e164, "+966500000001")
+		self.assertEqual(devices[0].phone_e164, "+967784499996")
 		self.assertTrue(devices[0].webhook_registered)
 		qr, _ = self._call_provider_with_fake_request(
 			provider,
@@ -402,11 +402,11 @@ class TestSndPlatform(IntegrationTestCase):
 			"get_pair_code",
 			"WAD-9",
 			response=_Resp(
-				200, {"message": {"ok": True, "pair_code": "ABCD1234", "phone_number": "966500000001"}}
+				200, {"message": {"ok": True, "pair_code": "ABCD1234", "phone_number": "967784499996"}}
 			),
 		)
 		self.assertEqual(code.pair_code, "ABCD1234")
-		self.assertEqual(code.phone_e164, "+966500000001")
+		self.assertEqual(code.phone_e164, "+967784499996")
 
 	def test_webhook_secret_and_endpoints(self):
 		provider = _provider()

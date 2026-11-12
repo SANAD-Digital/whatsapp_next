@@ -124,14 +124,14 @@ class TestUserComposedMessages(IntegrationTestCase):
 			with self.assertRaises(frappe.PermissionError):
 				quick_send_api.send(
 					device="x",
-					phone="+966500000001",
+					phone="+967784499996",
 					body="hi",
 					reference_doctype="User",
 					reference_name="Administrator",
 				)
 			with self.assertRaises(WAPermissionError):
 				quick_send_api.send(
-					device="x", phone="+966500000001", message_type="Document", attachment=self.file.file_url
+					device="x", phone="+967784499996", message_type="Document", attachment=self.file.file_url
 				)
 		compose.assert_not_called()
 
@@ -141,7 +141,7 @@ class TestSimulatorImpersonation(IntegrationTestCase):
 		customer = frappe.db.get_value("Customer", {}, "name")
 		if not customer:
 			self.skipTest("no Customer on this site")
-		self.contact = ensure_contact(f"{PREFIX} Party", phone="+966500000077")
+		self.contact = ensure_contact(f"{PREFIX} Party", phone="+967777999579")
 		doc = frappe.get_doc("Contact", self.contact)
 		if not any(link.link_doctype == "Customer" for link in doc.links):
 			doc.append("links", {"link_doctype": "Customer", "link_name": customer})
@@ -153,10 +153,10 @@ class TestSimulatorImpersonation(IntegrationTestCase):
 	def test_agent_cannot_run_commands_as_a_party(self):
 		with as_user("WhatsApp Agent"):
 			with self.assertRaises(WAPermissionError):
-				simulator_api._require_manager_to_act_as_party("+966500000077")
-			simulator_api._require_manager_to_act_as_party("+966500000078")  # no party: allowed
+				simulator_api._require_manager_to_act_as_party("+967777999579")
+			simulator_api._require_manager_to_act_as_party("+967784499996")  # no party: allowed
 		with as_user("WhatsApp Manager"):
-			simulator_api._require_manager_to_act_as_party("+966500000077")
+			simulator_api._require_manager_to_act_as_party("+967777999579")
 
 
 class TestDocumentInfoOwnership(IntegrationTestCase):

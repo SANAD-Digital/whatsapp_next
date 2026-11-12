@@ -21,7 +21,7 @@ from whatsapp_next.tests.conftest_frappe import (
 )
 
 DEVICE = "WAD-APITEST-Q1"
-P1, P2, P3 = "+966500910301", "+966500910302", "+966500910303"
+P1, P2, P3 = "+967777667663", "+967784499996", "+967777999579"
 BODY = "ApiTest queue"
 
 
@@ -29,7 +29,7 @@ class TestApiQueue(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Queue Device", DEVICE, phone="+966500910300")
+		cls.device = ensure_device("ApiTest Queue Device", DEVICE, phone="+967775040850")
 		cls._rate = frappe.db.get_single_value("WhatsApp Settings", "messages_per_minute")
 		ensure_settings(queue_paused=0, send_only_to_known_numbers=0, messages_per_minute=20)
 

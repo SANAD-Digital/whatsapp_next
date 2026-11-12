@@ -405,9 +405,9 @@ RECORD_LEVEL_SAMPLES: dict[str, dict] = {
 	"contacts.get_activity": {"name": "{contact}"},
 	"contacts.get_contact_numbers": {"contact": "{contact}"},
 	"contacts.link_many": {"names": json.dumps(["{contact}"]), "link_doctype": "Customer", "link_name": "x"},
-	"numbers.link_number": {"phone_e164": "+966500000001", "contact": "{contact}"},
-	"numbers.convert_number": {"phone_e164": "+966500000001"},
-	"numbers.convert_many": {"phone_e164s": json.dumps(["+966500000001"])},
+	"numbers.link_number": {"phone_e164": "+967784499996", "contact": "{contact}"},
+	"numbers.convert_number": {"phone_e164": "+967784499996"},
+	"numbers.convert_many": {"phone_e164s": json.dumps(["+967784499996"])},
 	"numbers.get_conversation_log": {"phone_e164": "{number}"},
 	"messages.get_conversation": {"phone_e164": "{number}"},
 	"picker.preview": {"target_doctype": "WhatsApp Contact Group", "target_name": "{group}"},
@@ -415,12 +415,12 @@ RECORD_LEVEL_SAMPLES: dict[str, dict] = {
 		"target_doctype": "WhatsApp Contact Group",
 		"target_name": "{group}",
 		"source_type": "manual",
-		"rows": json.dumps([{"phone": "+966500000001"}]),
+		"rows": json.dumps([{"phone": "+967784499996"}]),
 	},
 	"picker.commit_remove": {
 		"target_doctype": "WhatsApp Contact Group",
 		"target_name": "{group}",
-		"keys": json.dumps(["+966500000001"]),
+		"keys": json.dumps(["+967784499996"]),
 	},
 }
 
@@ -432,12 +432,12 @@ def check_record_level(ctx: Ctx, eps: list[Endpoint], frappe) -> None:
 	).insert(ignore_permissions=True)
 	frappe.db.commit()
 	contact = target.name
-	number = frappe.db.get_value("WhatsApp Number", {}, "phone_e164") or "+966500000000"
+	number = frappe.db.get_value("WhatsApp Number", {}, "phone_e164") or "+967777667663"
 	group = frappe.db.get_value("WhatsApp Contact Group", {}, "name") or "none"
 	fill = {"{contact}": contact, "{number}": number, "{group}": group}
 	before = "untouched"
 	members_before = (
-		frappe.db.count("WhatsApp Contact Group Member", {"phone_e164": "+966500000001"})
+		frappe.db.count("WhatsApp Contact Group Member", {"phone_e164": "+967784499996"})
 		if frappe.db.has_column("WhatsApp Contact Group Member", "phone_e164")
 		else None
 	)
@@ -475,7 +475,7 @@ def check_record_level(ctx: Ctx, eps: list[Endpoint], frappe) -> None:
 	created = frappe.get_all("Contact", filters={"first_name": "Live Probe"}, pluck="name")
 	ctx.add("record", "no contact created by denied users", not created, f"created={created}")
 	if members_before is not None:
-		members_after = frappe.db.count("WhatsApp Contact Group Member", {"phone_e164": "+966500000001"})
+		members_after = frappe.db.count("WhatsApp Contact Group Member", {"phone_e164": "+967784499996"})
 		ctx.add("record", "no group member added by denied users", members_after == members_before)
 	for name in [contact, *created]:
 		frappe.delete_doc("Contact", name, ignore_permissions=True, force=True)

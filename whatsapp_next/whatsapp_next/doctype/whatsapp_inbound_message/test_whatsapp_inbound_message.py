@@ -25,7 +25,7 @@ def _insert(device: str, **values) -> "frappe.model.document.Document":
 	payload = {
 		"doctype": DOCTYPE,
 		"device": device,
-		"phone": "0501234567",
+		"phone": "+967784499996",
 		"message_type": "Text",
 		"body": "hello",
 		"provider_message_id": PREFIX + frappe.generate_hash(length=8),
@@ -64,7 +64,7 @@ class TestWhatsAppInboundMessage(IntegrationTestCase):
 
 	def test_phone_pair_and_defaults(self) -> None:
 		doc = _insert(self.device)
-		self.assertEqual(doc.phone_e164, "+966501234567")
+		self.assertEqual(doc.phone_e164, "+967784499996")
 		self.assertTrue(doc.received_at)
 		self.assertEqual(doc.command_status, "None")
 		lid = _insert(self.device, phone=None, sender_jid="123456789@lid")
@@ -73,7 +73,7 @@ class TestWhatsAppInboundMessage(IntegrationTestCase):
 	def test_is_group_derived_from_chat_jid(self) -> None:
 		group = _insert(self.device, chat_jid="120363012345678@g.us")
 		self.assertEqual(group.is_group, 1)
-		single = _insert(self.device, chat_jid="966501234567@s.whatsapp.net", is_group=1)
+		single = _insert(self.device, chat_jid="967784499996@s.whatsapp.net", is_group=1)
 		self.assertEqual(single.is_group, 0)
 
 	def test_command_status_guard(self) -> None:

@@ -14,7 +14,7 @@ from frappe.tests import IntegrationTestCase
 from whatsapp_next.services import alerts, alerts_dates, report_render
 from whatsapp_next.tests.conftest_frappe import delete_all, delete_test_rows, ensure_device, ensure_settings
 
-PHONE = "+966500000911"
+PHONE = "+967784499996"
 NAME = "AlertTest Digest"
 REPORT_COLUMNS = [
 	{"label": "Customer", "fieldname": "customer", "fieldtype": "Data"},
@@ -22,9 +22,9 @@ REPORT_COLUMNS = [
 	{"label": "Amount", "fieldname": "amount", "fieldtype": "Currency"},
 ]
 REPORT_ROWS = [
-	{"customer": "A", "mobile": "0500000912", "amount": 10.5},
-	{"customer": "B", "mobile": "0500000913", "amount": 20},
-	{"customer": "A", "mobile": "0500000912", "amount": 5},
+	{"customer": "A", "mobile": "+967777999579", "amount": 10.5},
+	{"customer": "B", "mobile": "+967777667663", "amount": 20},
+	{"customer": "A", "mobile": "+967777999579", "amount": 5},
 ]
 
 
@@ -52,7 +52,7 @@ class TestAlerts(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("Alert Device", "WAD-TEST-AL01", phone="+966500000071")
+		cls.device = ensure_device("Alert Device", "WAD-TEST-AL01", phone="+967775040850")
 		ensure_settings(default_device=cls.device, send_only_to_known_numbers=0)
 
 	def setUp(self):
@@ -140,9 +140,9 @@ class TestAlerts(IntegrationTestCase):
 		for r in recips:
 			by_source.setdefault(r.source, []).append(r.phone_e164)
 		self.assertEqual(by_source["Phone"], [PHONE])
-		self.assertEqual(by_source["Report Column"], ["+966500000912", "+966500000913"])  # distinct
+		self.assertEqual(by_source["Report Column"], ["+967777999579", "+967777667663"])  # distinct
 		self.assertNotIn("User", by_source)  # Administrator has no mobile
-		col = next(r for r in recips if r.source == "Report Column" and r.phone_e164 == "+966500000912")
+		col = next(r for r in recips if r.source == "Report Column" and r.phone_e164 == "+967777999579")
 		self.assertEqual(len(alerts._rows_for(col, REPORT_ROWS, REPORT_COLUMNS, "mobile")), 2)
 
 	def test_render(self):
@@ -219,7 +219,7 @@ class TestAlerts(IntegrationTestCase):
 			col = next(
 				r
 				for r in preview.recipients
-				if r["source"] == "Report Column" and r["phone_e164"] == "+966500000912"
+				if r["source"] == "Report Column" and r["phone_e164"] == "+967777999579"
 			)
 			self.assertEqual(
 				(col["rows"], col["message_type"], col["mime_type"]), (2, "Document", "application/pdf")

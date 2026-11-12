@@ -55,10 +55,10 @@ class TestWhatsAppContactGroup(IntegrationTestCase):
 
 	def test_member_phone_normalized_and_counted(self) -> None:
 		doc = self._insert(
-			members=[{"phone": "0501234567"}, {"phone": "+966 50 765 4321", "display_name": "B"}]
+			members=[{"phone": "+967784499996"}, {"phone": "+967 777 667 663", "display_name": "B"}]
 		)
-		self.assertEqual(doc.members[0].phone_e164, "+966501234567")
-		self.assertEqual(doc.members[1].phone_e164, "+966507654321")
+		self.assertEqual(doc.members[0].phone_e164, "+967784499996")
+		self.assertEqual(doc.members[1].phone_e164, "+967777667663")
 		self.assertEqual(doc.member_count, 2)
 		self.assertTrue(doc.members_changed_at)
 		self.assertEqual(doc.members[0].added_by, "Administrator")
@@ -69,15 +69,15 @@ class TestWhatsAppContactGroup(IntegrationTestCase):
 
 	def test_duplicate_member_rejected(self) -> None:
 		with self.assertRaises(WAValidationError):
-			self._insert(members=[{"phone": "0501234567"}, {"phone": "+966501234567"}])
+			self._insert(members=[{"phone": "+967784499996"}, {"phone": "+967784499996"}])
 
 	def test_members_changed_at_only_on_change(self) -> None:
-		doc = self._insert(members=[{"phone": "0501234567"}])
+		doc = self._insert(members=[{"phone": "+967784499996"}])
 		first = doc.members_changed_at
 		doc.description = "renamed"
 		doc.save()
 		self.assertEqual(doc.members_changed_at, first)
-		doc.append("members", {"phone": "0509999999"})
+		doc.append("members", {"phone": "+967777667663"})
 		doc.save()
 		self.assertEqual(doc.member_count, 2)
 		self.assertGreaterEqual(doc.members_changed_at, first)

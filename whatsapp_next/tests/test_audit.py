@@ -22,10 +22,10 @@ class TestAudit(IntegrationTestCase):
 				reason="test-audit pause",
 				count=3,
 				details={
-					"phone": "+966501234567",
+					"phone": "+967784499996",
 					"api_key": "SECRET",
 					"note": "ok",
-					"nested": {"token": "x", "recipient_no": "966501234567"},
+					"nested": {"token": "x", "recipient_no": "967784499996"},
 				},
 				summary="Queue paused by {user}",
 				summary_args={"user": email},

@@ -29,9 +29,9 @@ from whatsapp_next.tests.conftest_frappe import (
 	fake_provider,
 )
 
-P_LINKED = "+966500940101"
-P_SUPPLIER = "+966500940102"
-P_UNLINKED = "+966500940103"
+P_LINKED = "+967777667663"
+P_SUPPLIER = "+967775040850"
+P_UNLINKED = "+967777999579"
 LINKED = "FnScript Linked Contact"
 SUPPLIER_CONTACT = "FnScript Supplier Contact"
 
@@ -53,7 +53,7 @@ class TestFunctionScripts(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ff.drop_all()
-		cls.device = ensure_device("FnScript Device", "WAD-TEST-FS01", phone="+966500940001")
+		cls.device = ensure_device("FnScript Device", "WAD-TEST-FS01", phone="+967784499996")
 		ensure_settings(
 			enable_commands=1,
 			command_service_user=ff.ensure_service_user(),
@@ -215,8 +215,8 @@ class TestFunctionScripts(IntegrationTestCase):
 	def test_04_party_types_refuse_a_supplier(self):
 		ff.ensure_function("_test_span")
 		cmd = frappe.get_doc("WhatsApp Command", ff.make_command("tfnspan", "_test_span"))
-		supplier = Sender("+966500940109", None, None, None, party_type="Supplier", party_name="Any Supplier")
-		customer = Sender("+966500940108", None, None, None, party_type="Customer", party_name="Any Customer")
+		supplier = Sender("+967782309999", None, None, None, party_type="Supplier", party_name="Any Supplier")
+		customer = Sender("+967775675566", None, None, None, party_type="Customer", party_name="Any Customer")
 		self.assertEqual(cr.function_block(cmd, supplier), "Party Type")
 		self.assertIsNone(cr.function_block(cmd, customer))
 		self.assertEqual(cr.check_access(cmd, frappe._dict(message_type="Text"), supplier), "Party Type")

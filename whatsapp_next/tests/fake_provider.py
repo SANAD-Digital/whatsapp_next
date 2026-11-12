@@ -392,7 +392,7 @@ class FakeProvider(BaseProvider):
 	def list_device_contacts(self, platform_device) -> list[ProviderContact]:
 		return [
 			ProviderContact(
-				jid="966500000009@s.whatsapp.net", phone_e164="+966500000009", name="Fake Contact"
+				jid="967784499996@s.whatsapp.net", phone_e164="+967784499996", name="Fake Contact"
 			)
 		]
 

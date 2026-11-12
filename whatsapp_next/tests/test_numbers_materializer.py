@@ -14,7 +14,7 @@ from whatsapp_next.services import numbers_materializer as nm
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_contact, ensure_device, ensure_settings
 
-K1, K2, K3 = "+966500000501", "+966500000502", "+966500000503"
+K1, K2, K3 = "+967777999579", "+967784499996", "+967777667663"
 GROUP = "120363000000000501@g.us"
 TAG = "nm-test"
 
@@ -96,7 +96,7 @@ class TestNumbersMaterializer(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ensure_settings()
-		cls.device = ensure_device("Numbers Device", "WAD-TEST-NM01", phone="+966500000021")
+		cls.device = ensure_device("Numbers Device", "WAD-TEST-NM01", phone="+967775040850")
 
 	def setUp(self):
 		self._delete_test_messages_and_numbers()
@@ -214,7 +214,7 @@ class TestNumbersMaterializer(IntegrationTestCase):
 			self.device,
 			phone=None,
 			chat_jid=GROUP,
-			sender_jid="966500000501@s.whatsapp.net",
+			sender_jid="967777999579@s.whatsapp.net",
 			ts=self._minutes_after_start(2),
 		)
 		nm.refresh_keys([GROUP])
@@ -232,7 +232,7 @@ class TestNumbersMaterializer(IntegrationTestCase):
 					"doctype": "WhatsApp Inbound Message",
 					"is_group": 1,
 					"chat_jid": GROUP,
-					"phone_e164": "+966500000501",
+					"phone_e164": "+967777999579",
 				}
 			),
 			GROUP,

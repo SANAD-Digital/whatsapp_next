@@ -24,6 +24,9 @@ from frappe.utils import add_to_date, now_datetime
 
 from whatsapp_next.services import dispatch
 
+# the owner's own numbers: the only ones a demo or a test may use (2026-11-12)
+OWNER_TEST_NUMBERS = ["+967784499996", "+967777667663", "+967777999579", "+967775040850", "+967775675566", "+967782309999", "+967779972929"]
+
 random.seed(20260924)
 
 TAG = "DEMOQ-"
@@ -92,7 +95,7 @@ def _log(device, name, phone, status, when):
 	doc.recipient_type = "Individual"
 	doc.display_name = name
 	doc.phone = phone
-	doc.phone_e164 = "+966" + phone[1:]
+	doc.phone_e164 = phone
 	doc.message_type = "Text"
 	doc.body = f"Demo queue message for {name}."
 	doc.status = status
@@ -113,14 +116,14 @@ def _log(device, name, phone, status, when):
 
 def _item(i, device, campaign, status, scheduled, **extra):
 	name = random.choice(NAMES)
-	phone = f"05{random.randint(10000000, 99999999)}"
+	phone = random.choice(OWNER_TEST_NUMBERS)
 	log_status = "Sent" if status == "Completed" else "Failed" if status == "Dead Letter" else "Queued"
 	doc = frappe.new_doc("WhatsApp Queue Item")
 	doc.outbound_message = _log(device, name, phone, log_status, scheduled)
 	doc.client_ref = f"{TAG}{i:04d}"
 	doc.device = device
 	doc.campaign = campaign
-	doc.phone_e164 = "+966" + phone[1:]
+	doc.phone_e164 = phone
 	doc.display_name = name
 	doc.priority = random.choice([1, 1, 2, 3, 5])
 	doc.scheduled_at = scheduled

@@ -42,7 +42,7 @@ class TestWhatsAppNotification(IntegrationTestCase):
 			"document_type": "ToDo",
 			"event": "Save",
 			"message": "Hello {{ doc.name }}",
-			"recipients": [{"recipient_type": "Fixed Number", "phone": "0501234567"}],
+			"recipients": [{"recipient_type": "Fixed Number", "phone": "+967784499996"}],
 		}
 		payload.update(values)
 		return frappe.get_doc(payload).insert(ignore_permissions=True)
@@ -63,7 +63,7 @@ class TestWhatsAppNotification(IntegrationTestCase):
 
 	def test_fixed_number_normalized_and_variables_counted(self) -> None:
 		doc = self._insert(message="Hi {{ doc.name }}, {{doc.name}} owes {{ doc.amount }} {{ doc.amount }}")
-		self.assertEqual(doc.recipients[0].phone_e164, "+966501234567")
+		self.assertEqual(doc.recipients[0].phone_e164, "+967784499996")
 		self.assertEqual(doc.variables_count, 2)
 		with self.assertRaises(WAInvalidPhoneError):
 			self._insert(name="_wa_test bad", recipients=[{"recipient_type": "Fixed Number", "phone": "x"}])

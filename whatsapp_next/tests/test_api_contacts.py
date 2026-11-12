@@ -14,7 +14,7 @@ from whatsapp_next.exceptions import WANotFoundError, WAPermissionError, WAValid
 from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_settings
 
 PREFIX = "ApiTest Contact"
-P1, P2, P3 = "+966500930001", "+966500930002", "+966500930003"
+P1, P2, P3 = "+967784499996", "+967777999579", "+967777667663"
 BLACKLIST = "ApiTest Contacts Blacklist"
 
 

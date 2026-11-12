@@ -25,8 +25,8 @@ from whatsapp_next.tests.conftest_frappe import (
 )
 
 SERVICE_USER = ff.SERVICE_USER
-P_LINKED = "+966500000601"
-P_UNLINKED = "+966500000602"
+P_LINKED = "+967784499996"
+P_UNLINKED = "+967777667663"
 BLACKLIST = "RouterTest Blacklist"
 
 
@@ -34,7 +34,7 @@ class TestCommandRouter(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("Router Device", "WAD-TEST-CR01", phone="+966500000031")
+		cls.device = ensure_device("Router Device", "WAD-TEST-CR01", phone="+967777999579")
 		if not frappe.db.exists("WhatsApp Contact Group", BLACKLIST):
 			frappe.get_doc(
 				{
@@ -390,7 +390,7 @@ class TestCommandRouter(IntegrationTestCase):
 	def test_the_reply_reaches_every_number_of_the_contact(self):
 		"""A command's answer goes to the number that asked and to the contact's other WhatsApp
 		numbers (owner, 2026-10-08); only the asker's copy quotes the message."""
-		other = "+966500000609"
+		other = "+967775040850"
 		c = frappe.get_doc("Contact", self.contact)
 		c.append("phone_nos", {"phone": other})
 		c.save(ignore_permissions=True)

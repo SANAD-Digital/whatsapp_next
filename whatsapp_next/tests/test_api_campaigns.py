@@ -29,7 +29,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	fake_provider,
 )
 
-P1, P2 = "+966500920401", "+966500920402"
+P1, P2 = "+967784499996", "+967777667663"
 NAME = "ApiTest Campaign"
 TAG = "ApiTest camp"
 
@@ -38,7 +38,7 @@ class TestApiCampaigns(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.device = ensure_device("ApiTest Device CP", "WAD-TEST-API24", phone="+966500920004")
+		cls.device = ensure_device("ApiTest Device CP", "WAD-TEST-API24", phone="+967777999579")
 		ensure_settings(default_device=cls.device, queue_paused=0, send_only_to_known_numbers=0)
 
 	@classmethod
@@ -230,7 +230,7 @@ class TestApiCampaigns(IntegrationTestCase):
 			self.assertEqual(api.get_recipients_page(name=name, status="Queued")["total"], 2)
 			self.assertEqual(api.get_recipients_page(name=name, status="Failed")["total"], 0)
 			self.assertEqual(api.get_recipients_page(name=name, source_type="Contact")["total"], 1)
-			self.assertEqual(api.get_recipients_page(name=name, search="920402")["rows"][0]["phone_e164"], P2)
+			self.assertEqual(api.get_recipients_page(name=name, search="667663")["rows"][0]["phone_e164"], P2)
 			self.assertEqual(api.get_recipients_page(name=name, search="R1")["total"], 1)
 			self.assertEqual(len(api.get_recipients_page(name=name, page=2, page_length=1)["rows"]), 1)
 			self.assertEqual(len(api.get_recipients_page(name=name, page_length="9999")["rows"]), 2)  # capped

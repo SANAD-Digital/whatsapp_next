@@ -25,6 +25,9 @@ from frappe.utils import add_to_date, now_datetime
 
 from whatsapp_next.services.guards import status_writer
 
+# the owner's own numbers: the only ones a demo or a test may use (2026-11-12)
+OWNER_TEST_NUMBERS = ["+967784499996", "+967777667663", "+967777999579", "+967775040850", "+967775675566", "+967782309999", "+967779972929"]
+
 random.seed(20260924)
 
 TAG = "DEMOD-"
@@ -41,22 +44,22 @@ NAMES = [
 
 # device_name, phone, status, minutes since the last event, is_default, traffic (sent, failed)
 DEVICES = [
-	("DEMO Sales device", "0501234567", "Connected", 0, 1, (290, 26)),
-	("DEMO Jeddah branch", "0559028814", "Disconnected", 42, 0, (769, 63)),
+	("DEMO Sales device", "+967784499996", "Connected", 0, 1, (290, 26)),
+	("DEMO Jeddah branch", "+967777999579", "Disconnected", 42, 0, (769, 63)),
 	("DEMO Accounting", None, "Pending QR", 4, 0, (0, 0)),
-	("DEMO Support desk", "0567713390", "Logged Out", 190, 0, (120, 3)),
+	("DEMO Support desk", "+967777667663", "Logged Out", 190, 0, (120, 3)),
 ]
 
 
 def _log(device, status, when, i):
 	"""One outbound row, so the card's 30-day tiles read a real number."""
-	phone = f"05{random.randint(10000000, 99999999)}"
+	phone = random.choice(OWNER_TEST_NUMBERS)
 	doc = frappe.new_doc("WhatsApp Log")
 	doc.device = device
 	doc.recipient_type = "Individual"
 	doc.display_name = random.choice(NAMES)
 	doc.phone = phone
-	doc.phone_e164 = "+966" + phone[1:]
+	doc.phone_e164 = phone
 	doc.message_type = "Text"
 	doc.body = "Demo device message."
 	doc.status = status

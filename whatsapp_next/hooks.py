@@ -193,3 +193,6 @@ doctype_list_js = {
 
 # Translation
 ignore_translatable_strings_from = []
+
+# a test run first forgets what the development site holds about the owner's own numbers
+before_tests = ["whatsapp_next.tests.owner_numbers.clear_owner_numbers_history"]

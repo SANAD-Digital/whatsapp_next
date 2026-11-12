@@ -19,6 +19,9 @@ import random
 import frappe
 from frappe.utils import add_to_date, now_datetime
 
+# the owner's own numbers: the only ones a demo or a test may use (2026-11-12)
+OWNER_TEST_NUMBERS = ["+967784499996", "+967777667663", "+967777999579", "+967775040850", "+967775675566", "+967782309999", "+967779972929"]
+
 random.seed(20260923)
 
 DEVICES = [d.name for d in frappe.get_all("WhatsApp Device", fields=["name"])]
@@ -67,8 +70,8 @@ def make(i):
 	doc.device = device
 	doc.recipient_type = "Individual"
 	doc.display_name = name
-	doc.phone = f"05{random.randint(10000000, 99999999)}"
-	doc.phone_e164 = "+966" + doc.phone[1:]
+	doc.phone = random.choice(OWNER_TEST_NUMBERS)
+	doc.phone_e164 = doc.phone
 	doc.message_type = random.choice(MSG_TYPES)
 	doc.body = f"Demo message {i} for {name}."
 	doc.status = status

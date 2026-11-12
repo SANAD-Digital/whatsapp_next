@@ -33,7 +33,7 @@ def _insert(device: str, **values) -> "frappe.model.document.Document":
 		"doctype": DOCTYPE,
 		"device": device,
 		"recipient_type": "Individual",
-		"phone": "0501234567",
+		"phone": "+967784499996",
 		"message_type": "Text",
 		"body": "unit test",
 		"source_type": "API",
@@ -72,7 +72,7 @@ class TestWhatsAppLog(IntegrationTestCase):
 
 	def test_phone_pair_normalized(self) -> None:
 		doc = _insert(self.device)
-		self.assertEqual(doc.phone_e164, "+966501234567")
+		self.assertEqual(doc.phone_e164, "+967784499996")
 		self.assertEqual(doc.status, "Unsent")
 		with self.assertRaises(WAInvalidPhoneError):
 			_insert(self.device, phone="not a phone")

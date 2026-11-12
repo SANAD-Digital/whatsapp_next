@@ -153,11 +153,11 @@ class TestSmoke(IntegrationTestCase):
 		ensure_settings()
 		for name in frappe.get_all("Contact", {"first_name": "WA Smoke Contact"}, pluck="name"):
 			frappe.delete_doc("Contact", name, ignore_permissions=True, force=True)
-		contact = ensure_contact("WA Smoke Contact", "0501234567")
+		contact = ensure_contact("WA Smoke Contact", "+967784499996")
 		e164 = frappe.db.get_value(
 			"Contact Phone", {"parent": contact, "parenttype": "Contact"}, "wa_phone_e164"
 		)
-		self.assertEqual(e164, "+966501234567")
+		self.assertEqual(e164, "+967784499996")
 
 	def test_composite_indexes_exist(self):
 		"""Each controller declares its composite indexes and Frappe's `on_doctype_update` handler
